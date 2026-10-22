@@ -150,6 +150,6 @@ Diorama is released under the [MIT License](LICENSE). Third-party components and
 
 ## Acknowledgements
 
-Diorama started as an extension of NoctAssetForge. Parts of its code (the 2D drawing layer, the asset and export pipeline, the CLI) come from it, and are used and relicensed here with its author's permission.
+**Special thanks to MrMagma**, the creator of NoctAssetForge. Diorama grew out of his tool: it started as an extension of NoctAssetForge, and parts of its code (the 2D drawing layer, the asset and export pipeline, the CLI) come from it, used and relicensed here with his permission. Thank you for building it and for letting it become an open-source project.
 
 Diorama is developed with [Claude Code](https://claude.com/claude-code): most of its code, guides and sample art were written by Claude (Anthropic) working with the maintainer, and commits carry a `Co-Authored-By` line saying so. The banner above is a scene, characters and effects exported from the sample project.
