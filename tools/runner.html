@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Diorama - Render Runner</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html, body {
+        width: 100%;
+        height: 100%;
+        background: transparent;
+        overflow: hidden;
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-start;
+      }
+      #asset-root {
+        position: relative;
+        overflow: hidden;
+        display: block;
+        transform-origin: 0 0;
+      }
+      .error-card {
+        padding: 16px;
+        background: #2b1114;
+        color: #ff858d;
+        border: 1px solid #791a24;
+        border-radius: 6px;
+        font-family: monospace;
+        font-size: 13px;
+        max-width: 90vw;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="asset-root"></div>
+
+    <script type="module">
+      const BAYER_4X4 = [
+        [0, 8, 2, 10],
+        [12, 4, 14, 6],
+        [3, 11, 1, 9],
+        [15, 7, 13, 5],
+      ].map(r => r.map(v => (v + 0.5) / 16));
+
+      function snapAlpha(ctx, threshold = 128) {
+        const w = ctx.canvas.width;
+        const h = ctx.canvas.height;
+        if (!w || !h) return;
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const data = imgData.data;
+        for (let i = 3; i < data.length; i += 4) {
+          data[i] = data[i] >= threshold ? 255 : 0;
+        }
+        ctx.putImageData(imgData, 0, 0);
+      }
+
+      function bayerDitherAlpha(ctx) {
+        const w = ctx.canvas.width;
+        const h = ctx.canvas.height;
+        if (!w || !h) return;
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const data = imgData.data;
+        for (let y = 0; y < h; y++) {
+          const rowOffset = y * w * 4;
+          const bRow = BAYER_4X4[y % 4];
+          for (let x = 0; x < w; x++) {
+            const idx = rowOffset + x * 4 + 3;
+            const a = data[idx];
+            if (a === 0 || a === 255) continue;
+            data[idx] = (a / 255) >= bRow[x % 4] ? 255 : 0;
+          }
+        }
+        ctx.putImageData(imgData, 0, 0);
+      }
+
+      window.__ASSET_READY__ = false;
+      window.__ASSET_ERROR__ = null;
+      window.__ASSET_METADATA__ = null;
+
+      async function run() {
+        const root = document.getElementById('asset-root');
+        const params = new URLSearchParams(window.location.search);
+        const project = params.get('project');
+        // The project's folder from the repository root (examples/<name> or projects/<name>); sheets live in <dir>/sheets/.
+        const dir = (params.get('dir') || `projects/${project}`).replace(/^\/+|\/+$/g, '');
+        const file = params.get('file');
+
+        if (!project || !file) {
+          throw new Error('Missing "project" or "file" query parameter in URL');
+        }
+
+        // Clean path to ensure leading slash
+        const cleanFile = file.startsWith('/') ? file : '/' + file;
+        const moduleUrl = `/${dir}/sheets${cleanFile}`;
+
+        console.log(`[AssetRunner] Loading asset module: ${moduleUrl}`);
+
+        let mod;
+        try {
+          mod = await import(/* @vite-ignore */ moduleUrl);
+        } catch (err) {
+          throw new Error(`Failed to import asset module "${moduleUrl}": ${err.message || err}`);
+        }
+
+        const asset = mod.default || mod.asset;
+        if (!asset) {
+          throw new Error(`Module "${moduleUrl}" must export an asset as default export (export default defineAsset({ ... }))`);
+        }
+
+        if (typeof asset.render !== 'function') {
+          throw new Error(`Asset definition in "${moduleUrl}" is missing a "render(root, context)" function`);
+        }
+
+        const width = Number(asset.width) || 256;
+        const height = Number(asset.height) || 256;
+        const format = asset.format || 'png';
+        const quality = typeof asset.quality === 'number' ? asset.quality : 90;
+        const scale = Number(asset.scale) || 1;
+        const background = asset.background ?? (format === 'jpeg' ? '#ffffff' : 'transparent');
+
+        const frameCount = Math.max(1, Number(asset.frames) || 1);
+        // Directions are rows: row 0 faces the camera (S) and each next row turns clockwise on screen.
+        const directionCount = Math.max(1, Math.floor(Number(asset.directions) || 1));
+        const DIRECTION_NAMES = { 1: ['S'], 4: ['S', 'W', 'N', 'E'], 8: ['S', 'SW', 'W', 'NW', 'N', 'NE', 'E', 'SE'] };
+        const directionNames = Array.from({ length: directionCount }, (_, d) => DIRECTION_NAMES[directionCount]?.[d] ?? `D${d}`);
+        const facingOf = (d) => Math.PI / 2 + (d * 2 * Math.PI) / directionCount;
+        const totalWidth = width * frameCount;
+        const totalHeight = height * directionCount;
+
+        // Style the root container
+        root.style.width = `${totalWidth}px`;
+        root.style.height = `${totalHeight}px`;
+        root.style.backgroundColor = background;
+        if (frameCount > 1 || directionCount > 1) {
+          root.style.display = 'flex';
+          root.style.flexDirection = 'row';
+          root.style.flexWrap = 'wrap';
+        }
+
+        const preview = params.get('preview') === 'true';
+
+        if (frameCount > 1 || directionCount > 1) {
+          for (let d = 0; d < directionCount; d++)
+          for (let f = 0; f < frameCount; f++) {
+            const frameCell = document.createElement('div');
+            frameCell.className = 'frame-cell';
+            frameCell.style.width = `${width}px`;
+            frameCell.style.height = `${height}px`;
+            frameCell.style.position = 'relative';
+            frameCell.style.overflow = 'hidden';
+            root.appendChild(frameCell);
+
+            const context = {
+              width,
+              height,
+              scale,
+              format,
+              project,
+              sourcePath: file,
+              preview,
+              resolveResource: (rel) => `/${dir}/src/${rel.replace(/^\//, '')}`,
+              frameIndex: f,
+              frameCount,
+              direction: d,
+              directionCount,
+              facing: facingOf(d),
+              directionName: directionNames[d],
+            };
+
+            await asset.render(frameCell, context);
+          }
+        } else {
+          // Context object provided to asset render
+          const context = {
+            width,
+            height,
+            scale,
+            format,
+            project,
+            sourcePath: file,
+            preview,
+            resolveResource: (rel) => `/${dir}/src/${rel.replace(/^\//, '')}`,
+            frameIndex: 0,
+            frameCount: 1,
+            direction: 0,
+            directionCount: 1,
+            facing: facingOf(0),
+            directionName: directionNames[0],
+          };
+
+          // Execute user render
+          await asset.render(root, context);
+        }
+
+        // Apply post-process anti-aliasing if configured
+        if (asset.antialiasing === 'none' || asset.antialiasing === 'dither') {
+          const canvases = Array.from(root.querySelectorAll('canvas'));
+          for (const cvs of canvases) {
+            const cCtx = cvs.getContext('2d');
+            if (cCtx) {
+              if (asset.antialiasing === 'none') {
+                snapAlpha(cCtx, asset.alphaThreshold ?? 128);
+              } else if (asset.antialiasing === 'dither') {
+                bayerDitherAlpha(cCtx);
+              }
+            }
+          }
+        }
+
+        // Wait for all web fonts to load
+        if (document.fonts && document.fonts.ready) {
+          await document.fonts.ready;
+        }
+
+        // Wait for any embedded <img> tags to complete decoding
+        const images = Array.from(root.querySelectorAll('img'));
+        if (images.length > 0) {
+          await Promise.all(
+            images.map((img) => {
+              if (img.complete) return Promise.resolve();
+              return img.decode().catch(() => {});
+            })
+          );
+        }
+
+        // Wait two animation frames to ensure DOM styles and canvas buffers are fully flushed
+        await new Promise((resolve) => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(resolve);
+          });
+        });
+
+        window.__ASSET_METADATA__ = {
+          width: totalWidth,
+          height: totalHeight,
+          format,
+          quality,
+          scale,
+          background,
+          name: asset.name,
+          frameCount,
+          frameWidth: width,
+          frameHeight: height,
+          fps: Number(asset.fps) || 5,
+          animations: asset.animations ?? null,
+          directionCount,
+          directionNames,
+          directionFacings: directionNames.map((_, d) => facingOf(d)),
+          pivot: asset.pivot ?? null,
+          data: asset.data ?? null,
+        };
+        window.__ASSET_READY__ = true;
+        console.log(`[AssetRunner] Asset ready: ${totalWidth}x${totalHeight} (${format}, ${frameCount} frames)`);
+      }
+
+      run().catch((err) => {
+        console.error('[AssetRunner Error]', err);
+        window.__ASSET_ERROR__ = err.stack || err.message || String(err);
+        const root = document.getElementById('asset-root');
+        root.innerHTML = `<div class="error-card"><strong>Render Error:</strong>\n${window.__ASSET_ERROR__}</div>`;
+      });
+    </script>
+  </body>
+</html>

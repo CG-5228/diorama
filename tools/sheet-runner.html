@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Diorama - Sheet Runner</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html, body {
+        width: 100%;
+        height: 100%;
+        background: transparent;
+        overflow: hidden;
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-start;
+      }
+      #sheet-root {
+        position: relative;
+        overflow: hidden;
+        display: block;
+        transform-origin: 0 0;
+      }
+      .sheet-cell {
+        position: absolute;
+        overflow: hidden;
+        box-sizing: border-box;
+      }
+      .error-card {
+        padding: 16px;
+        background: #2b1114;
+        color: #ff858d;
+        border: 1px solid #791a24;
+        border-radius: 6px;
+        font-family: monospace;
+        font-size: 13px;
+        max-width: 90vw;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="sheet-root"></div>
+
+    <script type="module">
+      import { packGrid, packCompact } from '@core';
+
+      const BAYER_4X4 = [
+        [0, 8, 2, 10],
+        [12, 4, 14, 6],
+        [3, 11, 1, 9],
+        [15, 7, 13, 5],
+      ].map(r => r.map(v => (v + 0.5) / 16));
+
+      function snapAlpha(ctx, threshold = 128) {
+        const w = ctx.canvas.width;
+        const h = ctx.canvas.height;
+        if (!w || !h) return;
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const data = imgData.data;
+        for (let i = 3; i < data.length; i += 4) {
+          data[i] = data[i] >= threshold ? 255 : 0;
+        }
+        ctx.putImageData(imgData, 0, 0);
+      }
+
+      function bayerDitherAlpha(ctx) {
+        const w = ctx.canvas.width;
+        const h = ctx.canvas.height;
+        if (!w || !h) return;
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const data = imgData.data;
+        for (let y = 0; y < h; y++) {
+          const rowOffset = y * w * 4;
+          const bRow = BAYER_4X4[y % 4];
+          for (let x = 0; x < w; x++) {
+            const idx = rowOffset + x * 4 + 3;
+            const a = data[idx];
+            if (a === 0 || a === 255) continue;
+            data[idx] = (a / 255) >= bRow[x % 4] ? 255 : 0;
+          }
+        }
+        ctx.putImageData(imgData, 0, 0);
+      }
+
+      window.__SHEET_READY__ = false;
+      window.__SHEET_ERROR__ = null;
+      window.__SHEET_METADATA__ = null;
+
+      async function run() {
+        const root = document.getElementById('sheet-root');
+        const params = new URLSearchParams(window.location.search);
+        const project = params.get('project');
+        // The project's folder from the repository root (examples/<name> or projects/<name>); sheets live in <dir>/sheets/.
+        const dir = (params.get('dir') || `projects/${project}`).replace(/^\/+|\/+$/g, '');
+        const filesJson = params.get('files');
+        const mode = params.get('mode') || 'grid';
+        const gap = Number(params.get('gap')) || 0;
+        const cols = params.get('cols') ? Number(params.get('cols')) : undefined;
+        const background = params.get('background') || 'transparent';
+        const preview = params.get('preview') === 'true';
+
+        if (!project || !filesJson) {
+          throw new Error('Missing "project" or "files" query parameter in sheet runner');
+        }
+
+        const files = JSON.parse(filesJson);
+        if (!Array.isArray(files) || files.length === 0) {
+          throw new Error('Empty files array provided to sheet runner');
+        }
+
+        // 1. Load all modules in parallel
+        const loadedAssets = [];
+        for (const file of files) {
+          const cleanFile = file.startsWith('/') ? file : '/' + file;
+          const moduleUrl = `/${dir}/sheets${cleanFile}`;
+          const mod = await import(/* @vite-ignore */ moduleUrl);
+          const asset = mod.default || mod.asset;
+
+          if (!asset || typeof asset.render !== 'function') {
+            throw new Error(`Asset in "${moduleUrl}" must export a default defineAsset()`);
+          }
+
+          const name = asset.name || file.replace(/\\/g, '/').replace(/^\//, '').replace(/\.(ts|js)$/, '');
+          loadedAssets.push({
+            file,
+            asset,
+            name,
+            width: Number(asset.width) || 256,
+            height: Number(asset.height) || 256,
+          });
+        }
+
+        // 2. Compute emergent layout
+        const packResult = mode === 'compact'
+          ? packCompact(loadedAssets, { gap })
+          : packGrid(loadedAssets, { gap, cols });
+
+        root.style.width = `${packResult.width}px`;
+        root.style.height = `${packResult.height}px`;
+        root.style.backgroundColor = background;
+
+        const frames = {};
+
+        // 3. Mount and render each asset at its calculated position
+        for (const placed of packResult.items) {
+          const item = placed.item;
+          const cell = document.createElement('div');
+          cell.className = 'sheet-cell';
+          cell.style.left = `${placed.x}px`;
+          cell.style.top = `${placed.y}px`;
+          cell.style.width = `${item.width}px`;
+          cell.style.height = `${item.height}px`;
+
+          root.appendChild(cell);
+
+          const context = {
+            width: item.width,
+            height: item.height,
+            scale: 1,
+            format: 'png',
+            project,
+            sourcePath: item.file,
+            preview,
+            resolveResource: (rel) => `/${dir}/src/${rel.replace(/^\//, '')}`,
+          };
+
+          await item.asset.render(cell, context);
+
+          // Apply postprocessing per cell if requested
+          if (item.asset.antialiasing && item.asset.antialiasing !== 'native') {
+            const canvases = cell.querySelectorAll('canvas');
+            for (const canvas of canvases) {
+              const canvasCtx = canvas.getContext('2d');
+              if (canvasCtx) {
+                if (item.asset.antialiasing === 'none') {
+                  snapAlpha(canvasCtx, item.asset.alphaThreshold ?? 128);
+                } else if (item.asset.antialiasing === 'dither') {
+                  bayerDitherAlpha(canvasCtx);
+                }
+              }
+            }
+          }
+
+          frames[item.name] = {
+            x: placed.x,
+            y: placed.y,
+            width: placed.width,
+            height: placed.height,
+          };
+        }
+
+        // 4. Wait for web fonts and images to settle
+        if (document.fonts && document.fonts.ready) {
+          await document.fonts.ready;
+        }
+
+        const images = Array.from(root.querySelectorAll('img'));
+        if (images.length > 0) {
+          await Promise.all(
+            images.map((img) => {
+              if (img.complete) return Promise.resolve();
+              return img.decode().catch(() => {});
+            })
+          );
+        }
+
+        await new Promise((resolve) => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(resolve);
+          });
+        });
+
+        window.__SHEET_METADATA__ = {
+          width: packResult.width,
+          height: packResult.height,
+          cols: packResult.cols,
+          rows: packResult.rows,
+          gap,
+          mode,
+          frames,
+        };
+        window.__SHEET_READY__ = true;
+      }
+
+      run().catch((err) => {
+        console.error('[SheetRunner Error]', err);
+        window.__SHEET_ERROR__ = err.stack || err.message || String(err);
+        const root = document.getElementById('sheet-root');
+        root.innerHTML = `<div class="error-card"><strong>Sheet Render Error:</strong>\n${window.__SHEET_ERROR__}</div>`;
+      });
+    </script>
+  </body>
+</html>

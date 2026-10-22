@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Production builds
+dist/
+
+# Your projects: one folder each in projects/, never versioned by Diorama (each can be its own
+# git repository). Only the README that explains the folder is.
+projects/*
+!projects/README.md
+
+# Generated in every project: exports (assets/, rebuilt with npm run export; npm run example for
+# the sample) and review renders (review/: contact sheets, scenery tests, mockups).
+examples/**/assets/
+examples/**/review/
+projects/**/assets/
+projects/**/review/
+
+# What the viewer deletes, kept so it can be undone
+.diorama-trash/
+
+# System & OS files
+.DS_Store
+Thumbs.db
+
+# Playwright test-results
+test-results/
+playwright-report/
+
+# Left behind when the docs test stops half way
+tests/docs/.snippets/

@@ -1,0 +1,156 @@
+/* Class detection stays inside the viewer: scanning the whole repo made every edit elsewhere reload this page. */
+@import "tailwindcss" source("../");
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/inter";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-heading: var(--font-sans);
+    --font-sans: 'Inter Variable', sans-serif;
+    --color-engine-volume: var(--engine-volume);
+    --color-engine-rig: var(--engine-rig);
+    --color-warning: var(--warning);
+    --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --warning: oklch(0.62 0.16 75);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.708 0 0);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --radius: 0.625rem;
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+    --background: oklch(0.145 0.004 270);
+    --foreground: oklch(0.96 0.003 270);
+    --card: oklch(0.185 0.004 270);
+    --card-foreground: oklch(0.96 0.003 270);
+    --popover: oklch(0.2 0.004 270);
+    --popover-foreground: oklch(0.96 0.003 270);
+    --primary: oklch(0.8 0.15 75);
+    --primary-foreground: oklch(0.2 0.05 75);
+    --secondary: oklch(0.25 0.004 270);
+    --secondary-foreground: oklch(0.96 0.003 270);
+    --muted: oklch(0.225 0.004 270);
+    --muted-foreground: oklch(0.68 0.01 270);
+    --accent: oklch(0.27 0.005 270);
+    --accent-foreground: oklch(0.96 0.003 270);
+    --destructive: oklch(0.7 0.19 25);
+    --warning: oklch(0.82 0.14 90);
+    --border: oklch(1 0 0 / 9%);
+    --input: oklch(1 0 0 / 12%);
+    --ring: oklch(0.8 0.15 75 / 70%);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --sidebar: oklch(0.165 0.004 270);
+    --sidebar-foreground: oklch(0.96 0.003 270);
+    --sidebar-primary: oklch(0.8 0.15 75);
+    --sidebar-primary-foreground: oklch(0.2 0.05 75);
+    --sidebar-accent: oklch(0.24 0.005 270);
+    --sidebar-accent-foreground: oklch(0.96 0.003 270);
+    --sidebar-border: oklch(1 0 0 / 8%);
+    --sidebar-ring: oklch(0.8 0.15 75 / 70%);
+    --engine-volume: oklch(0.72 0.14 55);
+    --engine-rig: oklch(0.7 0.09 235);
+    --checker-a: oklch(0.17 0.004 270);
+    --checker-b: oklch(0.205 0.004 270);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-background text-foreground text-xs/relaxed;
+    }
+  html {
+    @apply font-sans;
+    }
+  code, pre {
+    @apply font-mono text-[0.92em];
+    }
+}
+
+/* Sprites always sit on a checkerboard, so transparency reads at a glance. */
+@utility checker {
+    background-color: var(--checker-a);
+    background-image: conic-gradient(var(--checker-b) 25%, transparent 0 50%, var(--checker-b) 0 75%, transparent 0);
+    background-size: 14px 14px;
+}
+
+/* Sprite sheets are drawn at a fixed scale: never smooth them when scaling. */
+@utility pixelated {
+    image-rendering: pixelated;
+}

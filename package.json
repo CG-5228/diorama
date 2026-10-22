@@ -1,0 +1,88 @@
+{
+  "name": "diorama",
+  "version": "0.1.0",
+  "description": "2.5D game assets as code, for coding agents: props, scenery, effects, rigged characters with their gear, item icons and HUD pieces written in TypeScript and exported as sprite sheets with atlas JSON.",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "view": "vite",
+    "build": "vite build",
+    "export": "tsx tools/export.ts",
+    "example": "tsx tools/export.ts examples/pivot-v2-2d",
+    "new-project": "tsx tools/cli.ts new-project",
+    "new-asset": "tsx tools/cli.ts new-asset",
+    "list": "tsx tools/cli.ts list",
+    "check": "tsx tools/cli.ts check",
+    "layout": "tsx tools/cli.ts layout",
+    "inspect": "tsx tools/cli.ts inspect",
+    "contact": "tsx tools/cli.ts contact",
+    "new-outfit-character": "tsx tools/cli.ts new-outfit-character",
+    "gear-items": "tsx tools/cli.ts gear-items",
+    "scenery-items": "tsx tools/cli.ts scenery-items",
+    "new-scene": "tsx tools/cli.ts new-scene",
+    "scenery-test": "tsx tools/cli.ts scenery-test",
+    "vfx-items": "tsx tools/cli.ts vfx-items",
+    "item-icons": "tsx tools/cli.ts item-icons",
+    "docs:api": "tsx scripts/generate-api-docs.ts",
+    "doctor": "tsx scripts/doctor.ts",
+    "test": "tsx tests/run.ts",
+    "test:engine": "tsx tests/run.ts engine",
+    "test:docs": "tsx tests/run.ts docs",
+    "test:cli": "tsx tests/run.ts cli",
+    "test:viewer": "tsx tests/run.ts viewer"
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.9.0",
+    "@ebay/nice-modal-react": "^1.2.13",
+    "@fontsource-variable/inter": "^5.3.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@tanstack/react-query": "^5.104.5",
+    "@tanstack/react-router": "^1.170.45",
+    "@tanstack/react-store": "^0.11.2",
+    "@tanstack/react-table": "^9.3.1",
+    "@tanstack/react-virtual": "^3.14.21",
+    "class-variance-authority": "^0.7.1",
+    "cmdk": "^1.1.1",
+    "cn": "^0.5.0",
+    "lucide-react": "^1.61.0",
+    "paper": "^0.12.18",
+    "picocolors": "^1.1.1",
+    "playwright": "^1.50.1",
+    "radix-ui": "^1.8.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "shadcn": "^4.22.1",
+    "simplex-noise": "^4.0.3",
+    "sonner": "^2.0.8",
+    "tailwindcss": "^4.3.3",
+    "tw-animate-css": "^1.4.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@tanstack/intent": "^0.5.6",
+    "@tanstack/router-plugin": "^1.168.47",
+    "@types/node": "^22.13.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3",
+    "vite": "^6.2.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "intent": {
+    "skills": [
+      "@tanstack/router-core",
+      "@tanstack/router-plugin",
+      "@tanstack/react-table",
+      "@tanstack/table-core"
+    ]
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "esbuild@0.25.12": true
+  }
+}

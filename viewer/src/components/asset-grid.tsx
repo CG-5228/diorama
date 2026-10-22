@@ -1,0 +1,212 @@
+import { useEffect, useState, type RefObject } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { dirname, formatBytes, plural } from '@/lib/format';
+import { assetTitle, roleDetail, roleOf } from '@/lib/asset-role';
+import { isStale } from '@/lib/export-state';
+import { GRID_GAP, GRID_PADDING } from '@/lib/use-grid-columns';
+import { entryKey, type AssetEntry, type AssetGroup } from '@/lib/groups';
+import { assetDomId } from '@/lib/use-asset-selection';
+import type { AssetFileMeta } from '@/lib/types';
+import { AssetContextMenu, AssetMenuButton, GroupContextMenu, GroupMenuButton } from './asset-menu';
+import { AssetThumb, GroupThumb } from './asset-thumb';
+import { EngineBadge } from './engine-badge';
+import { StaleBadge } from './stale-badge';
+
+/** An item icon's rarity tier, in the color the project gave it, and how many fit in a slot. */
+function ItemBadges({ asset }: { asset: AssetFileMeta }) {
+  const info = asset.atlasInfo;
+  if (!info) return null;
+  return (
+    <>
+      {info.rarity && (
+        <Badge variant="outline" className="gap-1.5">
+          <span aria-hidden className="size-2 rounded-full" style={{ backgroundColor: info.rarity.color }} />
+          {info.rarity.label}
+        </Badge>
+      )}
+      {info.kind && <Badge variant="secondary">{info.kind}</Badge>}
+      {info.stack !== null && info.stack > 1 && <span title="Itens por espaço">×{info.stack}</span>}
+    </>
+  );
+}
+
+/** "8f · 8d" for an animation with 8 frames facing 8 directions; empty for stills and sheets. */
+function frameSummary({ atlasInfo: info }: AssetFileMeta): string {
+  if (!info || info.mode === 'sheet') return '';
+  return [info.frameCount > 1 && `${info.frameCount}f`, info.directions.length > 1 && `${info.directions.length}d`].filter(Boolean).join(' · ');
+}
+
+interface CardProps {
+  active: boolean;
+  /** Its place in the whole list: the rows that are not on screen are not in the DOM, so a screen reader cannot count them. */
+  position: { index: number; total: number };
+  onOpen: (asset: AssetFileMeta) => void;
+}
+
+function AssetCard({ asset, active, position, onOpen }: CardProps & { asset: AssetFileMeta }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <AssetContextMenu asset={asset} onPreview={onOpen}>
+      <EntryCard
+        id={assetDomId(asset.subpath)}
+        active={active}
+        position={position}
+        onOpen={() => onOpen(asset)}
+        onHover={setHovered}
+        thumb={<AssetThumb asset={asset} hovering={hovered} />}
+        flag={isStale(asset) ? <StaleBadge /> : null}
+        title={assetTitle(asset)}
+        description={dirname(asset.subpath) || '—'}
+        menu={<AssetMenuButton asset={asset} onPreview={onOpen} />}
+      >
+        {roleOf(asset) === 'gear' && <Badge variant="secondary">{roleDetail(asset) ?? 'Item'}</Badge>}
+        {(roleOf(asset) === 'vfx' || roleOf(asset) === 'ui') && asset.atlasInfo?.kind && <Badge variant="secondary">{asset.atlasInfo.kind}</Badge>}
+        {roleOf(asset) === 'icon' && <ItemBadges asset={asset} />}
+        {asset.engine && <EngineBadge engine={asset.engine} />}
+        {asset.width && <span>{asset.width}×{asset.height}</span>}
+        <span>{frameSummary(asset)}</span>
+        <span className="ml-auto">{formatBytes(asset.size)}</span>
+      </EntryCard>
+    </AssetContextMenu>
+  );
+}
+
+function GroupCard({ group, active, position, onOpen }: CardProps & { group: AssetGroup }) {
+  const [hovered, setHovered] = useState(false);
+  const [first] = group.assets;
+  const staleClips = group.assets.filter(isStale).length;
+  return (
+    <GroupContextMenu group={group} onOpen={onOpen}>
+      <EntryCard
+        id={assetDomId(`group:${group.id}`)}
+        active={active}
+        position={position}
+        onOpen={() => onOpen(first)}
+        onHover={setHovered}
+        thumb={<GroupThumb clips={group.assets} hovering={hovered} />}
+        flag={staleClips > 0 ? <StaleBadge count={staleClips} /> : null}
+        title={group.name}
+        description={dirname(group.folder) || '—'}
+        menu={<GroupMenuButton group={group} onOpen={onOpen} />}
+      >
+        {first.engine && <EngineBadge engine={first.engine} />}
+        <Badge variant="secondary">{plural(group.assets.length, 'animação', 'animações')}</Badge>
+        <span className="ml-auto">{formatBytes(group.assets.reduce((sum, a) => sum + a.size, 0))}</span>
+      </EntryCard>
+    </GroupContextMenu>
+  );
+}
+
+/** Extra props (ref, handlers) come from the context menu trigger wrapping the card. */
+interface EntryCardProps extends Omit<React.ComponentProps<typeof Card>, 'title' | 'onClick'> {
+  id: string;
+  active: boolean;
+  position: CardProps['position'];
+  onOpen: () => void;
+  onHover: (hovering: boolean) => void;
+  thumb: React.ReactNode;
+  /** Pinned to the corner of the thumbnail, e.g. the export state. */
+  flag: React.ReactNode;
+  title: string;
+  description: string;
+  menu: React.ReactNode;
+}
+
+function EntryCard({ id, active, position, onOpen, onHover, thumb, flag, title, description, menu, children, ...rest }: EntryCardProps) {
+  return (
+    <Card
+      {...rest}
+      id={id}
+      size="sm"
+      role="option"
+      aria-selected={active}
+      aria-posinset={position.index + 1}
+      aria-setsize={position.total}
+      onClick={onOpen}
+      onMouseEnter={() => onHover(true)}
+      onMouseLeave={() => onHover(false)}
+      className={cn('cursor-pointer gap-0 pt-0 pb-0 transition-colors hover:bg-accent/40', active && 'ring-2 ring-primary')}
+    >
+      <div className="relative">
+        {thumb}
+        {flag && <div className="absolute top-1.5 left-1.5">{flag}</div>}
+      </div>
+      <CardHeader className="pt-2">
+        <CardTitle className="truncate">{title}</CardTitle>
+        <CardDescription className="truncate">{description}</CardDescription>
+        <CardAction>{menu}</CardAction>
+      </CardHeader>
+      <CardFooter className="flex-wrap items-center gap-x-2 gap-y-1 py-2 text-muted-foreground tabular-nums">{children}</CardFooter>
+    </Card>
+  );
+}
+
+/** A thumbnail is 4:3; the header and footer add about this much. Only a first guess: rows are measured once shown. */
+const CARD_CHROME = 88;
+
+interface Props {
+  entries: AssetEntry[];
+  activeKey: string | null;
+  /** The width a card really has, from `useGridColumns`. */
+  cardWidth: number;
+  /** Cards per row, from `useGridColumns`. */
+  columns: number;
+  /** The element that scrolls; the grid only renders the rows inside it. */
+  scrollRef: RefObject<HTMLElement | null>;
+  onOpen: (asset: AssetFileMeta) => void;
+}
+
+export function AssetGrid({ entries, activeKey, cardWidth, columns, scrollRef, onOpen }: Props) {
+  const virtualizer = useVirtualizer({
+    count: Math.ceil(entries.length / columns),
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => Math.round((cardWidth * 3) / 4) + CARD_CHROME,
+    getItemKey: (row) => entryKey(entries[row * columns]),
+    gap: GRID_GAP,
+    paddingStart: GRID_PADDING,
+    paddingEnd: GRID_PADDING,
+    overscan: 2,
+  });
+
+  // A new card size or column count changes every row's height, including the rows that are not mounted.
+  useEffect(() => virtualizer.measure(), [virtualizer, cardWidth, columns]);
+
+  // Only when the active entry changes: filtering or resizing must not drag the scroll back to it.
+  useEffect(() => {
+    if (!activeKey) return;
+    const index = entries.findIndex((entry) => entryKey(entry) === activeKey);
+    if (index >= 0) virtualizer.scrollToIndex(Math.floor(index / columns), { align: 'auto' });
+  }, [activeKey]);
+
+  const rows = virtualizer.getVirtualItems();
+  return (
+    <div role="listbox" aria-label="Assets" className="relative" style={{ height: virtualizer.getTotalSize() }}>
+      {/* The mounted rows move together as one block, so measuring a row never shifts the others. */}
+      <div className="absolute inset-x-0 top-0 flex flex-col gap-3 px-4" style={{ transform: `translateY(${rows[0]?.start ?? 0}px)` }}>
+        {rows.map((row) => (
+          <div
+            key={row.key}
+            ref={virtualizer.measureElement}
+            data-index={row.index}
+            role="presentation"
+            className="grid gap-3"
+            style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+          >
+            {entries.slice(row.index * columns, (row.index + 1) * columns).map((entry, i) => {
+              const key = entryKey(entry);
+              const position = { index: row.index * columns + i, total: entries.length };
+              return entry.type === 'group' ? (
+                <GroupCard key={key} group={entry.group} active={activeKey === key} position={position} onOpen={onOpen} />
+              ) : (
+                <AssetCard key={key} asset={entry.asset} active={activeKey === key} position={position} onOpen={onOpen} />
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
