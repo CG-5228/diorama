@@ -83,7 +83,7 @@ const ALLOWED_CONFIG_KEYS = ['outDir', 'scale', 'format', 'cols', 'gap'];
 interface AssetTask {
   /** The project's name (atlas `meta.project`). */
   project: string;
-  /** The project folder from the repository root (`examples/pivot-v2-2d`): where the runner imports the sheet from. */
+  /** The project folder from the repository root (`examples/soulkeeper`): where the runner imports the sheet from. */
   projectDir: string;
   sourceFullPath: string;
   sourceRelPath: string; // under sheets/, e.g. "icons/shield-badge.ts"
@@ -173,7 +173,7 @@ ${pc.bold('Usage:')}
   Values can be written as --gap 8 or --gap=8. Use "npm run --silent" with --json.
 
 ${pc.bold('Assets:')}
-  The project is found by name in projects/, then examples/ (or name one: examples/pivot-v2-2d).
+  The project is found by name in projects/, then examples/ (or name one: examples/soulkeeper).
   Every .ts file under <project>/sheets/ is a sheet; each is written to <project>/assets/ at the same path.
   npm run export -- my-game                          # Export every sheet of the project
   npm run export -- my-game props/crate              # Export one sheet (sheets/props/crate.ts)

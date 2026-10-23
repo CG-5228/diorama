@@ -6,13 +6,13 @@ import type { ProjectRoot } from './types';
  * Inside it: `src/` (code), `sheets/` (one file per exported sheet), `assets/` (the exports), `review/` (scratch).
  */
 
-/** The project's folder from the repository root, as typed in a terminal: `examples/pivot-v2-2d`. */
+/** The project's folder from the repository root, as typed in a terminal: `examples/soulkeeper`. */
 export const projectDir = (root: ProjectRoot, name: string) => `${root}/${name}`;
 
-/** A file of the project from the repository root: `examples/pivot-v2-2d/sheets/gear/helm.ts`. */
+/** A file of the project from the repository root: `examples/soulkeeper/sheets/gear/helm.ts`. */
 export const projectFile = (root: ProjectRoot, name: string, path: string) => `${projectDir(root, name)}/${path}`;
 
-/** Where the dev server serves a file of the project from: `/examples/pivot-v2-2d/src/gear/catalog.ts`. */
+/** Where the dev server serves a file of the project from: `/examples/soulkeeper/src/gear/catalog.ts`. */
 export const projectUrl = (root: ProjectRoot, name: string, path: string) => `/${projectFile(root, name, path)}`;
 
 /** Where a project's kit catalogs are (`src/<kit>/catalog.ts`): the customize and scenery tabs import them. */

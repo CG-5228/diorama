@@ -15,4 +15,4 @@ projects/<name>/
 
 Commands and the viewer find a project by name here first, then in `examples/`, so a project here hides an example of the same name. `npm run check -- <name>` type-checks it, checks its layout and that it is deterministic (no `Math.random`, no clock, no raw colors outside `src/theme.ts`); `npm run export` type-checks it first too, and exports nothing while it has a type error.
 
-The sample, `examples/pivot-v2-2d`, shows every kind of asset in this layout; `npm run example` exports it.
+Soulkeeper, the sample game (`examples/soulkeeper`), shows every kind of asset in this layout; `npm run example` exports it.

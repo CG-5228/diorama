@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { validateOutfit, type GearCatalog, type OutfitData, type PartInfo } from '../../core/rig';
 import { addPiece, partOf, removePiece } from '../../viewer/src/lib/outfit/edit';
 import { candidatesFor, dependentsOf, equipOrSwap, flatten, mirrorOf, placeOf, placesOf, piecesIn, stacksIn, swapBoth, swapPiece, type Place } from '../../viewer/src/lib/outfit/slots';
-import { CATALOG, CHARACTERS } from '../../examples/pivot-v2-2d/src/gear/catalog';
+import { CATALOG, CHARACTERS } from '../../examples/soulkeeper/src/gear/catalog';
 
 console.log('🧪 Checking the customizer by slot (places of a body, stacks, candidates, swapping a piece in one step, wearing a part)...\n');
 

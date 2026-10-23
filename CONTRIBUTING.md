@@ -18,7 +18,7 @@ npm run doctor
 npm test
 ```
 
-`npm run example` exports the sample project (about five minutes) so the viewer (`npm run view`) has something to show.
+`npm run example` exports Soulkeeper, the sample game (`examples/soulkeeper`, about five minutes), so the viewer (`npm run view`) has something to show.
 
 ## Rules that keep the project healthy
 

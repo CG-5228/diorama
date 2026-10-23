@@ -12,7 +12,7 @@
 | :--- | :--- | :--- |
 | Humans, elves, undead, goblins (scale it) | `humanoid(scale)` | `scale` for size; bone lengths for proportions (long arms for a ghoul) |
 | Wolves, dogs, big cats, horses (longer legs) | `quadruped(scale)` | trunk joint positions for body length; leg lengths; the tail |
-| Spiders, insects, crabs | a new spec | 6–8 legs on one trunk joint, sideways offsets, **vector knees** that arch up and out (`[fan, ±1, 1.2]`), a `foot` segment for the tarsus, a tetrapod or wave gait. Worked example: `examples/pivot-v2-2d/src/characters/shared/bone-spider.ts` |
+| Spiders, insects, crabs | a new spec | 6–8 legs on one trunk joint, sideways offsets, **vector knees** that arch up and out (`[fan, ±1, 1.2]`), a `foot` segment for the tarsus, a tetrapod or wave gait. Worked example: `examples/soulkeeper/src/characters/shared/bone-spider.ts` |
 | Birds, raptors, kangaroo-like bodies | a new spec | 2 legs on the quadruped hind-leg pattern: `knee: 'forward'`, `lengths` = [thigh, shin], `foot` = the metatarsus tilted 20–25° so the ankle sits behind the toes; narrow stance; small arms held bent (guide 02); a long tail for balance. The skin draws the thigh mass on the first bone |
 | Serpents, worms, floating ghosts | a new spec with no legs | a long trunk; motion comes from `trunk` offsets in a custom clip |
 

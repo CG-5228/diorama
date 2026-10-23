@@ -1,5 +1,5 @@
 /**
- * The scenery catalog of pivot-v2-2d: the graveyard kit as an editor and the exporter see it.
+ * The scenery catalog of Soulkeeper: the graveyard kit as an editor and the exporter see it.
  * The viewer's scene painter loads this module (`SCENERY`), `npm run scenery-items` writes one
  * tile set per piece into `sheets/scenery/`, and saved scenes (`SceneData`) name pieces and materials by the ids below.
  *
@@ -45,7 +45,7 @@
  * name of their sheet (`<id>--<name>`). The timing lives in `motion.ts`; the chest in `props.ts`, the lever and the urn in `interactables.ts`.
  *
  * Adding a piece: write it in `floors.ts`, `walls.ts`, `fences.ts`, `props.ts` or `decals.ts` (or a new file here),
- * list it here with a group, roles and defaults, then run `npm run scenery-items -- pivot-v2-2d`.
+ * list it here with a group, roles and defaults, then run `npm run scenery-items -- soulkeeper`.
  */
 
 import type { PieceOption, SceneryCatalog, ScenePieceInfo } from '@core/volume';

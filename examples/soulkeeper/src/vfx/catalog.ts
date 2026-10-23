@@ -1,6 +1,6 @@
 /**
- * The effect catalog of pivot-v2-2d: what characters play on their clip events, as the exporter and
- * the viewer's playground see it (`VFX`). `npm run vfx-items -- pivot-v2-2d` writes one sheet per
+ * The effect catalog of Soulkeeper: what characters play on their clip events, as the exporter and
+ * the viewer's playground see it (`VFX`). `npm run vfx-items -- soulkeeper` writes one sheet per
  * entry into `sheets/vfx/<id>.ts`; characters cue them by id (`defineCharacter({ effects })`).
  *
  * Sizes are against the 80-unit character (`SPACE.scale.character`) and the 48-unit cell
@@ -17,7 +17,7 @@
  * a game reacts to, `release` where a cast lets go.
  *
  * Adding an effect: write its piece in one of the files here, list it below, run
- * `npm run vfx-items -- pivot-v2-2d` and export `vfx/`.
+ * `npm run vfx-items -- soulkeeper` and export `vfx/`.
  */
 
 import type { EffectCatalog, EffectInfo } from '@core/volume';

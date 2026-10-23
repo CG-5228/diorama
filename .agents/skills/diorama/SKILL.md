@@ -18,7 +18,7 @@ Pick the skill for the job, and read this one first:
 
 ## Where things go
 
-A project is one folder: `projects/<project>/` (yours; Diorama does not version it) or `examples/<project>/` (the versioned sample, `pivot-v2-2d`). Commands and the viewer find a project by name, `projects/` first, then `examples/`; `projects/<name>` or `examples/<name>` picks one. Inside it there are four places, and nothing else at the root but `STYLE.md`, an optional `README.md`, `diorama.config.json` and `.gitignore`:
+A project is one folder: `projects/<project>/` (yours; Diorama does not version it) or `examples/<project>/`, versioned with Diorama: Soulkeeper, the sample game (`examples/soulkeeper`). Commands and the viewer find a project by name, `projects/` first, then `examples/`; `projects/<name>` or `examples/<name>` picks one. Inside it there are four places, and nothing else at the root but `STYLE.md`, an optional `README.md`, `diorama.config.json` and `.gitignore`:
 
 | Place | It holds | You write it |
 | :--- | :--- | :--- |
@@ -36,7 +36,7 @@ The rules the layout check enforces (the seven of [docs/ARCHITECTURE.md](../../.
 - **One direction.** `src/` never imports `sheets/`, and a sheet never imports another sheet.
 - **Mirrors.** Every sheet has its export in `assets/` at the same path, and every asset has its sheet.
 
-`npm run check -- <project>` runs the type check, then these rules, then the determinism lint (`Math.random`, the clock and raw colors outside `src/theme.ts`, see Rejection rules), and every message says what to move where or what to use instead. After an export run `npm run layout -- <project> --strict`, which also fails on a sheet that was never exported and on an asset that has no sheet. To see a finished project in this layout, `npm run example` exports `examples/pivot-v2-2d` (about five minutes; `assets/` is not versioned, so a fresh clone has none), and the skills point to its `src/` for technique.
+`npm run check -- <project>` runs the type check, then these rules, then the determinism lint (`Math.random`, the clock and raw colors outside `src/theme.ts`, see Rejection rules), and every message says what to move where or what to use instead. After an export run `npm run layout -- <project> --strict`, which also fails on a sheet that was never exported and on an asset that has no sheet. To see a finished project in this layout, `npm run example` exports Soulkeeper, the sample game (`examples/soulkeeper`; about five minutes; `assets/` is not versioned, so a fresh clone has none), and the skills point to its `src/` for technique.
 
 ## Authority
 
@@ -92,7 +92,7 @@ For animation, set `frames` (and `fps`). The export writes a horizontal strip of
 
 Reject or rewrite code that violates these rules:
 
-- **Project isolation.** Work only inside `projects/<project>/`. Do not read or borrow code from other `projects/*` directories unless the user asks. The one exception is the worked examples a module skill names, all in the sample `examples/pivot-v2-2d/src/` (`diorama-rig`: `characters/`; `diorama-volume`: `scenery/`, `gear/`, `items/` and `ui/`): read them for technique, never copy their art or tokens.
+- **Project isolation.** Work only inside `projects/<project>/`. Do not read or borrow code from other `projects/*` directories unless the user asks. The one exception is the worked examples a module skill names, all in the `src/` of Soulkeeper, the sample game (`examples/soulkeeper/src/`): `diorama-rig` names `characters/`, `diorama-volume` names `scenery/`, `gear/`, `items/` and `ui/`. Read them for technique, never copy their art or tokens.
 - **Deterministic.** The same source exports the same pixels. No `Math.random`, no `Date`, no wall-clock time, no network or file reads at render time. Variation comes from `createRng(seed)` per part, and noise from `createNoise2D(seed)`. `npm run check` reports `Math.random`, `createRng()` without a seed, `new Date`, `Date()`, `Date.now` and `performance.now` in `src/` and `sheets/` with the file and line.
 - **No other graphics stacks.** Raw Canvas2D cascades, raw SVG, Rough.js and HTML/CSS layouts are not allowed in asset files. Draw with `@core/volume`, `@core/rig` and the `@core/draw` builders, which the engine rasterizes.
 - **No hardcoded geometry arrays.** Build geometry with `Polygon`, `Path`, `PathBuilder`, transforms, anchors and booleans. No hand-concatenated or hand-transformed raw point arrays for whole objects. Short literal point lists passed to `Polygon.fromPoints` or `Path.spline` for small shapes (a blade profile, a tear, a groove) are allowed.
@@ -142,7 +142,7 @@ Run commands from the repository root. Use `npm run --silent` whenever you need 
 | Check one project | `npm run check -- <project> [--strict] [--json]` (the type check, then the layout rules, then the determinism lint; `--strict` also fails on sheets without an export and assets without a sheet, the gate after an export; `--json` is for parsing) |
 | Check the layout alone | `npm run layout -- <project> [--strict] [--json]` (`--strict` also fails on sheets without an export and assets without a sheet: run it after exporting) |
 | Export official assets | `npm run export -- <project> [subpath] [options]` (`subpath` is a sheet under `sheets/`, without `.ts`, or a folder of them, `characters/hero/`; the project's type check runs first and a type error stops the export, `--force` skips it for experiments) |
-| Export the sample | `npm run example` (`examples/pivot-v2-2d`, about five minutes) |
+| Export Soulkeeper, the sample game | `npm run example` (`examples/soulkeeper`, about five minutes) |
 | Export with a JSON summary | `npm run --silent export -- <project> [subpath] [options] --json` |
 | Export a mockup (never overwrites official files) | `npm run export -- <project> <subpath> --mockup` |
 | List projects and assets | `npm run list -- [project] [--json]` |

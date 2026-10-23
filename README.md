@@ -26,11 +26,11 @@ npm install
 npx playwright install chromium
 npm run doctor
 npm test
-npm run check -- pivot-v2-2d
+npm run check -- soulkeeper
 npm run example
 ```
 
-`npm run check -- pivot-v2-2d` type checks the sample, checks its layout and that it is deterministic. `npm run example` exports the sample project, `examples/pivot-v2-2d` (165 sheets, about five minutes). Exports are never versioned, so a fresh clone has none until you run it; after it the viewer has something to show and the skills have a finished project to read.
+`npm run check -- soulkeeper` type checks the sample, checks its layout and that it is deterministic. `npm run example` exports Soulkeeper, the sample game (`examples/soulkeeper`, 165 sheets, about five minutes). Exports are never versioned, so a fresh clone has none until you run it; after it the viewer has something to show and the skills have a finished project to read.
 
 To open the viewer: on Windows, run `dev.bat`; on macOS and Linux, run `sh dev.sh`. Any system can run `npm run view` and then open `http://localhost:5173`.
 
@@ -46,7 +46,7 @@ scripts/     the doctor and the API reference generator
 templates/   what new-project copies (theme.ts, STYLE.md)
 viewer/      the web app
 tests/       engine, docs, cli and viewer suites
-examples/    versioned sample projects (pivot-v2-2d)
+examples/    Soulkeeper, the sample game (examples/soulkeeper)
 projects/    your projects, one folder each; not versioned by Diorama
 .agents/     skills for coding agents
 ```
@@ -98,7 +98,7 @@ npm run view
 | Check types, layout and determinism | `npm run check -- <project> [--strict] [--json]` |
 | Check the layout alone | `npm run layout -- <project> [--strict] [--json]` |
 | Export (type checks first; `--force` exports anyway) | `npm run export -- <project> [subpath] [options] [--force]` |
-| Export the sample | `npm run example` |
+| Export Soulkeeper, the sample game | `npm run example` |
 | List | `npm run list -- [project] [--json]` |
 | Measure a PNG | `npm run inspect -- <file.png> [--json]` |
 | Review sheet of a strip or direction sheet | `npm run contact -- <file.png> [--rows W,SW] [--frames 0-3] [--with <b.png>] [--gray] [--bg <hex>] [--zoom N]` |
@@ -129,7 +129,7 @@ npm run view
 
 Your projects live in `projects/<project>/`, laid out as above. Create one with `npm run new-project -- <project>`; it starts with `src/theme.ts` (the palette, the camera and the materials, to make your own), an empty `sheets/` and a `.gitignore` for `review/`.
 
-`examples/pivot-v2-2d` is the sample project: a dark-fantasy necropolis with 165 sheets. It has five characters (a guard, a captain, the necromancer Malvek, a wolf and a spider) with a gear kit of 28 parts, a scenery kit with floors, walls, fences, doors, a chest, a lever and breakable urns, four scenes, ten effects, 31 item icons and 11 HUD pieces. Beside them, `characters/necromancer` is a flat 2D illustration of Malvek (a portrait and an idle loop drawn with `@core/draw` alone), not a rig character. It is the worked example the skills point to; read its `src/` and `sheets/`, and run `npm run example` to export it.
+Soulkeeper, the sample game (`examples/soulkeeper`), will be a small dark-fantasy JRPG set in a necropolis; for now it is its art, 165 sheets. It has five characters (a guard, a captain, the necromancer Malvek, a wolf and a spider) with a gear kit of 28 parts, a scenery kit with floors, walls, fences, doors, a chest, a lever and breakable urns, four scenes, ten effects, 31 item icons and 11 HUD pieces. Beside them, `characters/necromancer` is a flat 2D illustration of Malvek (a portrait and an idle loop drawn with `@core/draw` alone), not a rig character. It is the worked example the skills point to; read its `src/` and `sheets/`, and run `npm run example` to export it.
 
 ## Skills and documentation for agents
 

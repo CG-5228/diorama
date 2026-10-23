@@ -70,7 +70,7 @@ export interface ProjectMeta {
   name: string;
   /** Where the project lives: `projects` (yours) or `examples` (the samples that ship with Diorama). */
   root: ProjectRoot;
-  /** The project's folder from the repository root, as typed in a terminal: `examples/pivot-v2-2d`. */
+  /** The project's folder from the repository root, as typed in a terminal: `examples/soulkeeper`. */
   rel: string;
   hasStyle: boolean;
   assetCount: number;

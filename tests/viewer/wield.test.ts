@@ -3,7 +3,7 @@ import { checkWield, type CharacterClip, type GearCatalog, type OutfitData, type
 import { createTranslator } from '../../viewer/src/i18n/core';
 import { candidatesFor, placeOf, swapPiece } from '../../viewer/src/lib/outfit/slots';
 import { classNameOf, wieldReport } from '../../viewer/src/lib/outfit/wield';
-import { CATALOG, CHARACTERS } from '../../examples/pivot-v2-2d/src/gear/catalog';
+import { CATALOG, CHARACTERS } from '../../examples/soulkeeper/src/gear/catalog';
 
 console.log('🧪 Checking what a character holds and the clips made for it (the report, the real kit)...\n');
 

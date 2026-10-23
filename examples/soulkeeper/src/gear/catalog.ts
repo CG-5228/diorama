@@ -1,5 +1,5 @@
 /**
- * The gear catalog of pivot-v2-2d: the kit as an editor sees it, and the characters it can dress.
+ * The gear catalog of Soulkeeper: the kit as an editor sees it, and the characters it can dress.
  * The viewer's customizer loads this module (`CATALOG`, `CHARACTERS`) and `new-outfit-character`
  * reads it; saved outfits (`OutfitData`) name parts, bases and materials by the ids below.
  *

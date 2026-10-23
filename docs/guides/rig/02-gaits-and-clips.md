@@ -56,7 +56,7 @@ One gait has one `stride`, `duty` and `cadence` for every leg, because planted f
   - the default `BEAT` = { apex 0.17, strike 0.24, extreme 0.37, hold 0.49, settle 0.64 };
   - `creep` (default 0) is the drift during the holds that keeps them alive.
   Frames sample t = k ÷ frames, so at 10–12 frames the default strike gets only 1–2 frames. For a 3-frame strike, pass a `Beat` with `extreme − strike = 3 ÷ frames`, and put the hit on a frame boundary so the hit frame shows the extreme pose.
-- **Worked actions:** `slash` (humanoid weapon swing) and `bite` (quadruped lunge with `extra.jaw`) are in `@core/rig`. The pivot-v2-2d characters add a skill each in their `character.ts`: the wolf's howl (`spawn:mouth` at release) and the spider's spit.
+- **Worked actions:** `slash` (humanoid weapon swing) and `bite` (quadruped lunge with `extra.jaw`) are in `@core/rig`. Soulkeeper's characters add a skill each in their `character.ts`: the wolf's howl (`spawn:mouth` at release) and the spider's spit.
 - Drive offsets are per joint: a `trunk` offset on the neck does not move the head. Move both, or use `root`, `pitch` and `twist` for whole-body motion.
 - Put the hit event at the end of the strike (`BEAT.extreme`). The skin uses it for the smear and the game for damage.
 - **Windows:** `bell(u)` is only a bump for u in 0..1 (outside it grows again). Use `bump(t, t0, t1)` for a windowed motion such as a tap, a claw flick or a jump arc, and keep t1 below 1 in loops.

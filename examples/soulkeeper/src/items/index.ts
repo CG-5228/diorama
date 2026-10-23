@@ -1,5 +1,5 @@
 /**
- * The item kit of pivot-v2-2d, for code: the item pieces drawn for their icons, the list of them
+ * The item kit of Soulkeeper, for code: the item pieces drawn for their icons, the list of them
  * (`PIECE_ITEMS`) and the rarity tiers. The icon sheets read the kit through `catalog.ts` (`ITEMS`).
  * `gear.ts` and `loot.ts` are not re-exported here: they import the gear catalog, which imports the
  * characters' rigs; the shared helpers of `util.ts` stay inside the kit.

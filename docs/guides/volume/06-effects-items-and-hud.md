@@ -40,7 +40,7 @@ A project keeps its effects in `src/vfx/` and exports `VFX: EffectCatalog` from 
 
 **What makes an effect read:**
 - a clear silhouette in the first frames (anticipation), the peak early, then a fall-off;
-- the project's saturated accent (soul green in pivot-v2-2d) as the core, darker tones at the rim, and a pale hot centre;
+- the project's saturated accent (soul green in Soulkeeper) as the core, darker tones at the rim, and a pale hot centre;
 - a size that matches the character (`SPACE.scale.character`): a hand projectile about a hand's size, an area blast a few cells;
 - loops that close, and one-shots that end empty (the last frame fades to nothing) unless they leave a mark (a scorch on the ground layer).
 

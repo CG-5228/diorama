@@ -26,7 +26,7 @@ diorama/
 │   ├── docs/             snippets, links and paths of the markdown
 │   └── viewer/           viewer logic
 ├── viewer/               the app (src/) and its dev server (server/)
-├── examples/             versioned sample projects (pivot-v2-2d); their assets/ and review/ are not versioned
+├── examples/             Soulkeeper, the sample game (examples/soulkeeper); its assets/ and review/ are not versioned
 ├── projects/             your projects, one folder each: not versioned by Diorama (only projects/README.md);
 │                         each project can be its own git repository
 ├── .agents/skills/       instructions for coding agents
@@ -88,7 +88,7 @@ draw  <-  volume  <-  rig
     └── mockups/                npm run export -- <project> <sheet> --mockup
 ```
 
-`pivot-v2-2d`, the sample in `examples/`, has every part of this tree: five characters, a gear kit, a scenery kit with four scenes, effects, item icons and 11 HUD pieces, 165 sheets. `characters/necromancer/` is not one of the five: it is a flat illustration of Malvek (a portrait and an idle loop, drawn with `@core/draw` alone and exported with `defineAsset`), so it has no clips, skeleton or manifest.
+Soulkeeper, the sample game (`examples/soulkeeper`), has every part of this tree: five characters, a gear kit, a scenery kit with four scenes, effects, item icons and 11 HUD pieces, 165 sheets. `characters/necromancer/` is not one of the five: it is a flat illustration of Malvek (a portrait and an idle loop, drawn with `@core/draw` alone and exported with `defineAsset`), so it has no clips, skeleton or manifest.
 
 ### The four places
 
@@ -139,7 +139,7 @@ A kit is a folder of `src/` that describes a set of related assets as data: `gea
 | `vfx` | a spark burst in `bursts.ts` (`VFX`) | `vfx-items`, export `vfx/` |
 | `items` | a gem in `gems.ts`, with two rarity tiers (`ITEMS`) | `item-icons`, export `icons/` |
 
-The first piece is a block-out that renders, so the kit's command, the export and `npm run check -- <project> --strict` pass on it at once; then it becomes the project's own, and the next pieces are added to the family files and the catalog by hand. `npm run check -- <project>` reports a `catalog.ts` that has no `index.ts`. [Guide 04 §5](guides/volume/04-scenery-kits.md) lists what a scenery catalog needs at least, and the catalogs of the sample's kits (`examples/pivot-v2-2d/src/<kit>/catalog.ts`) are the full form.
+The first piece is a block-out that renders, so the kit's command, the export and `npm run check -- <project> --strict` pass on it at once; then it becomes the project's own, and the next pieces are added to the family files and the catalog by hand. `npm run check -- <project>` reports a `catalog.ts` that has no `index.ts`. [Guide 04 §5](guides/volume/04-scenery-kits.md) lists what a scenery catalog needs at least, and the catalogs of the sample's kits (`examples/soulkeeper/src/<kit>/catalog.ts`) are the full form.
 
 ### Where a new thing goes
 
@@ -186,8 +186,8 @@ They are errors. `src/theme.ts` holds the palette, so its color literals are the
 
 | Rule | Enforced by |
 | :--- | :--- |
-| The layout of a project (the seven rules above) | `npm run check -- <project>` and `npm run layout -- <project>`; `tests/cli/cli.test.ts` breaks each rule on purpose and checks the message, and checks that `examples/pivot-v2-2d` follows them |
-| Determinism (no `Math.random`, no clock, no raw colors outside `src/theme.ts`) | `npm run check -- <project>` (`tools/lint.ts`); `tests/cli/cli.test.ts` writes each pattern and checks the message, and checks that `examples/pivot-v2-2d` passes |
+| The layout of a project (the seven rules above) | `npm run check -- <project>` and `npm run layout -- <project>`; `tests/cli/cli.test.ts` breaks each rule on purpose and checks the message, and checks that `examples/soulkeeper` follows them |
+| Determinism (no `Math.random`, no clock, no raw colors outside `src/theme.ts`) | `npm run check -- <project>` (`tools/lint.ts`); `tests/cli/cli.test.ts` writes each pattern and checks the message, and checks that `examples/soulkeeper` passes |
 | No export from code with type errors | `npm run export` (`tools/typecheck.ts`, shared with `check`); `tests/cli/cli.test.ts` checks the refusal and `--force` |
 | A new kit works with its commands | `tests/cli/cli.test.ts` runs `new-kit` for each kit, its generator, `new-scene`, the export and `check --strict` |
 | The dependency direction, the public entrypoints, nothing imports `tests/` | `tests/engine/boundary.test.ts` (scans every import of `core/`, `tools/`, `viewer/`, `templates/`, `examples/` and `projects/`) |

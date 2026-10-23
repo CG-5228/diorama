@@ -144,7 +144,7 @@ export const crate: ScenePiece = ctx => {
  *
  * Adding a piece: write it in a family file (\`props.ts\`, \`floors.ts\`, \`walls.ts\`...), export it from \`index.ts\`, list it
  * here, then run \`npm run scenery-items -- ${project}\`, export \`scenery/\` and \`npm run scenery-test -- ${project} <piece>\`.
- * \`examples/pivot-v2-2d/src/scenery/catalog.ts\` is the full form: floors, walls, fences, doors and living props.
+ * \`examples/soulkeeper/src/scenery/catalog.ts\` is the full form: floors, walls, fences, doors and living props.
  */
 
 import { ${theme.space ? '' : 'Grid, '}type SceneryCatalog, type ScenePieceInfo } from '@core/volume';
@@ -241,7 +241,7 @@ export const mannequinBody: BaseInfo['skin'] = (object, pose, kit, materials) =>
  *   \`characters/<name>/spec.ts\` and \`outfit.ts\` do) and drop it once they wear the kit.
  *
  * Adding a part: write it in a family file (\`heads.ts\`, \`torso.ts\`, \`weapons.ts\`...), export it from \`index.ts\`, list it
- * here, then run \`npm run gear-items -- ${project}\` and export \`gear/\`. \`examples/pivot-v2-2d/src/gear/catalog.ts\` is the full form.
+ * here, then run \`npm run gear-items -- ${project}\` and export \`gear/\`. \`examples/soulkeeper/src/gear/catalog.ts\` is the full form.
  */
 
 import { humanoid, idle, type BaseInfo, type GearCatalog, type OutfitCharacterInfo, type PartInfo } from '@core/rig';
@@ -350,7 +350,7 @@ export const spark: EffectPiece = ctx => {
  * - \`materials\`: the theme's \`VOLUMES\`; \`defaultMaterials\`: which of them plays each role.
  *
  * Adding an effect: write it in a family file (\`bursts.ts\`, \`impacts.ts\`, \`projectiles.ts\`...), export it from \`index.ts\`,
- * list it here, then run \`npm run vfx-items -- ${project}\` and export \`vfx/\`. \`examples/pivot-v2-2d/src/vfx/catalog.ts\` is the full form.
+ * list it here, then run \`npm run vfx-items -- ${project}\` and export \`vfx/\`. \`examples/soulkeeper/src/vfx/catalog.ts\` is the full form.
  */
 
 import type { EffectCatalog, EffectInfo } from '@core/volume';
@@ -416,10 +416,10 @@ export const gem: ItemPiece = ctx => {
  *   own (\`piece\` with its \`roles\`), a gear part drawn as worn (\`gear: { part }\`, with \`gear\` below), or both.
  * - \`rarities\`: the tiers, each with a theme color (here the tones of two materials; a palette token works too).
  * - \`icon\`: the icon square and the room kept round the item. \`background\` and \`frame\` (the slot art under and over the
- *   item, by rarity) are optional: \`examples/pivot-v2-2d/src/items/rarity.ts\` draws them.
+ *   item, by rarity) are optional: \`examples/soulkeeper/src/items/rarity.ts\` draws them.
  *
  * Adding an item: write its piece in a family file (\`gems.ts\`, \`potions.ts\`, \`keys.ts\`...), export it from \`index.ts\`,
- * list it here, then run \`npm run item-icons -- ${project}\` and export \`icons/\`. \`examples/pivot-v2-2d/src/items/catalog.ts\` is the full form.
+ * list it here, then run \`npm run item-icons -- ${project}\` and export \`icons/\`. \`examples/soulkeeper/src/items/catalog.ts\` is the full form.
  */
 
 import type { ItemCatalog, ItemInfo } from '@core/rig';

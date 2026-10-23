@@ -1,5 +1,5 @@
 /**
- * The item catalog of pivot-v2-2d (guide 06 of @core/volume): `ITEMS`, exported for `npm run item-icons`.
+ * The item catalog of Soulkeeper (guide 06 of @core/volume): `ITEMS`, exported for `npm run item-icons`.
  *
  * - **Rarities** (`rarity.ts`): common (iron grey), uncommon (bone), rare (steel blue), epic (violet) and legendary (soul
  *   green, the only tier that burns the project's accent). Every color is a theme token. The tier lives in the icon's frame and

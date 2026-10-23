@@ -197,10 +197,10 @@ export const VOLUMES: Record<string, VolumeStyle> = {};
   assert.deepEqual(listed.projects[0].sheets, ['characters/imp/idle', 'characters/knight/walk', 'characters/pup/bite', 'characters/pup/walk', 'marks/rune', 'props/barrel', 'props/crate']);
   assert.equal(listed.projects[0].dir, `projects/${project}`);
   // Projects are found in projects/ first, then examples/; examples/<name> names the sample explicitly.
-  assert.equal(JSON.parse(run('npm run --silent list -- pivot-v2-2d --json').stdout).projects[0].dir, 'examples/pivot-v2-2d', 'the sample is found in examples/');
-  assert.equal(JSON.parse(run('npm run --silent list -- examples/pivot-v2-2d --json').stdout).projects[0].project, 'pivot-v2-2d');
+  assert.equal(JSON.parse(run('npm run --silent list -- soulkeeper --json').stdout).projects[0].dir, 'examples/soulkeeper', 'the sample is found in examples/');
+  assert.equal(JSON.parse(run('npm run --silent list -- examples/soulkeeper --json').stdout).projects[0].project, 'soulkeeper');
   const missingProject = run('npm run --silent list -- zz-no-such-project');
-  assert.ok(missingProject.code !== 0 && missingProject.stderr.includes('projects/ or examples/') && missingProject.stderr.includes('pivot-v2-2d (examples)'), `an unknown project lists the ones there are: ${missingProject.stderr}`);
+  assert.ok(missingProject.code !== 0 && missingProject.stderr.includes('projects/ or examples/') && missingProject.stderr.includes('soulkeeper (examples)'), `an unknown project lists the ones there are: ${missingProject.stderr}`);
 
   // 3b. A volume scaffold exports as a direction sheet: 8 rows, the pivot at scale 2, the role in meta.data.
   assert.equal(run(`npm run --silent export -- ${project} props/crate`).code, 0, 'the volume scaffold must export');
@@ -469,8 +469,8 @@ export default defineAsset({
   rmSync(resolve(layoutDir, 'scratch.md'));
   assert.equal(layoutOf().code, 0, 'and passes again once the file is gone');
   // The sample follows every rule.
-  const sample = JSON.parse(run('npm run --silent layout -- pivot-v2-2d --json').stdout);
-  assert.ok(sample.ok && sample.errors.length === 0, `examples/pivot-v2-2d follows the layout: ${JSON.stringify(sample.errors.slice(0, 3))}`);
+  const sample = JSON.parse(run('npm run --silent layout -- soulkeeper --json').stdout);
+  assert.ok(sample.ok && sample.errors.length === 0, `examples/soulkeeper follows the layout: ${JSON.stringify(sample.errors.slice(0, 3))}`);
 
   // 11. new-kit: each kit's catalog.ts, index.ts and first piece, on a project with a space profile; the generator commands,
   // new-scene and the export work on them, and the project passes check --strict once exported.
@@ -581,8 +581,8 @@ export default defineAsset({
   rmSync(kitFile('scenery', 'noise.ts'));
   rmSync(resolve(kitsDir, 'sheets', 'swatch.ts'));
   // The sample is deterministic.
-  const sampleCheck = JSON.parse(run('npm run --silent check -- pivot-v2-2d --json').stdout);
-  assert.ok(sampleCheck.lint.ok && sampleCheck.lint.issues.length === 0 && sampleCheck.projectErrors.length === 0, `examples/pivot-v2-2d passes the type check and the determinism lint: ${JSON.stringify(sampleCheck.lint.issues.slice(0, 3))}`);
+  const sampleCheck = JSON.parse(run('npm run --silent check -- soulkeeper --json').stdout);
+  assert.ok(sampleCheck.lint.ok && sampleCheck.lint.issues.length === 0 && sampleCheck.projectErrors.length === 0, `examples/soulkeeper passes the type check and the determinism lint: ${JSON.stringify(sampleCheck.lint.issues.slice(0, 3))}`);
 
   console.log('✔ new-project, new-asset (volume and rig), new-kit, check (types, layout, determinism), layout, list, export (incl. --mockup and the type check), inspect and contact behave as documented.\n');
 } finally {

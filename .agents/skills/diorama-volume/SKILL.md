@@ -28,7 +28,7 @@ This skill covers how to plan, build and check volume assets. It does not repeat
 - Animated bodies with a skeleton (characters and creatures) are `@core/rig`; read `diorama-rig` for them. Their skins and gear are still volume parts.
 - Flat art that is not part of the world (a nine-slice panel, a bar, a cursor, a bitmap font) is drawn with `@core/draw` through the HUD helpers of guide 06. Volume parts are `@core/draw` shapes, so its styles and textures still apply.
 
-Worked examples (read-only, for technique: an exception to project isolation, like the rig ones) in `examples/pivot-v2-2d/src/`, each kit a folder with its `catalog.ts` and `index.ts`:
+Worked examples (read-only, for technique: an exception to project isolation, like the rig ones) in `examples/soulkeeper/src/`, each kit a folder with its `catalog.ts` and `index.ts`:
 - `scenery/props.ts` with `scenery/prop-parts.ts`: a tombstone, a reliquary with an animated lid, a candle cluster, a brazier, a lantern post and a coffin, built from solids, round volumes, tubes and decals (`on`, `visibleArc`, `object.custom` flames). They are `ScenePiece`s (guide 04) that draw into `ctx.object` in `ctx.frame`; a standalone prop uses `defineAsset` as the template does, with the same parts;
 - `gear/weapons.ts`, `gear/shields.ts`, `gear/heads.ts`: armor and weapons as helpers that take a frame (guide 03 §4);
 - `items/` and `ui/`: item icons and HUD pieces (guide 06);

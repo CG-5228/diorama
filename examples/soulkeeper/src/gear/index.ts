@@ -1,5 +1,5 @@
 /**
- * The gear kit of pivot-v2-2d: reusable parts for the `humanoid()` skeleton, written once from the
+ * The gear kit of Soulkeeper: reusable parts for the `humanoid()` skeleton, written once from the
  * Ossuary guard (see `docs/guides/rig/05-gear-and-outfits.md`). A character is an outfit of these
  * parts, saved as data (`characters/<name>/outfit.ts`) and drawn with `outfitFromData(OUTFIT,
  * CATALOG)`; `catalog.ts` lists every part, its slots, material roles and options, the base body

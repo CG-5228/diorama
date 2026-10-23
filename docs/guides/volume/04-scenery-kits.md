@@ -14,7 +14,7 @@ The engine gives the mechanics: a pixel-exact grid, connection masks, the piece 
 - catalog and scenes: `ScenePieceInfo`, `SceneryCatalog`, `validateCatalog`, `SceneData`, `validateScene`, `footprintOf`;
 - drawing and export: `layoutScene`, `drawScene`, `createSceneRenderer`, `defineTileSet`, `defineSceneAsset`, `seamTestScene`.
 
-**Worked kit:** `examples/pivot-v2-2d/src/scenery/`. Read it for technique:
+**Worked kit:** `examples/soulkeeper/src/scenery/`. Read it for technique:
 - `floors.ts` and `water.ts`: five floors, a recessed one among them;
 - `walls.ts`, `fences.ts` and `ruins.ts`: walls and fences that join, including a ruin;
 - `props.ts`, `prop-parts.ts`, `tree.ts` and `decals.ts`: props and decals;
@@ -249,7 +249,7 @@ A contact shadow or a pool of light drawn into `ctx.object` would cover the oute
 - `materials` (the theme's `VOLUMES`) and `defaultMaterials`;
 - `grid`, `camera` and `space` (the profile; its grid and camera).
 
-**The first piece of a kit.** `npm run new-kit -- <project> scenery` writes `src/scenery/`: a crate prop in a family file (`src/scenery/props.ts`), the catalog (`src/scenery/catalog.ts`) and `src/scenery/index.ts` (`export * from './props';`), with the theme's materials and the space profile; it refuses to overwrite a kit unless `--force`. Written by hand, the minimum is this: a prop needs only `id`, `label`, `group: 'prop'`, `piece`, `connect: 'none'` and `roles` in its entry (add `height` so `inspect` checks its scale, and `directions` for 4 or 8 facings), and the catalog needs `materials: VOLUMES`, a `defaultMaterials` entry for every role the pieces ask for (`{ wood: 'wood' }`), and `grid: SPACE.grid`, `camera: SPACE.camera` and `space: SPACE`. Then `npm run check -- <project>`, `scenery-items`, `export -- <project> scenery/` and `scenery-test`. The head of `examples/pivot-v2-2d/src/scenery/catalog.ts` is the full form.
+**The first piece of a kit.** `npm run new-kit -- <project> scenery` writes `src/scenery/`: a crate prop in a family file (`src/scenery/props.ts`), the catalog (`src/scenery/catalog.ts`) and `src/scenery/index.ts` (`export * from './props';`), with the theme's materials and the space profile; it refuses to overwrite a kit unless `--force`. Written by hand, the minimum is this: a prop needs only `id`, `label`, `group: 'prop'`, `piece`, `connect: 'none'` and `roles` in its entry (add `height` so `inspect` checks its scale, and `directions` for 4 or 8 facings), and the catalog needs `materials: VOLUMES`, a `defaultMaterials` entry for every role the pieces ask for (`{ wood: 'wood' }`), and `grid: SPACE.grid`, `camera: SPACE.camera` and `space: SPACE`. Then `npm run check -- <project>`, `scenery-items`, `export -- <project> scenery/` and `scenery-test`. The head of `examples/soulkeeper/src/scenery/catalog.ts` is the full form.
 
 `validateCatalog` checks it: duplicate ids, a group with the wrong connection, labels that do not match the variants, unknown joins, facings, footprints, default options out of their own range and unknown materials. `scenery-items`, `new-scene` and `scenery-test` refuse a catalog with problems.
 

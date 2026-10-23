@@ -44,7 +44,7 @@ export interface ProjectRef {
   root: ProjectRoot;
   /** Absolute path of the project folder. */
   dir: string;
-  /** Path from the repository root, with forward slashes: `examples/pivot-v2-2d`. */
+  /** Path from the repository root, with forward slashes: `examples/soulkeeper`. */
   rel: string;
 }
 

@@ -1,4 +1,4 @@
-# Style: pivot-v2-2d
+# Style: Soulkeeper
 
 Theme first: `src/theme.ts` is the source of truth. This file summarizes it and holds what the theme cannot express.
 

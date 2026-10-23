@@ -41,7 +41,7 @@ try {
     assert.throws(() => safeProjectName(bad), PathError, `safeProjectName must refuse ${JSON.stringify(bad)}`);
   }
   assert.equal(safeSubpath('characters/wolf/walk.png'), 'characters/wolf/walk.png');
-  assert.equal(safeProjectName('pivot-v2-2d'), 'pivot-v2-2d');
+  assert.equal(safeProjectName('soulkeeper'), 'soulkeeper');
 
   // 2. The plan lists exactly the files that exist: image, atlas, and the optional sheet.
   seed('chars/wolf/walk.png', 'assets');

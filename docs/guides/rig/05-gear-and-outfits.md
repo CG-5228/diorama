@@ -4,7 +4,7 @@
 
 **API reference:** [`docs/api/rig.md`](../../api/rig.md): `bodyFrames`, `chestJoint`, `slotFrame`, `held`, `outfit`, `outfitFromData`, `validateOutfit`, `Part`, `MaterialSet`, `GearCatalog`, `PartInfo`, `OutfitData`, `OutfitCharacterInfo`.
 
-**Worked kit:** `examples/pivot-v2-2d/src/gear/`. It holds the guard, Malvek and the captain; read it for technique.
+**Worked kit:** `examples/soulkeeper/src/gear/`. It holds the guard, Malvek and the captain; read it for technique.
 
 ---
 
@@ -78,7 +78,7 @@ For example, a helm exports its dome geometry, so a crest can rest on it without
   - With the viewer's Customize tab: pick a character, change pieces, options and materials, save.
   - From the command line: `npm run new-outfit-character -- <project> <name> --from <character> --outfit <file.json>` writes `src/characters/<name>/outfit.ts`, `character.ts` and one sheet per clip in `sheets/characters/<name>/`.
   - Clip factories shared by several characters live in one module (`src/characters/shared/humanoid-clips.ts`), not inside another character's folder.
-- **A new material for a variant** (steel, brass) is a new key in the theme's `VOLUMES`. Check it against the style (soul fire is pivot-v2-2d's only saturated accent) and write it in `STYLE.md`.
+- **A new material for a variant** (steel, brass) is a new key in the theme's `VOLUMES`. Check it against the style (soul fire is Soulkeeper's only saturated accent) and write it in `STYLE.md`.
 
 ## 5. The catalog
 

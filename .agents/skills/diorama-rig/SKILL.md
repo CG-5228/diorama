@@ -25,13 +25,13 @@ Your job is what it cannot decide: the body plan, the timing, and an art skin th
 | Timing: anticipation, holds, overshoot, smears, loops | [diorama-volume motion reference](../diorama-volume/references/motion.md) |
 | The finish every skin must reach | [diorama-volume quality bar](../diorama-volume/references/quality-bar.md) |
 
-Worked examples (read-only, for technique: the one exception to project isolation) in `examples/pivot-v2-2d/src/characters/`; the sheets that export them are in `examples/pivot-v2-2d/sheets/characters/`:
-- `guard/character.ts` with `spec.ts`, `outfit.ts` and `clips/`: a humanoid dressed from the gear kit (`examples/pivot-v2-2d/src/gear/`, guide 05): weapon, shield, helm, smear, sockets taken from the held weapon, hit and death, dodge and jump clips;
+Worked examples (read-only, for technique: the one exception to project isolation) in `examples/soulkeeper/src/characters/`; the sheets that export them are in `examples/soulkeeper/sheets/characters/`:
+- `guard/character.ts` with `spec.ts`, `outfit.ts` and `clips/`: a humanoid dressed from the gear kit (`examples/soulkeeper/src/gear/`, guide 05): weapon, shield, helm, smear, sockets taken from the held weapon, hit and death, dodge and jump clips;
 - `wolf/character.ts` with `shared/ghoul-wolf.ts`: quadruped with fur tufts, a jaw channel, and a howl skill spawning at its `mouth` socket;
 - `spider/character.ts` with `shared/bone-spider.ts` and `shared/bone-spider-skin.ts`: an eight-legged skeleton written as data (vector knees, a tetrapod gait, a custom idle with `extra` channels) and a spit skill;
 - `malvek/character.ts` with `spec.ts`, `outfit.ts` and `skeleton.ts`, and `captain/`: a second humanoid and a rank variant, both assembled from the gear kit;
 - `shared/` holds what several characters use (`humanoid-clips.ts`, `sword-angle.ts`) and the body plans kept apart from their character (the spider's and the wolf's bodies, each used by one character here);
-- a clip that is only a gait or an idle has no file of its own in `src/`: its sheet imports `character` and exports `character.sheet('<clip>')`, as in `examples/pivot-v2-2d/sheets/characters/guard/walk.ts`.
+- a clip that is only a gait or an idle has no file of its own in `src/`: its sheet imports `character` and exports `character.sheet('<clip>')`, as in `examples/soulkeeper/sheets/characters/guard/walk.ts`.
 
 ## Workflow
 
