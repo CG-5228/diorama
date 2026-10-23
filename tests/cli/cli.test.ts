@@ -4,12 +4,16 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync,
 import { resolve } from 'node:path';
 import { inflateSync } from 'node:zlib';
 
-console.log('🧪 Checking agent commands (new-project, new-asset, check, layout, list, export, inspect, contact)...\n');
+console.log('🧪 Checking agent commands (new-project, new-asset, new-kit, check, layout, list, export, inspect, contact)...\n');
 
 const project = `zz-cli-test-${Date.now()}`;
 const projectDir = resolve('projects', project);
 const layoutProject = `${project}-layout`;
 const layoutDir = resolve('projects', layoutProject);
+const kitsProject = `${project}-kits`;
+const kitsDir = resolve('projects', kitsProject);
+const bareKitsProject = `${project}-kits-nospace`;
+const bareKitsDir = resolve('projects', bareKitsProject);
 
 interface Result {
   code: number;
@@ -288,12 +292,13 @@ export default defineAsset({
   scale: 1,
   frames: 30,
   fps: 12,
-  render({ ctx, frameIndex }) {
+  render({ ctx, frameIndex = 0 }) {
     Polygon.circle(8, { cx: 16 + frameIndex * 4, cy: 16 }).draw(ctx, { fill: '#2244ff' });
   },
 });
 `);
-  assert.equal(run(`npm run --silent export -- ${project} wide`).code, 0);
+  const wideExport = run(`npm run --silent export -- ${project} wide`);
+  assert.equal(wideExport.code, 0, `the wide strip must export: ${wideExport.stderr}`);
   const wide = JSON.parse(run(`npm run --silent contact -- projects/${project}/assets/wide.png --json`).stdout);
   assert.equal(wide.zoom, 1, 'a very wide strip falls back to 1x');
   assert.equal(pngSize(wide.file).width, 30 * 160 + 31 * 6);
@@ -367,7 +372,7 @@ export default defineAsset({
   frames: 2,
   fps: 4,
   animations: { idle: [0, 1] },
-  render({ ctx, frameIndex }) {
+  render({ ctx, frameIndex = 0 }) {
     Polygon.circle(8 + frameIndex * 2, { cx: 16, cy: 16 }).draw(ctx, { fill: '#2244ff' });
   },
 });
@@ -467,8 +472,122 @@ export default defineAsset({
   const sample = JSON.parse(run('npm run --silent layout -- pivot-v2-2d --json').stdout);
   assert.ok(sample.ok && sample.errors.length === 0, `examples/pivot-v2-2d follows the layout: ${JSON.stringify(sample.errors.slice(0, 3))}`);
 
-  console.log('✔ new-project, new-asset (volume and rig), check, layout, list, export (incl. --mockup), inspect and contact behave as documented.\n');
+  // 11. new-kit: each kit's catalog.ts, index.ts and first piece, on a project with a space profile; the generator commands,
+  // new-scene and the export work on them, and the project passes check --strict once exported.
+  assert.equal(run(`npm run --silent new-project -- ${kitsProject} --genre jrpg`).code, 0);
+  const kitFile = (kit: string, name: string) => resolve(kitsDir, 'src', kit, name);
+  const firstPieces: [string, string, string, string][] = [
+    // kit, family file, generator command, generated sheet
+    ['scenery', 'props.ts', 'scenery-items', 'scenery/crate'],
+    ['gear', 'heads.ts', 'gear-items', 'gear/helm'],
+    ['vfx', 'bursts.ts', 'vfx-items', 'vfx/spark'],
+    ['items', 'gems.ts', 'item-icons', 'icons/gem'],
+  ];
+  for (const [kit, family] of firstPieces) {
+    const made = run(`npm run --silent new-kit -- ${kitsProject} ${kit}`);
+    assert.equal(made.code, 0, `new-kit ${kit} failed: ${made.stderr}`);
+    for (const name of ['catalog.ts', 'index.ts', family]) assert.ok(existsSync(kitFile(kit, name)), `new-kit ${kit} writes src/${kit}/${name}`);
+  }
+  const sceneryCatalog = readFileSync(kitFile('scenery', 'catalog.ts'), 'utf8');
+  assert.ok(sceneryCatalog.includes('space: SPACE') && sceneryCatalog.includes("from '../space'") && sceneryCatalog.includes("defaultMaterials: { wood: 'wood' }"), 'the scenery catalog reads the space profile and maps its role to a theme material');
+  assert.ok(readFileSync(kitFile('gear', 'catalog.ts'), 'utf8').includes("id: 'mannequin'") && existsSync(kitFile('gear', 'bodies.ts')), 'the gear kit has a wearer from the start');
+  // An existing kit is never overwritten without --force; --force rewrites the kit's files.
+  const refusedKit = run(`npm run --silent new-kit -- ${kitsProject} scenery`);
+  assert.ok(refusedKit.code !== 0 && refusedKit.stderr.includes('already has a kit') && refusedKit.stderr.includes('--force'), `new-kit must refuse an existing kit: ${refusedKit.stderr}`);
+  const propsSource = readFileSync(kitFile('scenery', 'props.ts'), 'utf8');
+  writeFileSync(kitFile('scenery', 'props.ts'), `${propsSource}// edited\n`, 'utf8');
+  assert.ok(readFileSync(kitFile('scenery', 'catalog.ts'), 'utf8') === sceneryCatalog, 'a refused new-kit changes nothing');
+  assert.equal(run(`npm run --silent new-kit -- ${kitsProject} scenery --force`).code, 0);
+  assert.equal(readFileSync(kitFile('scenery', 'props.ts'), 'utf8'), propsSource, '--force rewrites the kit');
+  const badKit = run(`npm run --silent new-kit -- ${kitsProject} weapons`);
+  assert.ok(badKit.code !== 0 && badKit.stderr.includes('"scenery", "gear", "vfx" or "items"'), `an unknown kit is refused with the four kinds: ${badKit.stderr}`);
+  for (const [kit, , command, sheet] of firstPieces) {
+    const generated = run(`npm run --silent ${command} -- ${kitsProject}`);
+    assert.equal(generated.code, 0, `${command} must work on a new ${kit} kit: ${generated.stderr}`);
+    assert.ok(existsSync(resolve(kitsDir, 'sheets', `${sheet}.ts`)), `${command} writes sheets/${sheet}.ts`);
+  }
+  mkdirSync(resolve(kitsDir, 'review', 'temp'), { recursive: true });
+  const sceneFile = resolve(kitsDir, 'review', 'temp', 'yard.json');
+  // jrpg puts walls on cell borders: the walls grid is one larger each way.
+  writeFileSync(sceneFile, JSON.stringify({ cols: 2, rows: 2, floor: [[null, null], [null, null]], walls: [[null, null, null], [null, null, null], [null, null, null]], props: [{ piece: 'crate', col: 0, row: 0 }] }), 'utf8');
+  const scene = run(`npm run --silent new-scene -- ${kitsProject} yard --scene ${sceneFile}`);
+  assert.equal(scene.code, 0, `new-scene must work on a new scenery kit: ${scene.stderr}`);
+  const kitExport = run(`npm run --silent export -- ${kitsProject} scenery/ gear/ vfx/ icons/ scenes/ --json`);
+  assert.equal(kitExport.code, 0, `the new kits must export: ${kitExport.stderr}`);
+  const kitSummary = JSON.parse(kitExport.stdout);
+  assert.deepEqual([kitSummary.typeCheck, kitSummary.successCount, kitSummary.failCount], ['clean', 5, 0], 'the export type checks first, then writes every sheet');
+  const kitsStrict = run(`npm run --silent check -- ${kitsProject} --strict`);
+  assert.equal(kitsStrict.code, 0, `a project with the four new kits passes check --strict after an export: ${kitsStrict.stdout}`);
+  // Without a space profile the scenery catalog takes the theme's camera and a grid of its own.
+  assert.equal(run(`npm run --silent new-project -- ${bareKitsProject}`).code, 0);
+  for (const kit of ['scenery', 'vfx']) assert.equal(run(`npm run --silent new-kit -- ${bareKitsProject} ${kit}`).code, 0);
+  assert.ok(readFileSync(resolve(bareKitsDir, 'src', 'scenery', 'catalog.ts'), 'utf8').includes('grid: Grid.fromScreen(CAMERA, 48, 36)'), 'no space profile: the theme camera and a 48 × 36 grid');
+  const bareCheck = run(`npm run --silent check -- ${bareKitsProject}`);
+  assert.equal(bareCheck.code, 0, `kits without a space profile type check: ${bareCheck.stdout}`);
+
+  // 12. export refuses a project with type errors (the type check of npm run check runs first) and --force exports it anyway.
+  const brokenLine = propsSource.split('\n').length;
+  writeFileSync(kitFile('scenery', 'props.ts'), `${propsSource}export const broken: number = 'not a number';\n`, 'utf8');
+  const cratePng = resolve(kitsDir, 'assets', 'scenery', 'crate.png');
+  rmSync(cratePng);
+  const refusedExport = run(`npm run --silent export -- ${kitsProject} scenery/`);
+  assert.notEqual(refusedExport.code, 0, 'an export with a type error must fail');
+  assert.ok(refusedExport.stderr.includes('1 type error(s), so nothing was exported') && refusedExport.stderr.includes(`src/scenery/props.ts(${brokenLine},14): error TS2322`) && refusedExport.stderr.includes('--force'), `it prints the errors and the way out: ${refusedExport.stderr}`);
+  assert.ok(!existsSync(cratePng), 'a refused export writes nothing');
+  const refusedJson = JSON.parse(run(`npm run --silent export -- ${kitsProject} scenery/ --json`).stdout);
+  assert.ok(refusedJson.typeCheck === 'failed' && refusedJson.typeErrors.length === 1 && refusedJson.outputs.length === 0, 'export --json carries the type errors');
+  const forced = run(`npm run --silent export -- ${kitsProject} scenery/ --force --json`);
+  assert.equal(forced.code, 0, `--force exports a project with type errors: ${forced.stderr}`);
+  assert.ok(JSON.parse(forced.stdout).typeCheck === 'skipped' && existsSync(cratePng), 'with --force the check is skipped and the sheet written');
+  // scenery-test is a review render: it does not stop on the project's type errors.
+  assert.equal(run(`npm run --silent scenery-test -- ${kitsProject} crate`).code, 0, 'scenery-test renders while the project has a type error');
+  writeFileSync(kitFile('scenery', 'props.ts'), propsSource, 'utf8');
+
+  // 13. check reports what makes an export non-deterministic, with the file, the line and what to use instead; comments do not count,
+  // and color literals are allowed in src/theme.ts only.
+  writeFileSync(kitFile('scenery', 'noise.ts'), [
+    "// Math.random(), new Date() and '#ff0000' in a comment do not count.",
+    '/** Nor rgba(0, 0, 0, 0.5) in a doc comment. */',
+    'export const jitter = Math.random();',
+    'export const stamp = Date.now() + performance.now();',
+    'export const born = new Date();',
+    "export const tint = { fill: '#ff0000', shade: `rgba(${jitter}, 2, 3, 0.5)` };",
+    "export const label = 'Math.random in a string is not a call';",
+    "import { createRng } from '@core';",
+    "export const rolls = [createRng(), createRng('crate'), createRng(7)];",
+    '',
+  ].join('\n'), 'utf8');
+  writeFileSync(resolve(kitsDir, 'sheets', 'swatch.ts'), "export default { color: 'hsl(10, 50%, 50%)' };\n", 'utf8');
+  const noisy = run(`npm run --silent check -- ${kitsProject} --json`);
+  assert.notEqual(noisy.code, 0, 'check must fail on non-deterministic code');
+  const lint = JSON.parse(noisy.stdout).lint as { ok: boolean; issues: { rule: string; path: string; line: number; message: string }[] };
+  const found = lint.issues.map(i => `${i.path}:${i.line}:${i.rule}`);
+  assert.deepEqual(found, [
+    'src/scenery/noise.ts:3:random',
+    'src/scenery/noise.ts:4:clock',
+    'src/scenery/noise.ts:4:clock',
+    'src/scenery/noise.ts:5:clock',
+    'src/scenery/noise.ts:6:color',
+    'src/scenery/noise.ts:6:color',
+    'src/scenery/noise.ts:9:random',
+    'sheets/swatch.ts:1:color',
+  ], 'each pattern is found once, in code and strings only, never in comments or src/theme.ts; a seeded createRng is fine');
+  const say = (line: number, rule: string) => lint.issues.filter(i => i.line === line && i.rule === rule).map(i => i.message).join(' | ');
+  assert.ok(say(3, 'random').startsWith('src/scenery/noise.ts:3: Math.random') && say(3, 'random').includes('createRng(seed)'), `Math.random points at createRng: ${say(3, 'random')}`);
+  assert.ok(say(4, 'clock').includes('Date.now reads the clock') && say(4, 'clock').includes('performance.now reads the clock') && say(5, 'clock').includes('new Date') && say(5, 'clock').includes('frameIndex'), `the clock points at frameIndex and createRng: ${say(4, 'clock')}`);
+  assert.ok(say(9, 'random').includes('createRng() without a seed'), `an unseeded createRng is reported: ${say(9, 'random')}`);
+  assert.ok(say(6, 'color').includes('"#ff0000" is a raw color') && say(6, 'color').includes('"rgba(...)"') && say(6, 'color').includes('src/theme.ts'), `raw colors point at the theme: ${say(6, 'color')}`);
+  assert.ok(noisy.stdout.includes('"ok": false') && run(`npm run --silent check -- ${kitsProject}`).stdout.includes('8 determinism problem(s)'), 'the text report counts them');
+  rmSync(kitFile('scenery', 'noise.ts'));
+  rmSync(resolve(kitsDir, 'sheets', 'swatch.ts'));
+  // The sample is deterministic.
+  const sampleCheck = JSON.parse(run('npm run --silent check -- pivot-v2-2d --json').stdout);
+  assert.ok(sampleCheck.lint.ok && sampleCheck.lint.issues.length === 0 && sampleCheck.projectErrors.length === 0, `examples/pivot-v2-2d passes the type check and the determinism lint: ${JSON.stringify(sampleCheck.lint.issues.slice(0, 3))}`);
+
+  console.log('✔ new-project, new-asset (volume and rig), new-kit, check (types, layout, determinism), layout, list, export (incl. --mockup and the type check), inspect and contact behave as documented.\n');
 } finally {
   rmSync(projectDir, { recursive: true, force: true });
   rmSync(layoutDir, { recursive: true, force: true });
+  rmSync(kitsDir, { recursive: true, force: true });
+  rmSync(bareKitsDir, { recursive: true, force: true });
 }

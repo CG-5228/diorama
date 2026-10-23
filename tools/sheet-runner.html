@@ -167,6 +167,9 @@
             sourcePath: item.file,
             preview,
             resolveResource: (rel) => `/${dir}/src/${rel.replace(/^\//, '')}`,
+            // One cell per asset: its first frame (the render context's frameIndex and frameCount are always set).
+            frameIndex: 0,
+            frameCount: Number(item.asset.frames) || 1,
           };
 
           await item.asset.render(cell, context);

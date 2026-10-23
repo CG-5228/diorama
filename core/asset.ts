@@ -27,10 +27,13 @@ export interface AssetRenderContext {
   preview?: boolean;
   /** Resolve a file path relative to the project's `src/` (an image or data file the drawing reads) to a URL */
   resolveResource?: (relPath: string) => string;
-  /** Current 0-based frame index when rendering a multi-frame animation or spritesheet */
-  frameIndex?: number;
-  /** Total number of frames in the animation */
-  frameCount?: number;
+  /**
+   * 0-based frame being rendered, from 0 to `frameCount - 1` (0 for a single image). The exporter always supplies it,
+   * so `t = frameIndex / frameCount` type checks without a default.
+   */
+  frameIndex: number;
+  /** Number of frames of the asset: its `frames`, 1 for a single image. The exporter always supplies it. */
+  frameCount: number;
   /** 0-based direction (row) being rendered when the asset declares `directions` */
   direction?: number;
   /** Number of directions (rows) of the asset; 1 when it declares none */

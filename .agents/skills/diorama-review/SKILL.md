@@ -11,8 +11,8 @@ This skill covers how to check what was produced: volume props, scenery, effects
 
 Go up the ladder only as far as the change needs. Each step is cheaper than the next.
 
-1. **Compiles.** `npm run check -- <project>` reports no type errors and no layout errors in the project (code in `src/`, thin sheets in `sheets/`; see the layout in `diorama`).
-2. **Exported.** `npm run --silent export -- <project> <subpath> --json` exits with code 0, and each output has a path that exists in `assets/`. After a full export, `npm run layout -- <project> --strict` is clean: every sheet has its export and no asset is left without its sheet.
+1. **Compiles.** `npm run check -- <project>` reports no type errors, no layout errors and no determinism problems in the project (code in `src/`, thin sheets in `sheets/`, no `Math.random`, clock or raw colors outside `src/theme.ts`; see the layout and the rejection rules in `diorama`).
+2. **Exported.** `npm run --silent export -- <project> <subpath> --json` exits with code 0 (it type checks first and exports nothing while the project has a type error; an export made with `--force` is an experiment, not a delivery), and each output has a path that exists in `assets/`. After a full export, `npm run layout -- <project> --strict` is clean: every sheet has its export and no asset is left without its sheet.
 3. **Measured.** `npm run inspect -- <output.png> --json` returns numbers that match what the asset should be (see below).
 4. **Looked at.** Make a contact sheet (`npm run contact -- <output.png>`) and open it with the image viewer (the `Read` tool, using the absolute path it prints). Judge form, color and style against `STYLE.md`, in every row and every frame.
 5. **In context.** Open the viewer to see a character or a prop move from its exported atlas (Playground), a scene laid out the way a game would (Scenery), or an outfit on a body (Customize). Only when the change needs it. See the sections below.

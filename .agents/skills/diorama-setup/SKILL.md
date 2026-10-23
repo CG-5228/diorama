@@ -73,7 +73,7 @@ npm run inspect -- projects/my-game/assets/props/crate.png
 npm run contact -- projects/my-game/assets/props/crate.png
 ```
 
-`check` runs the type check and then the layout rules (`npm run layout -- my-game --strict` after an export also confirms every sheet is exported). Open the contact sheet (it is written to `projects/my-game/review/contact/props/crate-contact.png`; the path is printed) and look at every row. In the viewer, the prop is in the project's Assets tab and, being a prop, in the Playground's palette.
+`check` runs the type check, then the layout rules, then the determinism lint (no `Math.random`, no clock, no raw colors outside `src/theme.ts`); `npm run layout -- my-game --strict` after an export also confirms every sheet is exported. The export type checks the project first and writes nothing while it has a type error. Open the contact sheet (it is written to `projects/my-game/review/contact/props/crate-contact.png`; the path is printed) and look at every row. In the viewer, the prop is in the project's Assets tab and, being a prop, in the Playground's palette.
 
 ## 6. First character
 
@@ -103,7 +103,8 @@ npm run contact -- projects/my-game/assets/characters/hero/walk.png
 | `npm run export` fails before writing a file | Chromium is missing | Run `npm run doctor` first, then the install command. The exporter does not need port 5173: it reuses a running viewer or starts its own server. |
 | `npm test` fails in `tests/docs/docs.test.ts` | A guide or skill has a fenced `ts` block that is too long or does not compile, a link that points nowhere, or a backticked path that does not exist | Fix the block, the link or the path. Do not add `docs:allow-long` to hide a block. |
 | `npm test` fails in `tests/engine/boundary.test.ts` | An import crosses a boundary of the architecture (for example `volume` importing `rig`, or the viewer reaching into `core/`) | Move the code to the side of the arrow it belongs to; the message names the file and the import. |
-| `npm run check -- <project>` fails after the type check | The project breaks a layout rule (a file at the root, an underscore, a sheet with drawing code...) | Do what the message says; it names the file and where to move it. |
+| `npm run check -- <project>` fails after the type check | The project breaks a layout rule (a file at the root, an underscore, a sheet with drawing code...) or a determinism rule (`Math.random`, `Date`, a raw `#hex` color outside `src/theme.ts`) | Do what the message says; it names the file (and the line) and where to move it or what to use instead. |
+| `npm run export` stops with "type error(s), so nothing was exported" | The project's code does not type check | Fix the errors it lists (`npm run check -- <project>` shows them too). `--force` exports anyway, for experiments only. |
 | `npm run docs:api` changes files in `docs/api/` after setup | The API changed in source, and the generated reference was not updated | Commit the regenerated files. They are generated and must not be edited by hand. |
 
 ## Rules for this skill

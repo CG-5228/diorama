@@ -22,6 +22,10 @@
  * Review render (<project>/review/mockups/, never assets/; used by scenery-test):
  *   npm run export -- my-game props/crate --mockup
  *
+ * Before rendering, the project's src/ and sheets/ are type checked (tools/typecheck.ts, the check of
+ * `npm run check`): with a type error nothing is exported, unless --force (for experiments).
+ *   npm run export -- my-game props/crate --force
+ *
  * Machine-readable summary:
  *   npm run export -- my-game --json
  */
@@ -33,6 +37,7 @@ import { readdir, stat, mkdir, writeFile, readFile, copyFile } from 'node:fs/pro
 import { existsSync } from 'node:fs';
 import pc from 'picocolors';
 import { LAYOUT, REVIEW, availableProjects, findProject, isSheetFile } from './project.js';
+import { typeCheckProject } from './typecheck.js';
 
 interface CliArgs {
   project?: string;
@@ -63,11 +68,14 @@ interface CliArgs {
 
   // Machine-readable summary on stdout; human logs go to stderr.
   json?: boolean;
+
+  // Export even when the project has type errors: skips the type check that runs first.
+  force?: boolean;
 }
 
 const ALLOWED_FLAGS = [
   'grid', 'compact', 'gap', 'cols', 'sheet-name', 'out-dir', 'both', 'no-json',
-  'scale', 'format', 'server', 'mockup', 'json', 'help',
+  'scale', 'format', 'server', 'mockup', 'json', 'force', 'help',
 ];
 const VALUE_OPTIONS = ['gap', 'cols', 'sheet-name', 'out-dir', 'scale', 'format', 'server'];
 const ALLOWED_CONFIG_KEYS = ['outDir', 'scale', 'format', 'cols', 'gap'];
@@ -152,6 +160,7 @@ function parseArguments(): CliArgs {
     both: Boolean(flags['both']),
     mockup: Boolean(flags['mockup']),
     json: Boolean(flags['json']),
+    force: Boolean(flags['force']),
   };
 }
 
@@ -177,6 +186,10 @@ ${pc.bold('Group sheets:')}
   npm run export -- my-game icons/ --grid --gap=16  # Gap in pixels between items
   npm run export -- my-game icons/ --compact --sheet-name=icons  # Custom sheet name
 
+${pc.bold('Type check:')}
+  The project's src/ and sheets/ are type checked first (as npm run check does, about 2 s for the sample):
+  with a type error nothing is exported and the errors are printed. --force skips the check.
+
 ${pc.bold('Frames and directions:')}
   \`frames\` (with \`fps\` and optional \`animations\`) lay out a strip across; \`directions\` add one row per
   facing (S first, then clockwise on screen). Sheets with more than one cell, or with \`data\`, get an
@@ -197,6 +210,7 @@ ${pc.bold('Options:')}
   --server=<url>       Use existing running dev server (default: auto-detected or 5173)
   --mockup             Review render (context.preview = true) into <project>/review/mockups/ (never touches assets/ or outDir)
   --json               Print a JSON summary on stdout (human logs go to stderr)
+  --force              Export even when the project has type errors (skips the type check that runs first; for experiments)
   --help, -h           Show this help message
 `);
 }
@@ -796,15 +810,40 @@ async function main() {
     project: string;
     mode: 'official' | 'mockup';
     outputDir: string;
+    /** The type check that runs first: `clean`, `failed` (nothing exported) or `skipped` (--force). */
+    typeCheck: 'clean' | 'failed' | 'skipped';
+    /** The project's type errors, in tsc's format (the check stops the export on them, unless --force). */
+    typeErrors: string[];
     outputs: Array<{ asset: string; path: string; absolutePath: string; size: string; resolution: string; frames?: number; atlas?: string }>;
     errors: Array<{ asset: string; message: string }>;
   } = {
     project: projectName,
     mode: args.mockup ? 'mockup' : 'official',
     outputDir: relative(rootDir, assetsDir).replace(/\\/g, '/'),
+    typeCheck: 'skipped',
+    typeErrors: [],
     outputs: [],
     errors: [],
   };
+
+  // Broken code must not produce sheets: the project's type check (the one of `npm run check`) runs first.
+  if (args.force) {
+    console.log(pc.yellow('  Type check skipped (--force).'));
+  } else {
+    const types = typeCheckProject(ref, rootDir);
+    report.typeErrors = types.projectErrors;
+    report.typeCheck = types.projectErrors.length ? 'failed' : 'clean';
+    if (types.projectErrors.length) {
+      console.error(pc.red(`\nError: ${projectName} has ${types.projectErrors.length} type error(s), so nothing was exported:`));
+      for (const line of types.projectErrors) console.error(`  ${line}`);
+      console.error(pc.yellow(`Fix them (npm run check -- ${projectName} lists them with the layout rules), or pass --force to export anyway.`));
+      if (args.json) process.stdout.write(JSON.stringify({ ...report, successCount: 0, failCount: 0 }, null, 2) + '\n');
+      process.exit(1);
+    }
+    const others = types.otherErrors.length ? pc.yellow(`; ${types.otherErrors.length} outside the project, in the engine files it imports`) : '';
+    console.log(pc.gray(`  Type check: clean (${(types.ms / 1000).toFixed(1)}s)`) + others);
+  }
+
   const server = await ensureServer(args.serverUrl);
 
   let browser: Browser | null = null;

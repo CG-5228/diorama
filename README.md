@@ -30,7 +30,7 @@ npm run check -- pivot-v2-2d
 npm run example
 ```
 
-`npm run check -- pivot-v2-2d` type checks the sample and checks its layout. `npm run example` exports the sample project, `examples/pivot-v2-2d` (165 sheets, about five minutes). Exports are never versioned, so a fresh clone has none until you run it; after it the viewer has something to show and the skills have a finished project to read.
+`npm run check -- pivot-v2-2d` type checks the sample, checks its layout and that it is deterministic. `npm run example` exports the sample project, `examples/pivot-v2-2d` (165 sheets, about five minutes). Exports are never versioned, so a fresh clone has none until you run it; after it the viewer has something to show and the skills have a finished project to read.
 
 To open the viewer: on Windows, run `dev.bat`; on macOS and Linux, run `sh dev.sh`. Any system can run `npm run view` and then open `http://localhost:5173`.
 
@@ -62,7 +62,7 @@ A project, in `projects/<project>/` or `examples/<project>/`, has four places:
 └── review/      contact sheets, scenery tests, mockups (scratch)
 ```
 
-`src/` is code and nothing there is exported by itself; `sheets/` lists what is exported, each sheet a one-line re-export of an asset in `src/`; `assets/` is the output and `review/` is scratch, and neither is versioned. No file or folder starts with an underscore, names are kebab-case, and a kit folder (`gear/`, `scenery/`, `vfx/`, `items/`) has a `catalog.ts` for editors and an `index.ts` for code. `npm run check -- <project>` runs the type check and then these rules, and says what to move where when one is broken; `npm run layout -- <project> --strict` (or `npm run check -- <project> --strict`) also fails on sheets without an export, which is the gate after an export.
+`src/` is code and nothing there is exported by itself; `sheets/` lists what is exported, each sheet a one-line re-export of an asset in `src/`; `assets/` is the output and `review/` is scratch, and neither is versioned. No file or folder starts with an underscore, names are kebab-case, and a kit folder (`gear/`, `scenery/`, `vfx/`, `items/`) has a `catalog.ts` for editors and an `index.ts` for code. `npm run check -- <project>` runs the type check, then these rules, then the determinism lint (no `Math.random`, no clock, no raw colors outside `src/theme.ts`), and says what to move or use instead when one is broken; `npm run layout -- <project> --strict` (or `npm run check -- <project> --strict`) also fails on sheets without an export, which is the gate after an export.
 
 **`examples/` and `projects/`.** `examples/` holds the samples Diorama ships; `projects/` holds your own, one folder each, and Diorama does not version them (only [`projects/README.md`](projects/README.md) is in the repository), so each can be a git repository of its own. Commands and the viewer find a project by name, in `projects/` first, then in `examples/`; `projects/<name>` or `examples/<name>` picks one exactly.
 
@@ -94,9 +94,10 @@ npm run view
 | Create a project | `npm run new-project -- <project> [--style] [--genre <preset>] [--character <height>]` |
 | Create a prop or any other one-off volume asset (scenery pieces, gear, effects and items are catalog entries: [where a new thing goes](docs/ARCHITECTURE.md#where-a-new-thing-goes)) | `npm run new-asset -- <project> <subpath> --engine volume [--size WxH] [--frames N] [--fps N] [--directions N]` |
 | Create a character clip | `npm run new-asset -- <project> <character-folder>/<clip> --engine rig [--skeleton humanoid\|quadruped] [--clip walk\|run\|idle\|attack\|hit\|death]` |
-| Check types and layout | `npm run check -- <project> [--strict] [--json]` |
+| Start a kit: catalog, index and a first piece | `npm run new-kit -- <project> scenery\|gear\|vfx\|items [--force]` |
+| Check types, layout and determinism | `npm run check -- <project> [--strict] [--json]` |
 | Check the layout alone | `npm run layout -- <project> [--strict] [--json]` |
-| Export | `npm run export -- <project> [subpath] [options]` |
+| Export (type checks first; `--force` exports anyway) | `npm run export -- <project> [subpath] [options] [--force]` |
 | Export the sample | `npm run example` |
 | List | `npm run list -- [project] [--json]` |
 | Measure a PNG | `npm run inspect -- <file.png> [--json]` |
@@ -113,7 +114,7 @@ npm run view
 | Check the environment | `npm run doctor` |
 | Run the tests | `npm test` |
 
-`--genre` adds `src/space.ts`, the game's space profile (grid, scale against the characters, wall placement) from a preset: `jrpg`, `action-rpg`, `tactics`, `farm-sim` or `dungeon-crawler`. `--directions` is the number of facings, 1, 4 or 8; the default is 8. A volume asset is two files, the drawing in `src/<subpath>.ts` and the sheet `sheets/<subpath>.ts`. A rig clip belongs to a character: `<character-folder>/<clip>` names the folder (the character) and the clip, the first clip creates `src/<character-folder>/character.ts` (`defineCharacter`), every clip gets its sheet in `sheets/<character-folder>/<clip>.ts`, and later clips print the line to add to the character's `clips`. The four generated commands (`gear-items`, `scenery-items`, `vfx-items`, `item-icons`) write `sheets/gear/`, `sheets/scenery/`, `sheets/vfx/` and `sheets/icons/` from the catalogs in `src/`; export those folders afterwards. `--skeleton`, `--size`, `--frames` and `--directions` apply to the first clip only. `--with <b.png>` stacks the same rows and frames of a second sheet under the first, to compare before and after or one character with another. `--bg` takes six hex digits: write `--bg 6e6a64` or quote it (`--bg "#6e6a64"`), because an unquoted `#` starts a shell comment. `npm run <command> -- --help` lists the options of a command, and `npm run export -- --help` those of the exporter.
+`--genre` adds `src/space.ts`, the game's space profile (grid, scale against the characters, wall placement) from a preset: `jrpg`, `action-rpg`, `tactics`, `farm-sim` or `dungeon-crawler`. `--directions` is the number of facings, 1, 4 or 8; the default is 8. A volume asset is two files, the drawing in `src/<subpath>.ts` and the sheet `sheets/<subpath>.ts`. A rig clip belongs to a character: `<character-folder>/<clip>` names the folder (the character) and the clip, the first clip creates `src/<character-folder>/character.ts` (`defineCharacter`), every clip gets its sheet in `sheets/<character-folder>/<clip>.ts`, and later clips print the line to add to the character's `clips`. `new-kit` starts a kit in `src/<kit>/` (its `catalog.ts`, its `index.ts` and a first piece drawn with the theme's materials: a crate prop, a helm with a mannequin that wears it, a spark burst or a gem) and refuses to overwrite one unless `--force`. The four generated commands (`gear-items`, `scenery-items`, `vfx-items`, `item-icons`) write `sheets/gear/`, `sheets/scenery/`, `sheets/vfx/` and `sheets/icons/` from the catalogs in `src/`; export those folders afterwards. `export` type checks the project first and exports nothing while it has a type error; `--force` skips the check for experiments. `--skeleton`, `--size`, `--frames` and `--directions` apply to the first clip only. `--with <b.png>` stacks the same rows and frames of a second sheet under the first, to compare before and after or one character with another. `--bg` takes six hex digits: write `--bg 6e6a64` or quote it (`--bg "#6e6a64"`), because an unquoted `#` starts a shell comment. `npm run <command> -- --help` lists the options of a command, and `npm run export -- --help` those of the exporter.
 
 ## The viewer
 
