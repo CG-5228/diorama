@@ -36,6 +36,7 @@ import { resolve, relative, dirname, basename } from 'node:path';
 import { readdir, stat, mkdir, writeFile, readFile, copyFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import pc from 'picocolors';
+import { ALLOWED_CONFIG_KEYS } from './layout.js';
 import { LAYOUT, REVIEW, availableProjects, findProject, isSheetFile } from './project.js';
 import { typeCheckProject } from './typecheck.js';
 
@@ -78,7 +79,6 @@ const ALLOWED_FLAGS = [
   'scale', 'format', 'server', 'mockup', 'json', 'force', 'help',
 ];
 const VALUE_OPTIONS = ['gap', 'cols', 'sheet-name', 'out-dir', 'scale', 'format', 'server'];
-const ALLOWED_CONFIG_KEYS = ['outDir', 'scale', 'format', 'cols', 'gap'];
 
 interface AssetTask {
   /** The project's name (atlas `meta.project`). */
@@ -715,7 +715,7 @@ async function main() {
     }
   }
 
-  const unknownKeys = Object.keys(projectConfig).filter((k) => !ALLOWED_CONFIG_KEYS.includes(k));
+  const unknownKeys = Object.keys(projectConfig).filter((k) => !(ALLOWED_CONFIG_KEYS as readonly string[]).includes(k));
   if (unknownKeys.length > 0) {
     console.error(
       pc.red(`Error: ${configFile} has unknown keys: ${unknownKeys.join(', ')}. Allowed: ${ALLOWED_CONFIG_KEYS.join(', ')}.`)

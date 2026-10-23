@@ -13,7 +13,7 @@ import { dirname, join, posix } from 'node:path';
 import { GENERATED_SHEETS, LAYOUT, OS_METADATA, isSheetFile, walkFiles, type GeneratedFolder } from './project.js';
 
 export interface LayoutIssue {
-  /** Short rule id: root, underscore, name, sheet-file, thin, generated, direction, kit, assets, missing, orphan. */
+  /** Short rule id: root, config, underscore, name, sheet-file, thin, generated, direction, kit, assets, missing, orphan. */
   rule: string;
   /** Project-relative path the issue is about. */
   path: string;
@@ -28,6 +28,8 @@ export interface LayoutReport {
 /** What may stand at a project root (OS metadata aside). */
 export const ROOT_DIRS = ['src', 'sheets', 'assets', 'review'] as const;
 export const ROOT_FILES = ['STYLE.md', 'README.md', 'diorama.config.json', '.gitignore'] as const;
+/** Allowed keys in diorama.config.json. */
+export const ALLOWED_CONFIG_KEYS = ['outDir', 'scale', 'format', 'cols', 'gap'] as const;
 
 /** A sheet longer than this many lines of code (comments and blank lines aside) is not thin. */
 export const THIN_SHEET_LINES = 20;
@@ -117,6 +119,23 @@ export function checkLayout(projectDir: string, name: string): LayoutReport {
     error('root', what, `${what} is not allowed at the project root, which holds only src/, sheets/, assets/, review/, STYLE.md, README.md, diorama.config.json and .gitignore: ${where}.`);
   }
 
+  const configPath = join(projectDir, 'diorama.config.json');
+  if (existsSync(configPath) && !isDir(configPath)) {
+    try {
+      const config = JSON.parse(readFileSync(configPath, 'utf8'));
+      if (!config || typeof config !== 'object' || Array.isArray(config)) {
+        error('config', 'diorama.config.json', `diorama.config.json must be a JSON object (allowed keys: ${ALLOWED_CONFIG_KEYS.join(', ')}).`);
+      } else {
+        const unknownKeys = Object.keys(config).filter(k => !(ALLOWED_CONFIG_KEYS as readonly string[]).includes(k));
+        if (unknownKeys.length > 0) {
+          error('config', 'diorama.config.json', `diorama.config.json has unknown keys: ${unknownKeys.join(', ')}. Allowed: ${ALLOWED_CONFIG_KEYS.join(', ')}.`);
+        }
+      }
+    } catch {
+      error('config', 'diorama.config.json', `diorama.config.json is not valid JSON (allowed keys: ${ALLOWED_CONFIG_KEYS.join(', ')}).`);
+    }
+  }
+
   // Rules 2 and 6: no underscore prefixes, kebab-case names, in src/ and sheets/.
   const named = new Set<string>();
   for (const place of [LAYOUT.src, LAYOUT.sheets] as const) {
@@ -125,6 +144,7 @@ export function checkLayout(projectDir: string, name: string): LayoutReport {
       const parts = rel.split('/');
       parts.forEach((part, i) => {
         const isFile = i === parts.length - 1;
+        if (place === LAYOUT.src && isFile && part.endsWith('.md')) return;
         const stem = isFile ? part.replace(/\..*$/, '') : part;
         const path = `${place}/${parts.slice(0, i + 1).join('/')}${isFile ? '' : '/'}`;
         // A folder is reported once, however many files it holds.
