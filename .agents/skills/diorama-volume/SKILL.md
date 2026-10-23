@@ -47,7 +47,7 @@ Worked examples (read-only, for technique: an exception to project isolation, li
 4. **Attach** secondary parts with `{ on: part }`. Things that stand on the ground next to the object (a candle at its foot, a rock) are separate objects. Add decals and textures last.
 5. **Check** (below), then polish and repeat.
 
-Scenery, effects and icons are kits: a folder of `src/` with a `catalog.ts` (what editors read), an `index.ts` (what other code imports) and its pieces and helpers as plain files (`src/scenery/`, `src/vfx/`, `src/items/`; the gear kit, `src/gear/`, is the same shape). A generator writes one sheet per catalog entry into `sheets/scenery/`, `sheets/vfx/` and `sheets/icons/` (`scenery-items`, `vfx-items`, `item-icons`), and you export those folders; a generated sheet is never edited, you change the catalog and run the command with `--force`. Guides 04 to 06 cover them. For a scenery piece, test the joins with `npm run scenery-test -- <project> <piece>` before calling it done, and judge it in the viewer's Scenery tab, painted into a scene.
+Scenery, effects and icons are kits: a folder of `src/` with a `catalog.ts` (what editors read), an `index.ts` (what other code imports) and its pieces and helpers as plain files (`src/scenery/`, `src/vfx/`, `src/items/`; the gear kit, `src/gear/`, is the same shape). A project without the kit starts it with `npm run new-kit -- <project> scenery|vfx|items` (`gear` for the gear kit): it writes `catalog.ts`, `index.ts` and a first piece (a crate prop, a spark burst, a gem) that reads its materials by role and its sizes from `src/space.ts`, a block-out to replace or to make the project's own. A generator writes one sheet per catalog entry into `sheets/scenery/`, `sheets/vfx/` and `sheets/icons/` (`scenery-items`, `vfx-items`, `item-icons`), and you export those folders; a generated sheet is never edited, you change the catalog and run the command with `--force`. Guides 04 to 06 cover them. For a scenery piece, test the joins with `npm run scenery-test -- <project> <piece>` before calling it done, and judge it in the viewer's Scenery tab, painted into a scene.
 
 ## Rejection rules
 
@@ -60,8 +60,8 @@ Reject or rewrite volume code that:
 - Adds the parts of one physical thing with separate `stage.add` calls (they then sort as separate objects). Group them with `stage.object()`.
 - Mirrors one direction to produce another for an asymmetric object.
 - Stretches heights by hand to compensate for the camera (`heightBoost` already does).
-- Writes raw colors or stroke settings. Materials are `VOLUMES.*` (add a key to `VOLUMES` for a new material); decals use `SHAPE_STYLES.*` or small style objects built only from theme tokens (`{ fill: RAMPS.accent.base }`).
-- Uses `Math.random` or time. Variation comes from `createRng(seed)` per part.
+- Writes raw colors or stroke settings. Materials are `VOLUMES.*` (add a key to `VOLUMES` for a new material); decals use `SHAPE_STYLES.*` or small style objects built only from theme tokens (`{ fill: RAMPS.accent.base }`). `npm run check` reports raw `#hex`, `rgb()` and `hsl()` literals outside `src/theme.ts`.
+- Uses `Math.random` or time. Variation comes from `createRng(seed)` per part. `npm run check` reports `Math.random`, `Date` and `performance.now` with the file and line.
 - Calls shape booleans (`union`, `subtract`, `intersect`) per part per frame, or anything that makes a cell cost more than about 30 ms.
 - Puts a one-sided part (nasal bar, chest bib, front panel) `on` a body without checking `cam.faces`, so it shows through when the body turns.
 - Stops at the mannequin stage: egg heads, pin limbs, one blob for a body, no secondary or tertiary detail (see the quality bar).

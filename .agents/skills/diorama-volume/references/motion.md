@@ -8,7 +8,7 @@ Applies to any asset with `frames > 1`: props (chests, doors, levers, flames, ba
 - Every periodic motion must complete a whole number of cycles per loop (a flame flicker of 2 cycles and a bob of 1 both close the loop).
 - Typical counts: idle 6–12 frames, walk 8, run 6–8, dash 4–6, attacks 6–12 (*convention*). Derive 6- and 4-frame walks from 8 by skipping frames so contacts are kept. Source: <https://opengameart.org/forumtopic/lpc-walk-cycle-with-varying-speed>
 - Playback speed is **fps = frames ÷ seconds**, independent of the game's frame rate. Hand-timed clips (idles, emotes, hits) read well at 8–12 fps. Locomotion plays at frames × cadence, usually 12–20 fps (a humanoid walk at 8 frames is about 12 fps, a run about 16). Fast strikes may reach 24–30 fps: their few strike frames are what sell the speed. Choose frames from these targets, never the other way round (*convention*).
-- Determinism: no `Math.random`, no wall-clock time. Simulations (hair, cloth, chains) step at a fixed rate from an identical start, with a pre-roll so they have settled by frame 0. Source: <https://gafferongames.com/post/fix_your_timestep/>
+- Determinism: no `Math.random`, no wall-clock time (`npm run check` reports both). Simulations (hair, cloth, chains) step at a fixed rate from an identical start, with a pre-roll so they have settled by frame 0. Source: <https://gafferongames.com/post/fix_your_timestep/>
 
 ## Strong moves: anticipation, strike, hold, settle
 
