@@ -1,5 +1,5 @@
 /**
- * Malvek Corvoluz, the Soul Shepherd.
+ * Malvek Ravenlight, the Soul Shepherd.
  *
  * A tall, gaunt necromancer who herds lost souls. His head is a bare skull wreathed
  * in soul fire, the same fire he holds in his left palm. He wears a long split coat
@@ -532,7 +532,7 @@ export function drawNecromancer(ctx: CanvasRenderingContext2D, t = 0) {
 }
 
 /**
- * Malvek Corvoluz, the Soul Shepherd: static portrait (rest pose of the idle loop).
+ * Malvek Ravenlight, the Soul Shepherd: static portrait (rest pose of the idle loop).
  */
 export const portrait = defineAsset({
   ...NECROMANCER_SIZE,
@@ -543,7 +543,7 @@ export const portrait = defineAsset({
 });
 
 /**
- * Malvek Corvoluz, idle loop: head fire flickers, palm flame pulses, the lantern
+ * Malvek Ravenlight, idle loop: head fire flickers, palm flame pulses, the lantern
  * swings and the lost souls float. One second at 10 fps.
  */
 export const idle = defineAsset({

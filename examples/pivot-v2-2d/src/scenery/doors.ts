@@ -185,7 +185,7 @@ export const CRYPT_DOOR_CLIPS = {
 } as const satisfies Record<string, PieceClip>;
 
 /** What the crypt door shows in its sheet: one look, dark wood with the ward. */
-export const CRYPT_DOOR_LOOKS = ['Madeira escura com ferragens e runa'] as const;
+export const CRYPT_DOOR_LOOKS = ['Dark wood with ironwork and a rune'] as const;
 
 /** Cell and pivot of the crypt door's sheets: the wall's height above the pivot and the leaf's reach (24 in front, up to the sill's step) around it. */
 export const CRYPT_DOOR_CELL = { width: 112, height: 148, pivot: { x: 56, y: 116 } };
@@ -385,7 +385,7 @@ export function darkDoorway(object: StageObject, g: Frame3, o: { f: number; s0: 
 // ----------------------------------------------------------------------------------------------
 
 /** What the archway looks like in its sheet: one look, a pointed arch with the ward on its cap. */
-export const CRYPT_ARCHWAY_LOOKS = ['Arco ogival com runa na chave'] as const;
+export const CRYPT_ARCHWAY_LOOKS = ['Pointed arch with a rune on the keystone'] as const;
 
 /** Cell and pivot of the archway's sheet: the crypt door's (the same wall height above the pivot, the same width). */
 export const CRYPT_ARCHWAY_CELL = { width: 96, height: 148, pivot: { x: 48, y: 116 } };

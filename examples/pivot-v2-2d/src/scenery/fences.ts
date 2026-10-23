@@ -57,11 +57,11 @@ export const FENCE = {
 } as const;
 
 /** What each variant of the iron fence looks like, in variant order (the catalog's `variantLabels`). */
-export const IRON_FENCE_LOOKS = ['Íntegra, com runa', 'Barras tortas e uma faltando', 'Íntegra, lisa', 'Uma barra torta'] as const;
+export const IRON_FENCE_LOOKS = ['Intact, with a rune', 'Bent bars and one missing', 'Intact, plain', 'One bent bar'] as const;
 /** What each variant of the iron gate looks like. */
-export const IRON_GATE_LOOKS = ['Ferro e pedra, lanterna de fogo-fátuo'] as const;
+export const IRON_GATE_LOOKS = ["Iron and stone, will-o'-wisp lantern"] as const;
 /** What each variant of the wooden fence looks like. */
-export const WOOD_FENCE_LOOKS = ['Estacas inteiras, com runa', 'Estacas quebradas e uma faltando', 'Estacas irregulares, sem runa'] as const;
+export const WOOD_FENCE_LOOKS = ['Whole stakes, with a rune', 'Broken stakes and one missing', 'Uneven stakes, no rune'] as const;
 
 type Run = { axis: 'x' | 'y'; sign: 1 | -1; from: number; to: number; pitch: number };
 

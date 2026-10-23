@@ -1,5 +1,5 @@
 /**
- * Malvek Corvoluz, the Soul Shepherd, as outfit data: the second outfit on the humanoid skeleton,
+ * Malvek Ravenlight, the Soul Shepherd, as outfit data: the second outfit on the humanoid skeleton,
  * dressed entirely from the gear kit. Where the guard is an armored skeleton warrior, Malvek is a
  * tall, gaunt necromancer: a bare skull wreathed in soul fire, a long split coat in dusk purple
  * with a high collar and a torn hem, a bone rib cage worn over it as a breastplate, skull pauldrons,

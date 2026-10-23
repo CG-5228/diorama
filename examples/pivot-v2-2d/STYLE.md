@@ -30,7 +30,7 @@ Theme first: `src/theme.ts` is the source of truth. This file summarizes it and 
 | Character (standing, to the top of the head) | 80 tall (`humanoid()`) |
 | Space profile (`src/space.ts`, `SPACE`) | `defineSpace({ camera: CAMERA, preset: 'jrpg', character: 80 })`: `scale` { character 80 (64 px on screen), cell 48, wall 100 (80 px), door 92 (74 px), fence 44 (35 px) }, walls on cell borders. Every size below follows from it; pieces and scenes read `SPACE`, they never type a wall, door, fence or cell size |
 | Ossuary guard (`characters/guard`) | 80 tall, horns to about 92; cell 108 × 162, pivot (54, 124) (room above for the jump's arc, below for the face-down death and the Soul Cleave shockwave) |
-| Malvek Corvoluz (`characters/malvek`) | 92 tall (`humanoid()` at 1.12 with legs 6% and arms 10% longer, hips and shoulders narrower), skull to about 87, fire crown to about 105; the scythe is 111 long and its head rises to about 114; cell 208 × 224, pivot (104, 148) (room above for the reap's sweep of more than 200°, to the sides for the scythe flung in the death, and 61 px below the pivot for the scythe lying on the floor) |
+| Malvek Ravenlight (`characters/malvek`) | 92 tall (`humanoid()` at 1.12 with legs 6% and arms 10% longer, hips and shoulders narrower), skull to about 87, fire crown to about 105; the scythe is 111 long and its head rises to about 114; cell 208 × 224, pivot (104, 148) (room above for the reap's sweep of more than 200°, to the sides for the scythe flung in the death, and 61 px below the pivot for the scythe lying on the floor) |
 | Ossuary captain (`characters/captain`) | 80 tall like the guard (same skeleton and clips), crested helm to about 79, horsehair plume to about 85; sword 32 long (the guard's is 24); cell 108 × 162, pivot (54, 124), the guard's, since the longer blade and the plume fit its room |
 | Ghoul wolf (`characters/wolf`) | 37 tall at the head, about 60 long; cell 112 × 96, pivot (56, 72) |
 | Bone spider (`characters/spider`) | leg span about 54, body about 30 tall; cell 128 × 112, pivot (64, 82); its `mouth` socket is about 6 high at the spit's `release` (11 to 19 while the head is up), where its `soul-spit` starts |
@@ -95,11 +95,11 @@ An effect is light and colour: a saturated core (the `glow` role, `VOLUMES.soul`
 
 | Tier | Label | Token | Atlas colour |
 | :--- | :--- | :--- | :--- |
-| common | Comum | `PALETTES.ironLit` (iron grey) | `#8a8799` |
-| uncommon | Incomum | `PALETTES.bone` | `#cdbf9d` |
-| rare | Raro | `PALETTES.steelBlue` | `#6a92bd` |
-| epic | Épico | `PALETTES.violet` (dusk violet), gem in the corner | `#9672cc` |
-| legendary | Lendário | `PALETTES.soul` (soul green), gem with a halo | `#5cf0c4` |
+| common | Common | `PALETTES.ironLit` (iron grey) | `#8a8799` |
+| uncommon | Uncommon | `PALETTES.bone` | `#cdbf9d` |
+| rare | Rare | `PALETTES.steelBlue` | `#6a92bd` |
+| epic | Epic | `PALETTES.violet` (dusk violet), gem in the corner | `#9672cc` |
+| legendary | Legendary | `PALETTES.soul` (soul green), gem with a halo | `#5cf0c4` |
 
 - **Gear items** (`gear.ts`, 12): parts of the gear kit drawn as a character wears them with the body hidden, through `loot.ts`'s characters (the bodies parts rest on drawn dark and hollow, so a helm shows its inside and two soul eyes; the scythe held along a diagonal with its lantern hung in the clear). `facing` picks the view. `gear.hosts: 'hide'` and `spin` were compared and not kept for these (a hidden skull leaves a floating shell and loses the eyes; `spin` leaves the lantern small and the blade edge-on).
 - **Pieces of their own** (`amulet.ts`, `armor.ts`, `cloth.ts`, `coin.ts`, `flask.ts`, `keys.ts`, `scroll.ts`, `shard.ts`, `tome.ts`, `worn.ts`; 19): built from `@core/volume` parts at a design size and fitted to the square, so only proportions show (a flask is 15 tall, a key 17 long, a coin 9 across: two to four times life size; a belt 11 across, a greave 16 long, a bracer 8 long, a shield a 16 across buckler). The ones that stand for a part of the gear kit (round shield, greave, bracer, leg wraps, belt, skull buckle, pouch, tunic, tabard, high collar, baldric) also carry `gear: { part }`: the piece draws the icon, the part says what it equips, and the atlas carries `gear` and, where the part has an equipment slot, `equip` (shield, greave, bracer, greave for the wraps, belt).

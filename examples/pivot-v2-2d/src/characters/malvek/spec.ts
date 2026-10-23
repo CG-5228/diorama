@@ -1,5 +1,5 @@
 /**
- * Malvek Corvoluz's rig: everything about the character except what he wears (the outfit is
+ * Malvek Ravenlight's rig: everything about the character except what he wears (the outfit is
  * `outfit.ts`): the gaunt `humanoid()` skeleton (`skeleton.ts`), the clips with their frame
  * counts, the camera, the cell, the pivot, the shadow and the sockets. `character.ts` defines the
  * exportable character from it and the gear catalog (`../../gear/catalog.ts`) lists it in

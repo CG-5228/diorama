@@ -35,7 +35,7 @@ import { SPACE } from '../space';
 import { blob, boxAt, castShadow, groundPatch, mixTone, role, runeShape, soulMark, tone, worldFrame } from './util';
 
 /** What each variant of the crypt wall looks like, in variant order (the catalog's `variantLabels`). */
-export const WALL_LOOKS = ['Íntegro, com runa', 'Bloco caído e rachaduras', 'Íntegro, liso', 'Musgo, bloco lascado e rachaduras'] as const;
+export const WALL_LOOKS = ['Intact, with a rune', 'Fallen block and cracks', 'Intact, plain', 'Moss, chipped block and cracks'] as const;
 
 /**
  * Plan sizes in world units (1 unit = 1 logical px, as the rest of the project). The plan follows the profile's cell: a wall

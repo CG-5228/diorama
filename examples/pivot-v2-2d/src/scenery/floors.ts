@@ -24,10 +24,10 @@ import { blob, castShadow, floorTile, hairline, mixTone, role, type Tile } from 
 
 /** What each floor's variants look like, in variant order (the catalog's `variantLabels`). */
 export const FLOOR_LOOKS = {
-  dirt: ['Lisa', 'Com raízes', 'Rachada', 'Pedregosa', 'Revolvida'],
-  flags: ['Laje inteira', 'Laje rachada', 'Laje partida', 'Laje gasta', 'Laje grande', 'Laje úmida'],
-  moss: ['Musgo denso', 'Capim seco', 'Musgo manchado', 'Musgo ralo', 'Tufos esparsos'],
-  gravel: ['Cascalho fino', 'Osso longo', 'Cascalho claro', 'Fragmento de osso', 'Cascalho grosso'],
+  dirt: ['Smooth', 'With roots', 'Cracked', 'Stony', 'Churned'],
+  flags: ['Whole slab', 'Cracked slab', 'Broken slab', 'Worn slab', 'Large slab', 'Damp slab'],
+  moss: ['Dense moss', 'Dry grass', 'Patchy moss', 'Thin moss', 'Scattered tufts'],
+  gravel: ['Fine gravel', 'Long bone', 'Pale gravel', 'Bone fragment', 'Coarse gravel'],
 } as const;
 
 /** Number of looks of each floor (frames per mask). */

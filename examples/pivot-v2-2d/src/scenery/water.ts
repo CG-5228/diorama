@@ -17,7 +17,7 @@ import type { ScenePiece } from '@core/volume';
 import { castShadow, floorTile, hairline, mixTone, role, type Tile } from './util';
 
 /** What each variant looks like, in variant order (the catalog's `variantLabels`). */
-export const WATER_LOOKS = ['Lisa e parada', 'Ondas finas', 'Brilhos de alma', 'Reflexo pálido', 'Funda e escura', 'Turva, com lodo'] as const;
+export const WATER_LOOKS = ['Smooth and still', 'Fine ripples', 'Soul glints', 'Pale reflection', 'Deep and dark', 'Murky, with silt'] as const;
 
 /** Number of looks (frames per mask). */
 export const WATER_VARIANTS = WATER_LOOKS.length;

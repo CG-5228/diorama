@@ -1,5 +1,5 @@
 /**
- * Malvek Corvoluz, the Soul Shepherd (a gaunt `humanoid()` skeleton, see `skeleton.ts`). Every clip
+ * Malvek Ravenlight, the Soul Shepherd (a gaunt `humanoid()` skeleton, see `skeleton.ts`). Every clip
  * sheet (`sheets/characters/malvek/<clip>.ts`) is one line, `export default character.sheet('<key>')`; this
  * file declares the character once.
  *

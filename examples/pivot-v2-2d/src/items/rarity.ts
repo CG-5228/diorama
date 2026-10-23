@@ -14,13 +14,13 @@ import { Polygon, StrokeStyle, alpha, lerpColor } from '@core/draw';
 import type { IconBox, ItemInfo, Rarity } from '@core/rig';
 import { PALETTES, STROKES } from '../theme';
 
-/** The tiers, from the plainest up. Labels are the game's UI copy (pt-BR). */
+/** The tiers, from the plainest up. Labels are the game's UI copy. */
 export const RARITIES: Record<string, Rarity> = {
-  common: { label: 'Comum', color: PALETTES.ironLit },
-  uncommon: { label: 'Incomum', color: PALETTES.bone },
-  rare: { label: 'Raro', color: PALETTES.steelBlue },
-  epic: { label: 'Épico', color: PALETTES.violet },
-  legendary: { label: 'Lendário', color: PALETTES.soul },
+  common: { label: 'Common', color: PALETTES.ironLit },
+  uncommon: { label: 'Uncommon', color: PALETTES.bone },
+  rare: { label: 'Rare', color: PALETTES.steelBlue },
+  epic: { label: 'Epic', color: PALETTES.violet },
+  legendary: { label: 'Legendary', color: PALETTES.soul },
 };
 
 /** The tiers that carry a gem in the frame's corner. */
