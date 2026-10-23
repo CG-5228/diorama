@@ -313,8 +313,11 @@ export interface ClipWields {
   off?: string[];
 }
 
-/** Options of `defineCharacter`. */
-export interface CharacterOptions extends Omit<CharacterAssetOptions, 'clip' | 'frames' | 'character' | 'key' | 'skin'> {
+/**
+ * Options of `defineCharacter`. `K` is the union of the keys of `clips`; `defineCharacter` infers it
+ * from the object literal, so `CharacterOptions` alone (`K` = `string`) is every character's options.
+ */
+export interface CharacterOptions<K extends string = string> extends Omit<CharacterAssetOptions, 'clip' | 'frames' | 'character' | 'key' | 'skin'> {
   /** Character name for players and the viewer (e.g. 'ossuary-guard'). */
   name: string;
   /** How the character is drawn; with `outfit` and no skin, `outfitFromData(outfit.data, outfit.catalog)`. */
@@ -327,9 +330,11 @@ export interface CharacterOptions extends Omit<CharacterAssetOptions, 'clip' | '
   outfit?: { data: OutfitData; catalog: GearCatalog };
   /**
    * Every clip, by key. The key is the clip file's name: `characters/<name>/<key>.ts` exports
-   * `character.sheet('<key>')`. Lowercase letters, digits and dashes.
+   * `character.sheet('<key>')`. Lowercase letters, digits and dashes. `defineCharacter` takes the keys
+   * from the object passed (a literal, or a value whose type keeps its key names), and
+   * `character.sheet` accepts only those.
    */
-  clips: Record<string, CharacterClip>;
+  clips: Record<K, CharacterClip>;
   /** Frames of a clip that does not set its own. Default 8. */
   frames?: number;
   /** Override default bindings (see `CharacterManifest.controls`). */
@@ -338,30 +343,46 @@ export interface CharacterOptions extends Omit<CharacterAssetOptions, 'clip' | '
   effects?: Record<string, EffectCue[]>;
 }
 
-/** A defined character: its manifest and one exportable sheet per clip. */
-export interface Character {
+/**
+ * A defined character: its manifest and one exportable sheet per clip. `K` is the union of its clip
+ * keys (`'idle' | 'walk'`...); `Character` alone, with `K` = `string`, is any character.
+ */
+export interface Character<K extends string = string> {
   manifest: CharacterManifest;
-  /** The sheet of one clip: `export default character.sheet('walk')` in `<name>/walk.ts`. */
-  sheet(key: string): AssetDefinition;
+  /**
+   * The sheet of one clip: `export default character.sheet('walk')` in `<name>/walk.ts`. A key the
+   * character does not declare in `clips` is a type error there, and throws if it gets past the types.
+   */
+  sheet(key: K): AssetDefinition;
 }
+
+/**
+ * The clip keys of a character, as a union: `ClipKey<typeof character>` is `'idle' | 'walk'` for a
+ * character with those two clips, and `string` when its clips do not keep their key names
+ * (`Object.fromEntries`, a `Record<string, ...>`): then any key type-checks.
+ */
+export type ClipKey<C extends Character> = C extends Character<infer K> ? K : never;
 
 /**
  * Declares a character once: skeleton, skin, camera, cell, pivot, sockets and every clip. Each
  * clip file is one line, `export default character.sheet('<key>')`, and every exported sheet
  * carries the full manifest, so players never guess what a sheet is from its file name.
+ * The clip keys are inferred from `clips`: a sheet file that names a clip the character does not
+ * declare fails to type-check (see `ClipKey`).
  * Throws on a bad key; collects softer problems (no idle, events naming unknown sockets) in
  * `manifest.warnings`, which `npm run inspect` prints.
  */
-export function defineCharacter(o: CharacterOptions): Character {
-  const keys = Object.keys(o.clips);
+export function defineCharacter<K extends string = string>(o: CharacterOptions<K>): Character<K> {
+  const clipsIn: Record<string, CharacterClip> = o.clips;
+  const keys = Object.keys(clipsIn);
   if (keys.length === 0) throw new Error(`character "${o.name}": no clips`);
   for (const k of keys) if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(k)) throw new Error(`character "${o.name}": clip key "${k}" must be lowercase letters, digits and dashes (it is the file name)`);
   const skin = o.skin ?? (o.outfit ? outfitFromData(o.outfit.data, o.outfit.catalog) : undefined);
   if (!skin) throw new Error(`character "${o.name}": give it a skin or an outfit`);
-  const wield = o.outfit ? checkWield(o.clips, o.outfit.data, o.outfit.catalog) : undefined;
+  const wield = o.outfit ? checkWield(clipsIn, o.outfit.data, o.outfit.catalog) : undefined;
   const socketFns = { ...o.sockets, ...(o.outfit ? weaponSockets(o.outfit.data, o.outfit.catalog, o.skeleton) : {}) };
   const entries = keys.map(key => {
-    const c = o.clips[key];
+    const c = clipsIn[key];
     const clip = 'drive' in c ? c : c.clip;
     const frames = ('drive' in c ? undefined : c.frames) ?? o.frames ?? 8;
     if (!(frames >= 1)) throw new Error(`character "${o.name}": clip "${key}" needs at least 1 frame`);
@@ -433,7 +454,7 @@ export function defineCharacter(o: CharacterOptions): Character {
   const { name: _name, clips: _clips, frames: _frames, controls: _controls, effects: _effects, outfit: _outfit, skin: _skin, sockets: _sockets, ...shared } = o;
   return {
     manifest,
-    sheet(key: string): AssetDefinition {
+    sheet(key: K): AssetDefinition {
       const e = entries.find(x => x.key === key);
       if (!e) throw new Error(`character "${o.name}" has no clip "${key}" (clips: ${keys.join(', ')})`);
       return defineCharacterAsset({ ...shared, skin, sockets: socketFns, clip: e.clip, frames: e.frames, character: manifest, key });

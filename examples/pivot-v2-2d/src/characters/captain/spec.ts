@@ -24,7 +24,7 @@ const skeleton = humanoid();
 // checked by `inspect` against the cell's edges).
 const PIVOT = { x: 54, y: 124 };
 
-export const CAPTAIN_RIG: Omit<OutfitCharacterInfo, 'id' | 'label' | 'outfit'> = {
+export const CAPTAIN_RIG = {
   skeleton,
   camera: CAMERA,
   width: 108,
@@ -42,4 +42,4 @@ export const CAPTAIN_RIG: Omit<OutfitCharacterInfo, 'id' | 'label' | 'outfit'> =
     hit: { clip: humanoidHit(skeleton), frames: 10 },
     death: { clip: humanoidDeath(skeleton), frames: 12 },
   },
-};
+} satisfies Omit<OutfitCharacterInfo, 'id' | 'label' | 'outfit'>;

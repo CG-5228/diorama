@@ -101,6 +101,7 @@ Procedural characters and creatures for `@core/volume`: skeletons as data (human
   - [`ClipCheck`](#clipcheck)
   - [`Character`](#character)
   - [`CharacterOptions`](#characteroptions)
+  - [`ClipKey`](#clipkey)
   - [`CharacterClip`](#characterclip)
   - [`ClipWields`](#clipwields)
   - [`CharacterManifest`](#charactermanifest)
@@ -582,11 +583,13 @@ function checkClip(skeleton: SkeletonSpec, clip: Clip, samples?: number): ClipCh
 Declares a character once: skeleton, skin, camera, cell, pivot, sockets and every clip. Each
 clip file is one line, `export default character.sheet('<key>')`, and every exported sheet
 carries the full manifest, so players never guess what a sheet is from its file name.
+The clip keys are inferred from `clips`: a sheet file that names a clip the character does not
+declare fails to type-check (see `ClipKey`).
 Throws on a bad key; collects softer problems (no idle, events naming unknown sockets) in
 `manifest.warnings`, which `npm run inspect` prints.
 
 ```ts
-function defineCharacter(o: CharacterOptions): Character
+function defineCharacter<K extends string = string>(o: CharacterOptions<K>): Character<K>
 ```
 
 ---
@@ -1365,30 +1368,32 @@ interface ClipCheck {
 
 ### `Character`
 
-A defined character: its manifest and one exportable sheet per clip.
+A defined character: its manifest and one exportable sheet per clip. `K` is the union of its clip
+keys (`'idle' | 'walk'`...); `Character` alone, with `K` = `string`, is any character.
 
 ```ts
-interface Character {
+interface Character<K extends string = string> {
   manifest: CharacterManifest;
-  /** The sheet of one clip: `export default character.sheet('walk')` in `<name>/walk.ts`. */
-  sheet(key: string): AssetDefinition;
+  /** The sheet of one clip: `export default character.sheet('walk')` in `<name>/walk.ts`. A key the character does not declare in `clips` is a type error there, and throws if it gets past the types. */
+  sheet(key: K): AssetDefinition;
 }
 ```
 
 ### `CharacterOptions`
 
-Options of `defineCharacter`.
+Options of `defineCharacter`. `K` is the union of the keys of `clips`; `defineCharacter` infers it
+from the object literal, so `CharacterOptions` alone (`K` = `string`) is every character's options.
 
 ```ts
-interface CharacterOptions {
+interface CharacterOptions<K extends string = string> {
   /** Character name for players and the viewer (e.g. 'ossuary-guard'). */
   name: string;
   /** How the character is drawn; with `outfit` and no skin, `outfitFromData(outfit.data, outfit.catalog)`. */
   skin?: Skin;
   /** The outfit it wears, as data. With it the character holds what the outfit holds: the held items' sockets (a blade's `tip`) replace sockets of the same name, the clips made for something else are marked unusable and left out of `controls`, and `warnings` says what does not match (`checkWield`). */
   outfit?: { data: OutfitData; catalog: GearCatalog; };
-  /** Every clip, by key. The key is the clip file's name: `characters/<name>/<key>.ts` exports `character.sheet('<key>')`. Lowercase letters, digits and dashes. */
-  clips: Record<string, CharacterClip>;
+  /** Every clip, by key. The key is the clip file's name: `characters/<name>/<key>.ts` exports `character.sheet('<key>')`. Lowercase letters, digits and dashes. `defineCharacter` takes the keys from the object passed (a literal, or a value whose type keeps its key names), and `character.sheet` accepts only those. */
+  clips: Record<K, CharacterClip>;
   /** Frames of a clip that does not set its own. Default 8. */
   frames?: number;
   /** Override default bindings (see `CharacterManifest.controls`). */
@@ -1413,6 +1418,16 @@ interface CharacterOptions {
   /** Named points exported per frame (see `defineCharacter`). `head` and `center` are always added from the skeleton. */
   sockets?: Record<string, SocketFn>;
 }
+```
+
+### `ClipKey`
+
+The clip keys of a character, as a union: `ClipKey<typeof character>` is `'idle' | 'walk'` for a
+character with those two clips, and `string` when its clips do not keep their key names
+(`Object.fromEntries`, a `Record<string, ...>`): then any key type-checks.
+
+```ts
+type ClipKey<C extends Character> = C extends Character<infer K extends string> ? K : never
 ```
 
 ### `CharacterClip`

@@ -36,7 +36,7 @@ const skeleton = humanoid();
 // below the pivot (the camera tilt shortens depth to 0.74).
 const PIVOT = { x: 54, y: 124 };
 
-export const GUARD_RIG: Omit<OutfitCharacterInfo, 'id' | 'label' | 'outfit'> = {
+export const GUARD_RIG = {
   skeleton,
   camera: CAMERA,
   width: 108,
@@ -65,4 +65,4 @@ export const GUARD_RIG: Omit<OutfitCharacterInfo, 'id' | 'label' | 'outfit'> = {
     backstep: { clip: guardDodge(skeleton, 'backstep'), frames: 10 },
     jump: { clip: guardJump(skeleton, { distance: 0.4 * skeleton.height, seconds: 0.75, frames: 12 }), frames: 12 },
   },
-};
+} satisfies Omit<OutfitCharacterInfo, 'id' | 'label' | 'outfit'>;

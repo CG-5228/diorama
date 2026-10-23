@@ -27,6 +27,7 @@ export {
   along,
   type Character,
   type CharacterOptions,
+  type ClipKey,
   type CharacterClip,
   type ClipWields,
   type CharacterManifest,

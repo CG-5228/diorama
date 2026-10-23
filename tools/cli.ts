@@ -12,8 +12,13 @@
  *     volume: src/<subpath>.ts (the drawing, a named export) and sheets/<subpath>.ts (its one-line re-export).
  *     rig: <subpath> is <character-folder>/<clip>. The first clip creates src/<character-folder>/character.ts
  *     (defineCharacter); --skeleton, --size, --frames and --directions apply to that first clip only.
+ *   npm run new-kit -- <project> scenery|gear|vfx|items [--force] [--json]
+ *     src/<kit>/catalog.ts, src/<kit>/index.ts and a first piece in a family file (tools/kits.ts), for the kit's
+ *     generator command (scenery-items, gear-items, vfx-items, item-icons).
  *   npm run list -- [project] [--json]
  *   npm run check -- <project> [--strict] [--json]
+ *     the type check of src/ and sheets/ (tools/typecheck.ts), the layout rules (tools/layout.ts) and the
+ *     determinism lint (tools/lint.ts).
  *   npm run layout -- <project> [--strict] [--json]
  *   npm run inspect -- <file.png> [--json]
  *   npm run contact -- <file.png> [--with <b.png>] [--rows W,SW] [--frames 0-3] [--zoom N] [--bg 6e6a64] [--gray]
@@ -34,8 +39,11 @@ import { basename, dirname, extname, join, relative, resolve, sep } from 'node:p
 import { pathToFileURL } from 'node:url';
 import { deflateSync, inflateSync } from 'node:zlib';
 import pc from 'picocolors';
+import { FIRST_PIECE, KIT_KINDS, kitFiles, readKitTheme, type KitKind, type KitTheme } from './kits.js';
 import { checkLayout, type LayoutReport } from './layout.js';
+import { lintProject, type LintIssue } from './lint.js';
 import { GENERATED_SHEETS, LAYOUT, REVIEW, availableProjects, findProject, generatedHeader, listProjects, listSheets, walkFiles, type ProjectRef } from './project.js';
+import { typeCheckProject } from './typecheck.js';
 
 const ROOT = resolve(process.cwd());
 const PROJECTS = resolve(ROOT, 'projects');
@@ -160,6 +168,7 @@ async function newProject(positionals: string[], flags: Record<string, string | 
     console.log(`     STYLE.md is optional: --style adds it only when the project is created. Later, copy templates/optional/STYLE.md to projects/${name}/STYLE.md and put the name in its title.`);
   }
   console.log(`  2. npm run new-asset -- ${name} <subpath> --engine volume|rig`);
+  console.log(`  3. npm run new-kit -- ${name} scenery|gear|vfx|items, for the first scenery piece, gear part, effect or item`);
 }
 
 /**
@@ -399,7 +408,7 @@ function newAsset(positionals: string[], flags: Record<string, string | true>): 
       const existing = /const\s+skeleton\s*=\s*(\w+)\(/.exec(readFileSync(codeFile, 'utf8'))?.[1];
       if (existing && existing in RIG_SKELETONS) rig.skeleton = existing as RigSkeleton;
       const c = rigClipCall(rig);
-      addToCharacter = `Add the clip to \`clips\` in ${repoPath(codeFile)}: '${key}': ${c.call} (import ${c.import} from '@core/rig'). --skeleton, --size, --frames and --directions are ignored: the character already sets them.`;
+      addToCharacter = `Add the clip to \`clips\` in ${repoPath(codeFile)}: '${key}': ${c.call} (import ${c.import} from '@core/rig'). Until it is there, the sheet's character.sheet('${key}') is a type error: npm run check reports it and the export stops on it. --skeleton, --size, --frames and --directions are ignored: the character already sets them.`;
     }
     writeFileSync(sheetFile, rigSheetSource(rig, importPath(sheetFile, codeFile), `src/${dirname(subpath)}/character.ts`), 'utf8');
   } else {
@@ -418,6 +427,60 @@ function newAsset(positionals: string[], flags: Record<string, string | true>): 
   if (addToCharacter) console.log(pc.yellow(addToCharacter));
   if (rig && !addToCharacter) console.log('The skin is a mannequin block-out: replace it with the project skin (diorama-rig skill) before it ships.');
   console.log(`Export it with: npm run export -- ${project.name} ${subpath}`);
+}
+
+// ---------------------------------------------------------------------------
+// new-kit: src/<kit>/catalog.ts, index.ts and a first piece (tools/kits.ts), for the kit's generator command.
+// ---------------------------------------------------------------------------
+
+async function newKit(positionals: string[], flags: Record<string, string | true>): Promise<void> {
+  const [projectName, kind] = positionals;
+  const project = requireProject(projectName);
+  if (!kind || !(KIT_KINDS as readonly string[]).includes(kind)) {
+    fail(`the kit must be ${orList(KIT_KINDS)}${kind ? `, got "${kind}"` : ''}.`, 'npm run new-kit -- <project> scenery|gear|vfx|items [--force]');
+  }
+  const kit = kind as KitKind;
+  const [folder, generated] = Object.entries(GENERATED_SHEETS).find(([, g]) => g.kit === kit)!;
+  const kitDir = resolve(project.dir, LAYOUT.src, kit);
+  let theme: KitTheme;
+  try {
+    theme = await readKitTheme(project.dir);
+  } catch (err) {
+    fail(`${project.rel}: ${(err as Error).message}`);
+  }
+  const files = kitFiles(kit, project.name, theme);
+  // A kit is there when any file new-kit would write is: refuse unless --force, before writing anything.
+  const existing = files.map(f => resolve(kitDir, f.name)).filter(existsSync);
+  if (existing.length && !flags['force']) {
+    fail(`${project.rel}/src/${kit}/ already has a kit: ${existing.map(f => basename(f)).join(', ')}. Nothing was changed.`, `Pass --force to replace these files (the kit's other files stay), or add the next piece by hand: its drawing in a family file, its entry in src/${kit}/catalog.ts.`);
+  }
+  mkdirSync(kitDir, { recursive: true });
+  const written: string[] = [];
+  for (const file of files) {
+    const target = resolve(kitDir, file.name);
+    writeFileSync(target, file.content, 'utf8');
+    written.push(repoPath(target));
+  }
+  // Sheets generated from the catalog that was replaced may name pieces the new one lacks.
+  const stale = existing.length ? listSheets(project.dir).filter(s => s.startsWith(`${folder}/`)) : [];
+  const first = FIRST_PIECE[kit];
+  const next = [
+    `npm run ${generated.command} -- ${project.name}`,
+    `npm run export -- ${project.name} ${folder}/`,
+    `npm run check -- ${project.name} --strict`,
+    ...(kit === 'scenery' ? [`npm run scenery-test -- ${project.name} ${first.id}`] : []),
+  ];
+  if (flags['json']) {
+    printJson({ project: project.name, kit, files: written, firstPiece: first.id, space: theme.space, next, ...(stale.length ? { staleSheets: stale.map(s => `sheets/${s}.ts`) } : {}) });
+    return;
+  }
+  console.log(pc.green(`Created the ${kit} kit of ${project.name}: ${written.join(', ')}`));
+  console.log(`  Its first piece, "${first.id}" in src/${kit}/${first.family}, is a block-out drawn with the theme's materials: make it the project's own.`);
+  if ((kit === 'scenery' || kit === 'vfx') && !theme.space) console.log(pc.yellow(`  No space profile (src/space.ts): the catalog uses the theme's camera${kit === 'scenery' ? ' and a 48 × 36 grid' : ''}. new-project --genre writes one; guide 04 §1 says how to add it by hand.`));
+  if (stale.length) console.log(pc.yellow(`  sheets/${folder}/ still has ${stale.length} sheet(s) generated from the old catalog: delete the ones whose piece is gone, then run ${generated.command} with --force.`));
+  console.log('Next:');
+  next.forEach((line, i) => console.log(`  ${i + 1}. ${line}`));
+  if (kit === 'scenery') console.log(`  A scene painted in the viewer's Scenery tab (or written as JSON) becomes source with npm run new-scene -- ${project.name} <name> --scene <file.json>.`);
 }
 
 // ---------------------------------------------------------------------------
@@ -489,30 +552,29 @@ function layout(positionals: string[], flags: Record<string, string | true>): vo
   process.exit(ok ? 0 : 1);
 }
 
+/** Prints the determinism lint (tools/lint.ts). Returns whether it passes. */
+function printLint(project: ProjectRef, issues: LintIssue[]): boolean {
+  if (issues.length === 0) {
+    console.log(pc.green(`${project.name}: deterministic (no Math.random, Date or raw colors outside src/theme.ts).`));
+    return true;
+  }
+  console.log(pc.red(`${project.name}: ${issues.length} determinism problem(s) in ${project.rel}/:`));
+  for (const issue of issues) console.log(`  ${issue.message}`);
+  return false;
+}
+
 function check(positionals: string[], flags: Record<string, string | true>): void {
   const project = requireProject(positionals[0]);
   const asJson = Boolean(flags['json']);
   const strict = Boolean(flags['strict']);
-  const tsc = resolve(ROOT, 'node_modules', 'typescript', 'bin', 'tsc');
 
-  let output = '';
-  try {
-    output = execFileSync(process.execPath, [tsc, '--noEmit', '-p', 'tsconfig.json'], {
-      cwd: ROOT,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-  } catch (err: any) {
-    output = String(err.stdout ?? '') + String(err.stderr ?? '');
-  }
-
-  const errors = output.split(/\r?\n/).filter(line => /error TS\d+/.test(line));
-  const prefix = `${project.rel}/`;
-  const projectErrors = errors.filter(line => line.replace(/\\/g, '/').startsWith(prefix));
-  const engineErrors = errors.filter(line => /^(core|tests|scripts|tools)\//.test(line.replace(/\\/g, '/')));
+  // The project's src/ and sheets/ with the repository's tsconfig (tools/typecheck.ts, the check export runs too).
+  const types = typeCheckProject(project, ROOT);
+  const { projectErrors } = types;
   const report = checkLayout(project.dir, project.name);
   const layoutOk = (strict ? report.errors.length + report.warnings.length : report.errors.length) === 0;
-  const ok = projectErrors.length === 0 && layoutOk;
+  const lint = lintProject(project.dir);
+  const ok = projectErrors.length === 0 && layoutOk && lint.length === 0;
 
   if (asJson) {
     printJson({
@@ -520,8 +582,9 @@ function check(positionals: string[], flags: Record<string, string | true>): voi
       dir: project.rel,
       ok,
       projectErrors,
-      engineErrors: engineErrors.length,
+      engineErrors: types.otherErrors.length,
       layout: { ok: layoutOk, strict, ...report },
+      lint: { ok: lint.length === 0, issues: lint },
     });
   } else {
     if (projectErrors.length === 0) console.log(pc.green(`${project.name}: no type errors.`));
@@ -529,10 +592,11 @@ function check(positionals: string[], flags: Record<string, string | true>): voi
       console.log(pc.red(`${project.name}: ${projectErrors.length} type error(s):`));
       for (const line of projectErrors) console.log(`  ${line}`);
     }
-    if (engineErrors.length > 0) {
-      console.log(pc.yellow(`Warning: the engine itself has ${engineErrors.length} type error(s) (core/tests/scripts/tools).`));
+    if (types.otherErrors.length > 0) {
+      console.log(pc.yellow(`Warning: ${types.otherErrors.length} type error(s) outside the project, in the engine files it imports (not the project's to fix): ${types.otherErrors[0]}`));
     }
     printLayout(project, report, strict);
+    printLint(project, lint);
   }
   process.exit(ok ? 0 : 1);
 }
@@ -1642,7 +1706,8 @@ export default defineSceneAsset({ catalog: SCENERY, scene: seamTestScene(SCENERY
   const png = resolve(project.dir, LAYOUT.review, folder, `${testName}.png`);
   rmSync(rendered, { force: true });
   try {
-    execFileSync(process.execPath, [resolve(ROOT, 'node_modules', 'tsx', 'dist', 'cli.mjs'), resolve(ROOT, 'tools', 'export.ts'), project.rel, `${folder}/${testName}`, '--mockup'], { cwd: ROOT, stdio: flags['json'] ? 'pipe' : ['ignore', 'ignore', 'inherit'] });
+    // A review render, never an asset: it skips the export's type check (--force), which the official export of the piece runs.
+    execFileSync(process.execPath, [resolve(ROOT, 'node_modules', 'tsx', 'dist', 'cli.mjs'), resolve(ROOT, 'tools', 'export.ts'), project.rel, `${folder}/${testName}`, '--mockup', '--force'], { cwd: ROOT, stdio: flags['json'] ? 'pipe' : ['ignore', 'ignore', 'inherit'] });
   } finally {
     if (!flags['keep']) {
       rmSync(file, { force: true });
@@ -1678,8 +1743,9 @@ const { positionals, flags } = parseFlags(rest);
 const USAGE: Record<string, string> = {
   'new-project': 'npm run new-project -- <project> [--style] [--genre <preset>] [--character <height>]\n  Creates projects/<project>/ with the layout of docs/ARCHITECTURE.md: src/theme.ts (from templates/project/: a neutral volume theme with palettes, ramps, line weights, the 2.5D CAMERA and the VOLUMES materials, to make the project\'s own), an empty sheets/ and a .gitignore for review/.\n  --genre      add src/space.ts, the space profile (grid, scale against the characters, wall placement) from a genre preset: jrpg, action-rpg, tactics, farm-sim or dungeon-crawler\n  --character  height of a standing character in world units for the profile (default 80)\n  --style      add STYLE.md (style first, or theme first with a summary). Only when the project is created: for an existing project copy templates/optional/STYLE.md to projects/<project>/STYLE.md',
   'new-asset': 'npm run new-asset -- <project> <subpath> [--engine volume|rig] [--size WxH] [--frames N] [--fps N] [--directions N] [--skeleton humanoid|quadruped] [--clip walk|run|idle|attack|hit|death]\n  <subpath>     kebab-case names joined by "/": the sheet is sheets/<subpath>.ts and the export assets/<subpath>.png. For rig it is <character-folder>/<clip>, e.g. characters/goblin/walk: the folder is the character, the file name is the clip key\n  --engine      volume (default: a prop, scenery piece or effect built from 2.5D volumes, turned to face each direction; the drawing goes in src/<subpath>.ts, exported by name, and the sheet re-exports it) or rig (an animated character clip on a @core/rig skeleton)\n  --size        logical size of one frame; the export is size × scale 2 (default 128x128; rig: 96x112 humanoid, 112x96 quadruped)\n  --frames      frames in an animation strip (default 1; rig 8)\n  --fps         playback speed hint (default 6; not for rig: the clip sets it)\n  --directions  facings rendered as rows (default 8: S, SW, W, NW, N, NE, E, SE; 4: S, W, N, E; 1 for a piece that never turns)\n  --skeleton    rig only: humanoid (default) or quadruped\n  --clip        rig only: walk, run, idle, attack, hit or death. Default: the file name when it is one of these, else walk\n  The first clip of a character creates src/<character-folder>/character.ts (defineCharacter, with a mannequin block-out skin to replace: diorama-rig skill). --skeleton, --size, --frames and --directions apply to that first clip only; a later clip prints the line to add to `clips` there.',
+  'new-kit': 'npm run new-kit -- <project> scenery|gear|vfx|items [--force] [--json]\n  Starts a kit in src/<kit>/ (docs/ARCHITECTURE.md, Kits): catalog.ts (what editors and the generator command read), index.ts (what other code imports) and a first piece in a family file, written with the engine\'s types and the project\'s theme (CAMERA, the VOLUMES materials) and space profile (src/space.ts, when it has one):\n    scenery  src/scenery/props.ts, a crate prop (SCENERY)                then scenery-items, export scenery/, scenery-test; new-scene works on it\n    gear     src/gear/heads.ts, a helm, and bodies.ts, a mannequin body (CATALOG, and CHARACTERS with a mannequin that wears it)   then gear-items, export gear/\n    vfx      src/vfx/bursts.ts, a spark burst (VFX)                       then vfx-items, export vfx/\n    items    src/items/gems.ts, a gem with its rarity tiers (ITEMS)       then item-icons, export icons/\n  The first piece is a block-out that renders, so the kit\'s generator, the export and check --strict pass on it; make it the project\'s own. Refuses to overwrite an existing kit\'s files unless --force (the kit\'s other files stay).',
   list: 'npm run list -- [project] [--json]\n  Sheets, exported assets and review files (review/) of one project or of all of them (projects/, then examples/).',
-  check: 'npm run check -- <project> [--strict] [--json]\n  Type-checks the repository and reports the errors in the project\'s folder (engine errors are counted apart), then checks its layout (npm run layout). Fails on type errors or layout errors; --strict also fails on sheets not exported yet and assets without a sheet.',
+  check: 'npm run check -- <project> [--strict] [--json]\n  Type-checks the project\'s src/ and sheets/ with the repository\'s tsconfig (errors in the engine files it imports are counted apart), then checks its layout (npm run layout) and that it is deterministic: no Math.random, no Date or performance.now, and no raw color literals (#hex, rgb(), hsl()) outside src/theme.ts, each reported with its file and line. Fails on any of them; --strict also fails on sheets not exported yet and assets without a sheet.',
   layout: 'npm run layout -- <project> [--strict] [--json]\n  Checks the project against the rules of docs/ARCHITECTURE.md: only src/, sheets/, assets/, review/, STYLE.md, README.md, diorama.config.json and .gitignore at its root; no underscore prefixes and kebab-case names in src/ and sheets/; sheets are thin (no function or class, at most 20 lines of code) and generated ones keep their "Generated by" line; src/ never imports sheets/ and sheets never import sheets; a kit with catalog.ts has index.ts; assets/ holds only PNG and JSON. Sheets without an export and assets without a sheet are warnings (errors with --strict).',
   inspect: 'npm run inspect -- <file.png> [--json]\n  Size, content bounds, edges reached, transparency and distinct colors; with the atlas JSON next to the PNG, each cell (touching its edges, empty, pivot to content bottom, height above the pivot against the space profile); the quality numbers (value spread, tone levels, ink, accent) with warnings by role; the rig\'s motion check and the character manifest of a character sheet (with the cued effects looked up in assets/vfx/).',
   contact: 'npm run contact -- <file.png> [--with <b.png>] [--rows W,SW] [--frames 0-3] [--zoom N] [--bg <hex>] [--gray] [--out <png>] [--json]\n  Zoomed review sheet: one row per direction (or one row of frames) on a flat background.\n  --with    a second sheet drawn under the first, with the same rows and frames and the cells aligned (before and after, or one character against another). Both need the same cell size unless --zoom is given: each band then keeps its own cell size, left-aligned\n  --rows    only these directions (names from the atlas, in the order given; a UI sheet\'s states and, on a 16-facing sheet, the 8 compass names work too)\n  --frames  only these frame columns: 0-3, 0,2,5 or 0-2,5\n  --zoom    whole number; default 2 (more for small cells) while the sheet stays under 4000px wide, else 1\n  --bg      six hex digits, default 6e6a64. Write --bg 6e6a64 or quote it, --bg "#6e6a64": an unquoted # starts a shell comment\n  --gray    desaturate for the value test.\n  Written to <project>/review/contact/<asset path>[-vs-<b>]-contact[-<rows>][-f<frames>][-gray].png.',
@@ -1697,7 +1763,7 @@ function overview(): string {
   return [
     'Diorama commands (npm run <command> -- --help for the options of one):',
     ...Object.values(USAGE).map(text => `  ${text.split('\n')[0]}`),
-    '  npm run export -- <project> [subpath...] [--grid|--compact] [--mockup] [--json]   (npm run export -- --help)',
+    '  npm run export -- <project> [subpath...] [--grid|--compact] [--mockup] [--force] [--json]   (type checks first; npm run export -- --help)',
     '  npm run example   (exports examples/pivot-v2-2d)',
   ].join('\n');
 }
@@ -1712,6 +1778,7 @@ const run = (task: Promise<void>) => task.catch(err => fail(String(err?.message 
 switch (command) {
   case 'new-project': run(newProject(positionals, flags)); break;
   case 'new-asset': newAsset(positionals, flags); break;
+  case 'new-kit': run(newKit(positionals, flags)); break;
   case 'list': list(positionals, flags); break;
   case 'check': check(positionals, flags); break;
   case 'layout': layout(positionals, flags); break;

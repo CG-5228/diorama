@@ -24,6 +24,7 @@
     "viewer/**/*",
     "templates/**/*",
     "projects/**/*",
-    "examples/**/*"
+    "examples/**/*",
+    "tests/engine/clip-keys.test.ts"
   ]
 }
