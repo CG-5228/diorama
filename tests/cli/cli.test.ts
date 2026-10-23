@@ -432,16 +432,22 @@ export default defineAsset({
   breaks('notes.txt', 'todo\n', ['notes.txt is not allowed at the project root', 'README.md or STYLE.md'], 'a stray file at the root');
   breaks('drafts/crate.ts', 'export {};\n', ['drafts/ is not allowed at the project root', 'src/drafts/'], 'a stray folder at the root');
   rmSync(resolve(layoutDir, 'drafts'), { recursive: true, force: true });
-  breaks('diorama.config.json', '{"scale": 2, "unknownKey": true}\n', ['diorama.config.json has unknown keys: unknownKey', 'Allowed: outDir, scale, format, cols, gap'], 'an unknown key in diorama.config.json');
+  breaks('diorama.config.json', '{"scale": 2, "unknownKey": true}\n', ['diorama.config.json has unknown keys: unknownKey', 'Remove them or fix their spelling', 'allowed keys: outDir, scale, format, cols, gap'], 'an unknown key in diorama.config.json');
+  breaks('diorama.config.json', '{', ['is not valid JSON', 'allowed keys: outDir, scale, format, cols, gap'], 'invalid JSON in diorama.config.json');
+  breaks('diorama.config.json', '[]', ['must be a JSON object', 'allowed keys: outDir, scale, format, cols, gap'], 'a non-object diorama.config.json');
   writeFileSync(resolve(layoutDir, 'diorama.config.json'), '{"scale": 2, "format": "png"}\n', 'utf8');
   assert.equal(layoutOf().code, 0, 'known keys in diorama.config.json are allowed');
   rmSync(resolve(layoutDir, 'diorama.config.json'));
   breaks('src/_helpers.ts', 'export const x = 1;\n', ['src/_helpers.ts: no underscore prefixes', 'rename it to src/helpers.ts'], 'an underscore file in src/');
   breaks('sheets/_shared.ts', 'export const x = 1;\n', ['sheets/_shared.ts: no underscore prefixes', 'Every file in sheets/ is a sheet'], 'an underscore file in sheets/');
   breaks('src/BigCrate.ts', 'export const x = 1;\n', ['names are kebab-case', 'src/big-crate.ts'], 'a name that is not kebab-case');
+  breaks('src/_draft.md', '# Draft\n', ['src/_draft.md: no underscore prefixes', 'rename it to src/draft.md'], 'an underscore markdown file in src/');
+  breaks('src/My Notes.md', '# Notes\n', ['names are kebab-case', 'src/my-notes.md'], 'a markdown file with spaces in src/');
   writeFileSync(resolve(layoutDir, 'src', 'README.md'), '# Notes\n', 'utf8');
+  writeFileSync(resolve(layoutDir, 'src', 'CHANGELOG.md'), '# Changes\n', 'utf8');
   assert.equal(layoutOf().code, 0, 'markdown files in src/ are allowed');
   rmSync(resolve(layoutDir, 'src', 'README.md'));
+  rmSync(resolve(layoutDir, 'src', 'CHANGELOG.md'));
   const fat = `import { defineAsset } from '@core';
 
 export default defineAsset({

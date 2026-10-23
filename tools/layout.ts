@@ -10,7 +10,9 @@
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, posix } from 'node:path';
-import { GENERATED_SHEETS, LAYOUT, OS_METADATA, isSheetFile, walkFiles, type GeneratedFolder } from './project.js';
+import { ALLOWED_CONFIG_KEYS, GENERATED_SHEETS, LAYOUT, OS_METADATA, isSheetFile, walkFiles, type GeneratedFolder } from './project.js';
+
+export { ALLOWED_CONFIG_KEYS };
 
 export interface LayoutIssue {
   /** Short rule id: root, config, underscore, name, sheet-file, thin, generated, direction, kit, assets, missing, orphan. */
@@ -28,8 +30,6 @@ export interface LayoutReport {
 /** What may stand at a project root (OS metadata aside). */
 export const ROOT_DIRS = ['src', 'sheets', 'assets', 'review'] as const;
 export const ROOT_FILES = ['STYLE.md', 'README.md', 'diorama.config.json', '.gitignore'] as const;
-/** Allowed keys in diorama.config.json. */
-export const ALLOWED_CONFIG_KEYS = ['outDir', 'scale', 'format', 'cols', 'gap'] as const;
 
 /** A sheet longer than this many lines of code (comments and blank lines aside) is not thin. */
 export const THIN_SHEET_LINES = 20;
@@ -128,11 +128,12 @@ export function checkLayout(projectDir: string, name: string): LayoutReport {
       } else {
         const unknownKeys = Object.keys(config).filter(k => !(ALLOWED_CONFIG_KEYS as readonly string[]).includes(k));
         if (unknownKeys.length > 0) {
-          error('config', 'diorama.config.json', `diorama.config.json has unknown keys: ${unknownKeys.join(', ')}. Allowed: ${ALLOWED_CONFIG_KEYS.join(', ')}.`);
+          error('config', 'diorama.config.json', `diorama.config.json has unknown keys: ${unknownKeys.join(', ')}. Remove them or fix their spelling (allowed keys: ${ALLOWED_CONFIG_KEYS.join(', ')}).`);
         }
       }
-    } catch {
-      error('config', 'diorama.config.json', `diorama.config.json is not valid JSON (allowed keys: ${ALLOWED_CONFIG_KEYS.join(', ')}).`);
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      error('config', 'diorama.config.json', `diorama.config.json is not valid JSON (${detail}; allowed keys: ${ALLOWED_CONFIG_KEYS.join(', ')}).`);
     }
   }
 
@@ -144,7 +145,7 @@ export function checkLayout(projectDir: string, name: string): LayoutReport {
       const parts = rel.split('/');
       parts.forEach((part, i) => {
         const isFile = i === parts.length - 1;
-        if (place === LAYOUT.src && isFile && part.endsWith('.md')) return;
+        const markdown = place === LAYOUT.src && isFile && /\.md$/i.test(part);
         const stem = isFile ? part.replace(/\..*$/, '') : part;
         const path = `${place}/${parts.slice(0, i + 1).join('/')}${isFile ? '' : '/'}`;
         // A folder is reported once, however many files it holds.
@@ -155,7 +156,7 @@ export function checkLayout(projectDir: string, name: string): LayoutReport {
           error('underscore', path, place === LAYOUT.sheets
             ? `${path}: no underscore prefixes (rule 2). Every file in sheets/ is a sheet: move helper code to src/ (e.g. src/${[...parts.slice(0, i), part.replace(/^_+/, '')].join('/')}) and import it from there.`
             : `${path}: no underscore prefixes (rule 2): nothing in src/ is exported by itself, so rename it to ${renamed} (and fix its imports).`);
-        } else if (!KEBAB.test(stem)) {
+        } else if (!KEBAB.test(markdown ? stem.toLowerCase() : stem)) {
           const kebab = stem.replace(/([a-z0-9])([A-Z])/g, '$1-$2').replace(/[_\s.]+/g, '-').toLowerCase();
           error('name', path, `${path}: names are kebab-case (lowercase words joined by "-", rule 6): rename it to ${posix.join(place, ...parts.slice(0, i), isFile ? part.replace(stem, kebab) : kebab)}${isFile ? '' : '/'}.`);
         }

@@ -36,8 +36,7 @@ import { resolve, relative, dirname, basename } from 'node:path';
 import { readdir, stat, mkdir, writeFile, readFile, copyFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import pc from 'picocolors';
-import { ALLOWED_CONFIG_KEYS } from './layout.js';
-import { LAYOUT, REVIEW, availableProjects, findProject, isSheetFile } from './project.js';
+import { ALLOWED_CONFIG_KEYS, LAYOUT, REVIEW, availableProjects, findProject, isSheetFile } from './project.js';
 import { typeCheckProject } from './typecheck.js';
 
 interface CliArgs {
