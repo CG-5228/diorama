@@ -144,6 +144,10 @@ The `.agents/skills/` folder holds the instructions for coding agents:
 
 The guides explain when to use each module, and are indexed in [`docs/guides/`](docs/guides/README.md): [`docs/guides/volume/`](docs/guides/volume/) (space and camera, volumes and the stage, props and armor, scenery kits, living scenery, effects, items and the HUD), [`docs/guides/rig/`](docs/guides/rig/) (skeletons, gaits and clips, skins, the atlas contract, gear and outfits) and [`core/draw/README.md`](core/draw/README.md). The API reference is generated in [`docs/api/`](docs/api/), and the folder architecture is in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
+## Contributing
+
+Ideas, bugs and pull requests are welcome. The [roadmap board](https://github.com/users/leduardo99/projects/1) shows what is next, [Discussions](https://github.com/leduardo99/diorama/discussions) is the place for ideas and questions, and [CONTRIBUTING.md](CONTRIBUTING.md) explains how to set up and what every change has to keep.
+
 ## License
 
 Diorama is released under the [MIT License](LICENSE). Third-party components and their licenses are listed in [THIRD_PARTY.md](THIRD_PARTY.md).
