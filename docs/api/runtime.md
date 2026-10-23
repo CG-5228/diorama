@@ -219,7 +219,7 @@ function readSheet<A extends SheetRef = SheetRef>(ref: string | A, json: unknown
 
 ### `sheetNamed`
 
-A sheet named by another: a path from the assets root when it has a `/`, else a sibling of the sheet that names it (contract §6).
+A sheet named by another: a path from the assets root when it has a `/`, else a sibling of the sheet that names it (as scenery pieces name their state and clip sheets).
 
 ```ts
 function sheetNamed(from: string, name: string): string
