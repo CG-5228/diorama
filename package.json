@@ -12,6 +12,7 @@
     "example": "tsx tools/export.ts examples/pivot-v2-2d",
     "new-project": "tsx tools/cli.ts new-project",
     "new-asset": "tsx tools/cli.ts new-asset",
+    "new-kit": "tsx tools/cli.ts new-kit",
     "list": "tsx tools/cli.ts list",
     "check": "tsx tools/cli.ts check",
     "layout": "tsx tools/cli.ts layout",

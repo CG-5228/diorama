@@ -18,6 +18,8 @@ A project keeps its parts in `src/gear/`, one file per family (nothing in `src/`
 - `index.ts`: re-exports the parts and documents the material roles the kit reads;
 - `catalog.ts`: the editor catalog (§5).
 
+`npm run new-kit -- <project> gear` starts the kit in a project that has none: a helm in `heads.ts`, a mannequin body in `bodies.ts`, `index.ts`, and a `catalog.ts` whose `CHARACTERS` lists a mannequin that wears the helm, so `gear-items`, the customizer and `new-outfit-character` work at once. The helm is a block-out to make the project's own.
+
 Each part is a `Part<Options>`: `(ctx, options) => Placed | void`. Its JSDoc gives:
 - the slot it is made for;
 - the material roles it reads;

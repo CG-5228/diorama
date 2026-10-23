@@ -78,7 +78,7 @@ Reject or rewrite character code that:
 - Uses different pivots or cell sizes between clips of the same character.
 - Mirrors facings of an asymmetric character, or builds in world coordinates instead of pose frames.
 - Ships a mannequin (blockout) skin, or a skin missing a detail tier (see the quality bar).
-- Draws armor, weapons or garments inline in one character's skin when the project has a gear kit: they are parts (guide 05), so other characters and the customizer can reuse them.
+- Draws armor, weapons or garments inline in one character's skin when the project has a gear kit: they are parts (guide 05), so other characters and the customizer can reuse them. A project without one starts it with `npm run new-kit -- <project> gear` (`src/gear/` with a first part, a helm, and a mannequin in `CHARACTERS` that wears it); list the project's characters in `CHARACTERS` once they wear the kit.
 
 ## Quality gates
 

@@ -21,7 +21,7 @@ A project keeps its effects in `src/vfx/` and exports `VFX: EffectCatalog` from 
 - `materials` (the theme's `VOLUMES`), `defaultMaterials`;
 - `camera`, and `space` when the project has a space profile.
 
-`npm run vfx-items -- <project>` writes the generated sheet `sheets/vfx/<id>.ts` (`defineEffect`) for each. Export `vfx/`.
+`npm run vfx-items -- <project>` writes the generated sheet `sheets/vfx/<id>.ts` (`defineEffect`) for each. Export `vfx/`. A project without the kit starts it with `npm run new-kit -- <project> vfx`: a spark burst in `src/vfx/bursts.ts`, `catalog.ts` and `index.ts`.
 
 **An effect** (`EffectInfo`):
 - **`kind`:** `projectile`, `impact`, `cast`, `aura`, `area`, `burst` or `trail`. It tells a player how to play it.
@@ -77,7 +77,7 @@ A project keeps its items in `src/items/` and exports `ITEMS: ItemCatalog` from 
 - `background` and `frame`: the project's drawing under and over the item for its rarity (a slot's ground, a border, a corner gem);
 - `camera`, `materials`, `defaultMaterials`, and `gear: { catalog, characters }` for gear items.
 
-`npm run item-icons -- <project>` writes the generated sheet `sheets/icons/<id>.ts` (`defineItemIcon`). Export `icons/`.
+`npm run item-icons -- <project>` writes the generated sheet `sheets/icons/<id>.ts` (`defineItemIcon`). Export `icons/`. A project without the kit starts it with `npm run new-kit -- <project> items`: a gem in `src/items/gems.ts` with two rarity tiers, `catalog.ts` and `index.ts`.
 
 **How an icon is made:** the item is drawn once to measure its pixels, then drawn again at the scale that fits the padded square, centred, so every icon fills its slot the same way and lines stay crisp. A soft halo (a crown of fire) counts in the measure and makes the item smaller.
 - **The view:** three-quarters from the front left (`facing`, default 3π/4). `pose: { turn, tip }` turns a piece of its own before the view (a shield tipped towards the viewer); `spin` turns the drawn item in the icon's plane (a sword or a key on the diagonal).
