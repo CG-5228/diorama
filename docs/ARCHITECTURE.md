@@ -59,7 +59,7 @@ draw  <-  volume  <-  rig                 core/: the engine, the producer of the
 - `draw` imports no other engine module (only the low-level `random`, `noise` and `color` of `core/`); `volume` imports `draw` and never `rig`; `rig` imports `volume` and `draw`.
 - The top-level files of `core/` (`asset.ts`, `ui.ts`, `random.ts`...) import neither `volume` nor `rig`; the HUD helpers of `ui.ts` build on `asset.ts`, and the HUD pieces a project writes with them draw with `draw`.
 - `core` never imports `tools/`, `viewer/`, `packages/`, `projects/`, `examples/` or `tests/`: nothing outside `core/`.
-- Projects, examples, templates and tools import the engine only through `@core`, `@core/draw`, `@core/volume` and `@core/rig`, never a path inside `core/` and never an `internal/` folder.
+- Projects, examples and templates import the engine only through `@core`, `@core/draw`, `@core/volume` and `@core/rig`, never a path inside `core/`; the tools, the engine's own tooling, may also import its files by path. Nothing imports an `internal/` folder.
 - The viewer reaches the engine only through the same `@core` aliases.
 - Nothing imports `tests/`.
 

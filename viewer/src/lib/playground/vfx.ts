@@ -5,14 +5,14 @@ import {
 import type { Atlas } from '../atlas';
 import type { AssetFileMeta } from '../types';
 import type { Actor, ClipEvent } from './actor';
-import { socketPoint } from './effects';
+import { clamp, socketPoint } from './effects';
 import type { Character } from './library';
 import { drawnOf, floorAt, fxInView, placeFx, sheetRef, velocityOf, viewOfFx, type AssetRef, type Drawn, type Fx } from './view';
 
 /**
  * Visual effects in the playground: the runtime's effects (`@diorama/runtime`, contract §5 rule 9: cues on events, stay,
- * follow, fly) in the view's actor units. The runtime decides what plays, its rows, ages and ends, what follows what and
- * where a projectile is stopped; the view draws each effect where it draws the frame it came from: on the socket of the
+ * follow, fly) in the view's actor units. The runtime decides what plays, its rows (all but an impact's, below), ages and
+ * ends, what follows what and where a projectile is stopped; the view draws each effect where it draws the frame it came from: on the socket of the
  * frame that cued it (`effects.ts: socketPoint`), on its socket frame by frame for one that follows, moved by its
  * velocity in actor units for a projectile, and where that one ended for its impact, which faces the way the projectile
  * crossed the view. The scene calls it with the actors' events, the time and what the view and the floor allow, and draws
@@ -55,7 +55,8 @@ function startOf(event: ClipEvent, cue: EffectCue): Drawn {
 
 /**
  * The effects a clip's event cues, ready to play in the view. `missing` lists the cues whose sheets are not in the
- * project: nothing to play for them. The view draws an effect sheet at its own export scale, so a projectile crosses the
+ * project: nothing to play for them. `character` must be the event's actor's character (the effects come from
+ * `event.actor`, the missing list from `character`). The view draws an effect sheet at its own export scale, so a projectile crosses the
  * view at its own sheet's rate (`travel.speed × meta.scale` px per second, the depth part shrunk by the tilt), whatever
  * the scale of the character that cued it; it ends after the same time, at `travel.range`.
  */
@@ -82,8 +83,6 @@ export function playCues(event: ClipEvent, character: Character | null, sheets: 
 
 /** Where the effect stands on the floor, for sorting it among what stands: the point under its origin. */
 export const floorY = (fx: Pick<Fx, 'y' | 'lift'>) => fx.y + fx.lift;
-
-const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 
 /** Where the view draws a following effect after a step: on its socket in the frame shown now (where it was, when that frame has none), at its height above the feet. */
 function following(fx: RuntimeFx<AssetRef>, was: Drawn): Drawn {

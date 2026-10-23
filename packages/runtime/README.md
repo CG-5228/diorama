@@ -65,7 +65,7 @@ The full reference is [docs/api/runtime.md](../../docs/api/runtime.md).
 
 - `tests/runtime/` (`npm run test:runtime`) holds the rules, the contract type test and the conformance traces.
   - The rules run on synthetic atlases and on small JSON fixtures cut from the sample's export (`tests/runtime/fixtures/`).
-  - `contract.test.ts` checks that the engine's producer types can be assigned to these, and that every field these read is one the engine writes.
+  - `contract.test.ts` checks that the engine's producer types can be assigned to these and, for the types it lists, that every field these name is one the engine still writes. It compiles itself, so `npm test` runs the type checks too.
   - The conformance traces in `tests/runtime/conformance/` record what the runtime plays, frame by frame, for the guard, Malvek and the wolf. Another implementation replays them.
 - `tests/runtime/standalone.test.ts` compiles the package alone with its own `tsconfig.json`: lib ES2022, no DOM, no paths.
 - `tests/engine/boundary.test.ts` checks that the runtime imports nothing outside `packages/runtime`, that core never imports it, and that everything else reaches it through `@diorama/runtime`, never by a path into `packages/`.

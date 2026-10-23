@@ -88,6 +88,8 @@ Every sheet's JSON repeats the whole character manifest, so reading any one shee
 Fields were added over time: older atlases may lack `action`, `sockets`, `travel` or `character`. Fall back to:
 - `clipKind`;
 - `groundSpeed > 0` for locomotion, `loop` for idle, anything else as an action;
-- grouping clips by folder, skeleton and pivot.
+- grouping clips by folder, skeleton and pivot;
+- for effects on a clip without `sockets`, a start 60 px of the sheet above the feet;
+- for a projectile whose `travel` has no `range`, a flight of 150 world units.
 
 Never infer meaning from file names.

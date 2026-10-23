@@ -67,7 +67,7 @@ How pieces count (`nav`, else the group's default):
 - **Doors** block their edge until their state is passable.
 - **`nav.interact`** lists a piece in `interactables`: 'door', 'chest', 'lever', 'break', or the project's own kinds; **`nav.interactIn`** limits it to some states, so a chest once opened or an urn once broken drops out.
 
-Moving on it is done by the players, not the engine, with `@diorama/runtime` ([`packages/runtime/README.md`](../../../packages/runtime/README.md)). A game reads the navigation from the scene sheet's atlas (`meta.data.navigation`, with its `grid`); the viewer's playground builds the same navigation from the project's source with `sceneNavigation` and moves on it with the same helpers:
+Moving on it is done by the players, not the engine, with `@diorama/runtime` ([`packages/runtime/README.md`](../../../packages/runtime/README.md)). A game reads the navigation from the scene sheet's atlas (`meta.data.navigation`, with its `grid`); the viewer's playground builds the same navigation from the project's source with `sceneNavigation` and moves on it with `moveIn` and `flightStop`:
 - `canStep(nav, from, to)`: a 4-neighbour step for grid movement;
 - `findPath(nav, from, to)`: the cheapest path (A*), or null;
 - `cellAt(grid, p)` and `moveIn(nav, grid, p, delta, radius, postRadius?)`: free movement on the floor (world units) that slides along walls, stops a body's radius short of what blocks, keeps clear of wall posts, and takes long moves in half-cell steps so nothing is tunnelled through;

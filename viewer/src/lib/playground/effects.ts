@@ -63,7 +63,7 @@ export function spawnFromEvent(event: ClipEvent, effects: Effect[]) {
   }
 }
 
-const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
+export const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 
 /**
  * Ages the effects. A projectile ends where its range runs out or where it leaves the scene, and a ring marks the spot,

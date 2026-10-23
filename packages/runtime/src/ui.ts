@@ -1,7 +1,7 @@
+/** What an interface sheet gives a game, as pure geometry (core/ui.ts): how a nine-slice stretches, how a bar fills, how a bitmap font sets text. */
+
 import type { Rect } from './contract/atlas.js';
 import type { FontMeta, Insets, UiBox } from './contract/ui.js';
-
-/** What an interface sheet gives a game, as pure geometry (core/ui.ts): how a nine-slice stretches, how a bar fills, how a bitmap font sets text. */
 
 /** A part of a nine-slice: where it comes from on the sheet and where it goes (both in pixels). */
 export interface SlicePart {

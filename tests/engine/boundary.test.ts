@@ -111,7 +111,7 @@ const outsideEngine = [
 ];
 
 for (const file of outsideEngine) {
-  // The tools run under tsx without the bundler's aliases, so they import the entry files by path.
+  // The tools are the engine's own tooling: they may import core's files by path (tools/cli.ts reads core/volume/space.ts).
   const byPathAllowed = inside(rel(file), 'tools');
   for (const spec of specifiersOf(file)) {
     if (/(^|\/)internal(\/|$)/.test(spec)) {

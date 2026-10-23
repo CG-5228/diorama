@@ -162,18 +162,37 @@ for (let i = 0; i < 100 && crossing[0]?.sheet.id === 'soul-bolt'; i++) crossing 
 assert.equal(crossing[0].sheet.id, 'splash');
 assert.equal(crossing[0].row, rowOfHeading(fourWay.get('splash')!, Math.atan2(crossingVelocity.vy / Math.sin((48 * Math.PI) / 180), crossingVelocity.vx)), 'the heading it crossed the view with');
 assert.equal(crossing[0].row, 3, 'E, the row it always showed');
+// Through a 30° camera the tilt decides the row: a NE shot onto an impact with sixteen rows shows the row of its heading
+// with the depth grown back, not the one its shrunk velocity on the screen points at (at 48° the two agree).
+const sixteenWay = new Map(fourWay).set('splash', effectSheetOf(asset('vfx', 'splash'), effectAtlas('splash', { kind: 'impact', frames: 5 }, 16))!);
+const steep: Fx[] = [];
+const steepEmit = (e: ClipEvent) => steep.push(...playCues(e, e.actor.character, sixteenWay).fx);
+const steepShooter = newActor(9, mage.idle!, 300, 400, mage, DIRS.indexOf('NE'));
+startClip(steepShooter, clip('cast'), steepEmit);
+for (let t = 0; t < 0.75; t += 0.01) advance(steepShooter, 0.01, steepEmit);
+let steepFlight = steep.filter((f) => f.sheet.id === 'soul-bolt');
+const steepVelocity = steepFlight[0].fly!;
+for (let i = 0; i < 100 && steepFlight[0]?.sheet.id === 'soul-bolt'; i++) steepFlight = stepFx(steepFlight, 0.01, { sheets: sixteenWay, bounds: { width: 5000, height: 5000 } });
+const splash16 = sixteenWay.get('splash')!;
+assert.equal(steepFlight[0].sheet.id, 'splash');
+assert.equal(steepFlight[0].row, rowOfHeading(splash16, Math.atan2(steepVelocity.vy / Math.sin((30 * Math.PI) / 180), steepVelocity.vx)), 'the heading with the depth grown back by the tilt');
+assert.notEqual(steepFlight[0].row, rowOfHeading(splash16, Math.atan2(steepVelocity.vy, steepVelocity.vx)), 'not the shrunk heading on the screen: here the two differ');
 
 // The view places effects with its own pixel arithmetic, kept from before the runtime so the Playground's frames do not
 // change, while the runtime keeps each effect's floor point and lift (what a game draws from). The two must agree: through
-// both cameras and at whole, half and quarter pixels, every effect a cast and a channel play (the bolt in flight, its
-// impact at the range, the aura following the hand) projects from the runtime's floor point to where the view draws it.
+// both cameras, at whole, half and quarter pixels, and with effect sheets at the character's scale or at their own (a bolt
+// at 1 and its impact at 3 under a character at 2), every effect a cast and a channel play (the bolt in flight, its impact
+// at the range, the aura following the hand) projects from the runtime's floor point to where the view draws it.
+const bigImpact = effectAtlas('impact', { kind: 'impact', frames: 5, events: [{ frame: 1, name: 'hit' }] }, 1);
+bigImpact.meta.scale = 3;
+const mixedScales = new Map(sheets).set('soul-bolt', effectSheetOf(asset('vfx', 'soul-bolt'), lowRes)!).set('impact', effectSheetOf(asset('vfx', 'impact'), bigImpact)!);
 const seen = new Set<string>();
 let compared = 0;
-for (const who of [mage, tilted]) {
+for (const effectSheets of [sheets, mixedScales]) for (const who of [mage, tilted]) {
   const pick = (key: string) => who.clips.find((c) => c.key === key)!;
   for (const [x, y] of [[200, 300], [300.5, 192.5], [611.25, 47.75]]) {
     const fresh: Fx[] = [];
-    const emit = (e: ClipEvent) => fresh.push(...playCues(e, e.actor.character, sheets).fx);
+    const emit = (e: ClipEvent) => fresh.push(...playCues(e, e.actor.character, effectSheets).fx);
     const caster = newActor(7, who.idle!, x, y, who);
     const channel = newActor(8, who.idle!, x + 80, y, who);
     startClip(caster, pick('cast'), emit);
@@ -182,12 +201,12 @@ for (const who of [mage, tilted]) {
     for (let step = 0; step < 250; step++) {
       advance(caster, 0.01, emit);
       advance(channel, 0.01, emit);
-      effects = stepFx([...effects, ...fresh.splice(0)], 0.01, { sheets, bounds: { width: 2000, height: 2000 } });
+      effects = stepFx([...effects, ...fresh.splice(0)], 0.01, { sheets: effectSheets, bounds: { width: 2000, height: 2000 } });
       for (const f of effects) {
         const view = viewOfFx(f.fx);
         const origin = toScreen(view, f.fx.pos, f.fx.lift);
         const floor = toScreen(view, f.fx.pos);
-        assert.ok(Math.abs(origin.x - f.x) < 1e-6 && Math.abs(origin.y - f.y) < 1e-6, `${f.sheet.id} at (${x}, ${y}), step ${step}: the runtime puts it at (${origin.x}, ${origin.y}), the view draws it at (${f.x}, ${f.y})`);
+        assert.ok(Math.abs(origin.x - f.x) < 1e-6 && Math.abs(origin.y - f.y) < 1e-6, `${f.sheet.id} (scale ${f.sheet.scale}) at (${x}, ${y}), step ${step}: the runtime puts it at (${origin.x}, ${origin.y}), the view draws it at (${f.x}, ${f.y})`);
         assert.ok(Math.abs(floor.y - floorY(f)) < 1e-6, `${f.sheet.id} at (${x}, ${y}), step ${step}: sorted on the runtime's floor point`);
         seen.add(f.sheet.id);
         compared++;

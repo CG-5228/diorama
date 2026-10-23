@@ -1,20 +1,26 @@
 /**
  * The producer and the consumer agree on the contract: the engine's types for what it writes into atlases (`@core/rig`'s
  * manifest, clips and cues and the item an icon describes, `@core/volume`'s navigation, the effect fields it copies from an
- * `EffectInfo` and its space profile) can be assigned to the runtime's types for what it reads, and every field the runtime reads
- * is one the engine still writes (so a rename on either side fails). The scene's layout items are written without a named
- * type, so the exported scene checks those.
+ * `EffectInfo` and its space profile) can be assigned to the runtime's types for what it reads; and the other way, every field
+ * the runtime's types name is one the engine's types still name, for the types listed in `Checks` (top-level fields, plus the
+ * manifest's camera and controls, a clip's wields and the navigation's doors and interactables), so a rename on either side
+ * fails there. The scene's layout items, effect sheets and item icons are written without a named type, so the exported
+ * files check those.
  *
- * This file is part of the repository's tsc project (tsconfig.json `include`), so `npx tsc --noEmit -p .` checks the type
- * half: every `Expect<Assignable<...>>` must compile, and every `// @ts-expect-error` must still be an error. The runtime
- * half checks the same on the sample's exported files.
+ * The type half is checked twice: by `npx tsc --noEmit -p .` (this file is in tsconfig.json `include`), and by this test,
+ * which compiles itself below, because tsx strips types and `npm test` would pass a broken check otherwise. Every
+ * `Expect<...>` must compile, and every `// @ts-expect-error` must still be an error.
  */
 
 import assert from 'node:assert/strict';
-import type { CharacterManifest as ProducedManifest, EffectCue as ProducedCue, ItemIconData, ManifestClip as ProducedClip } from '../../core/rig/index.js';
-import type { EffectInfo, SceneNavigation as ProducedNavigation, NavCell as ProducedCell, spaceData } from '../../core/volume/index.js';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
+import type { CharacterManifest as ProducedManifest, EffectCue as ProducedCue, ItemIconData, ManifestClip as ProducedClip, SocketTable } from '../../core/rig/index.js';
+import type { Insets as ProducedInsets, UiBox as ProducedBox } from '../../core/ui.js';
+import type { EffectInfo, PieceClip, PieceNav, SceneNavigation as ProducedNavigation, NavCell as ProducedCell, spaceData } from '../../core/volume/index.js';
 import { EDGE as PRODUCED_EDGE } from '../../core/volume/index.js';
-import { CONTRACT, EDGE, buildLibrary, manifestOf, type CharacterManifest, type EffectCue, type EffectMeta, type ItemMeta, type ManifestClip, type NavCell, type SceneLayoutItem, type SceneNavigation, type SpaceData } from '@diorama/runtime';
+import { CONTRACT, EDGE, buildLibrary, manifestOf, type AtlasSockets, type CharacterManifest, type EffectCue, type EffectMeta, type Insets, type ItemMeta, type ManifestClip, type NavCell, type PieceClipData, type PieceNavData, type SceneLayoutItem, type SceneNavigation, type SpaceData, type UiBox } from '@diorama/runtime';
 import { fixtureSheets } from './helpers';
 
 /** Compile-time assertions: `Expect<Assignable<A, B>>` fails to compile unless a value of type A can be used as a B. */
@@ -51,6 +57,22 @@ export type Checks = [
   Expect<Named<ProducedCue, EffectCue>>,
   Expect<Named<ProducedNavigation, SceneNavigation>>,
   Expect<Named<ItemIconData, ItemMeta>>,
+  Expect<Named<NonNullable<ProducedClip['wields']>, NonNullable<ManifestClip['wields']>>>,
+  Expect<Named<ProducedNavigation['doors'][number], SceneNavigation['doors'][number]>>,
+  Expect<Named<ProducedNavigation['interactables'][number], SceneNavigation['interactables'][number]>>,
+  Expect<Named<ReturnType<typeof spaceData>, SpaceData>>,
+  // A clip's socket table (`meta.data.sockets`), a UI sheet's insets and boxes (`core/ui.ts`), and a scenery piece's nav and
+  // clips (the exporter adds each clip's `sheet`), both ways.
+  Expect<Assignable<SocketTable, AtlasSockets>>,
+  Expect<Named<SocketTable, AtlasSockets>>,
+  Expect<Assignable<ProducedInsets, Insets>>,
+  Expect<Named<ProducedInsets, Insets>>,
+  Expect<Assignable<ProducedBox, UiBox>>,
+  Expect<Named<ProducedBox, UiBox>>,
+  Expect<Assignable<PieceNav, PieceNavData>>,
+  Expect<Named<PieceNav, PieceNavData>>,
+  Expect<Assignable<PieceClip, PieceClipData>>,
+  Expect<Named<PieceClip, Omit<PieceClipData, 'sheet'>>>,
 ];
 
 // The check bites: a type the runtime cannot read is refused.
@@ -61,7 +83,13 @@ export type RefusedItem = Expect<Assignable<ItemIconData, { gear?: { part: strin
 // @ts-expect-error a producer that drops a field the runtime reads (here the optional `pivot`) is caught, though it is still assignable
 export type RefusedRename = Expect<Named<Omit<ProducedManifest, 'pivot'>, CharacterManifest>>;
 
-console.log('🧪 Checking that the engine\'s contract types fit the runtime\'s (manifest, clips, cues, navigation, effects, space, items) and the exported files read...\n');
+console.log('🧪 Checking that the engine\'s contract types fit the runtime\'s (manifest, clips, cues, navigation, effects, space, items, sockets, UI, scenery pieces) and the exported files read...\n');
+
+// tsx strips types: compile this file with the repository's tsconfig, so the checks above fail `npm test` too.
+const self = fileURLToPath(import.meta.url);
+const config = ts.getParsedCommandLineOfConfigFile(resolve('tsconfig.json'), {}, { ...ts.sys, onUnRecoverableConfigFileDiagnostic: (d) => assert.fail(ts.flattenDiagnosticMessageText(d.messageText, ' ')) })!;
+const typeErrors = ts.getPreEmitDiagnostics(ts.createProgram([self], config.options)).filter((d) => d.file && resolve(d.file.fileName) === self);
+assert.deepEqual(typeErrors.map((d) => ts.flattenDiagnosticMessageText(d.messageText, ' ')), [], 'the contract type checks compile');
 
 // The constants agree too.
 assert.deepEqual(EDGE, PRODUCED_EDGE, 'the edge bits of `navigation.walls`');

@@ -9,8 +9,10 @@
   "character": "malvek",
   "scene": "scenes/crypt-entrance",
   "start": {
-    "x": 192,
-    "y": 96.88555653165909,
+    "cell": [
+      4,
+      2
+    ],
     "row": 4
   },
   "steps": [

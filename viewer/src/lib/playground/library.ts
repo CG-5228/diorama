@@ -43,6 +43,8 @@ export function buildLibrary(assets: AssetFileMeta[], atlases: Map<string, Atlas
       sheets.push(atlas ? readSheet(sheetRef(asset), atlas) : imageSheet(sheetRef(asset), { width: asset.width ?? 0, height: asset.height ?? 0 }));
     } catch (error) {
       if (!(error instanceof ContractError)) throw error;
+      // A file that is not a readable atlas leaves its asset out of the playground instead of taking it down.
+      console.warn(`playground: ${asset.subpath} skipped: ${error.message}`);
     }
   }
   const library = buildRuntimeLibrary(sheets);

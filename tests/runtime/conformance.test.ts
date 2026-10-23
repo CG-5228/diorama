@@ -36,7 +36,8 @@ interface Script {
   character: string;
   /** A scene sheet whose navigation is the floor (`moveIn`) and stops projectiles (`flightStop`); null for a free floor. */
   scene: string | null;
-  start: { x: number; y: number; row: number };
+  /** Where the actor starts: a floor point (world units), or a cell of the scene's grid (its centre), and the facing row. */
+  start: { x: number; y: number; row: number } | { cell: [number, number]; row: number };
   steps: Step[];
 }
 
@@ -63,7 +64,7 @@ const SCRIPTS: Record<string, Script> = {
     sheets: ['characters/malvek', 'vfx', 'scenes/crypt-entrance'],
     character: 'malvek',
     scene: 'scenes/crypt-entrance',
-    start: { x: 4 * 48, y: 2 * 48.442778265829546, row: 4 },
+    start: { cell: [4, 2], row: 4 },
     steps: [
       { frames: 30, input: [0, -1, false] }, { frames: 4 }, { play: 'soulbolt' }, { frames: 90 },
       { frames: 20, input: [1, 1, true] }, { frames: 2 }, { aim: [0, 0] }, { play: 'soulbolt' }, { frames: 90 }, { aim: null },
@@ -99,7 +100,8 @@ function record(script: Script) {
   const scene = script.scene ? fixtureSheets(script.scene)[0].atlas!.meta.data! : null;
   const floor: Floor = scene ? { move: (from, delta, radius) => moveIn(scene.navigation!, scene.grid!, from, delta, radius) } : FREE_FLOOR;
   const world: FxWorld = { effects: library.effects, ...(scene ? { blocked: (from: Vec2, to: Vec2) => flightStop(scene.navigation!, scene.grid!, from, to) } : {}) };
-  const actor = createActor(character, { x: script.start.x, y: script.start.y }, { id: 1, row: script.start.row, radius: RADIUS });
+  const start = 'cell' in script.start ? { x: script.start.cell[0] * scene!.grid!.cell.x, y: script.start.cell[1] * scene!.grid!.cell.y } : { x: script.start.x, y: script.start.y };
+  const actor = createActor(character, start, { id: 1, row: script.start.row, radius: RADIUS });
   let fx: Fx[] = [];
   let aim: Vec2 | null = null;
   const frames: unknown[] = [];
