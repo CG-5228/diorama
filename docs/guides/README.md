@@ -31,6 +31,10 @@ Reference: [volume](../api/volume.md), and [core](../api/core.md) for the HUD he
 
 Reference: [rig](../api/rig.md).
 
+## `@diorama/runtime`: playing the exports
+
+[`packages/runtime/README.md`](../../packages/runtime/README.md) stays with its package. It reads exported sheets and plays them in a game, as rig guide 04 says: characters, the effects they cue, movement on a scene's navigation, the depth order and the geometry of interface pieces. Reference: [runtime](../api/runtime.md).
+
 ## Where a guide ends
 
 The quality bar, the readability checks and the motion rules every style must clear are not guides: they are references of the [`diorama-volume` skill](../../.agents/skills/diorama-volume/SKILL.md) (`references/quality-bar.md`, `references/readability.md`, `references/motion.md`), because they are checked on every asset.

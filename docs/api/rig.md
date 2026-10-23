@@ -137,6 +137,7 @@ Procedural characters and creatures for `@core/volume`: skeletons as data (human
   - [`OutfitEdit`](#outfitedit)
   - [`SwapBlocker`](#swapblocker)
   - [`GearAssetOptions`](#gearassetoptions)
+  - [`ItemIconData`](#itemicondata)
   - [`ItemInfo`](#iteminfo)
   - [`ItemCatalog`](#itemcatalog)
   - [`ItemPiece`](#itempiece)
@@ -1988,6 +1989,26 @@ interface GearAssetOptions {
   /** Facings (default 8). */
   directions?: number;
   scale?: number;
+}
+```
+
+### `ItemIconData`
+
+What an item icon's atlas says about its item (`meta.data.item`, role 'icon'): the catalog's fields, the gear part it
+equips (`gear`, the part's id) and that part's equipment slot (`equip`, when the gear catalog gives the part one).
+
+```ts
+interface ItemIconData {
+  id: string;
+  label: string;
+  kind: string;
+  rarity: string;
+  rarityLabel: string;
+  rarityColor: string;
+  stack: number;
+  description?: string;
+  gear?: string;
+  equip?: string;
 }
 ```
 

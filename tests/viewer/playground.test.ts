@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { buildRows, listEntries, matches, pushRecent, RECENT_LIMIT, type Entry } from '../../viewer/src/lib/playground/catalog';
-import type { Atlas, AtlasSockets, CharacterManifest } from '../../viewer/src/lib/atlas';
-import { advance, canStart, newActor, reset, rowFor, startClip, stepPlayer, type ClipEvent } from '../../viewer/src/lib/playground/actor';
+import { shownFrame, type Atlas, type CharacterManifest } from '@diorama/runtime';
+import { advance, currentFrame, newActor, startClip, stepPlayer, type ClipEvent } from '../../viewer/src/lib/playground/actor';
 import { socketPoint, spawnFromEvent, stepEffects, type Effect } from '../../viewer/src/lib/playground/effects';
 import { buildLibrary } from '../../viewer/src/lib/playground/library';
 import type { AssetFileMeta } from '../../viewer/src/lib/types';
+import { DIRS, clipSheet as sheet, type ClipSpec } from '../runtime/helpers';
 
-console.log('🧪 Checking the playground (palette search, folders, recents; atlas contract: controls, priority, cancel, hold, events, sockets, travel)...\n');
+console.log('🧪 Checking the playground (palette search, folders, recents; the runtime\'s actors in the view: moves and root motion in actor units at each clip\'s scale, exact view points, the view\'s sides, sockets, the generic rings)...\n');
 
 const entry = (key: string, name: string, group: string, kind: Entry['kind'] = 'animated') =>
   ({ key, name, group, kind, subtitle: '', cover: {}, armed: {} }) as unknown as Entry;
@@ -51,45 +52,10 @@ assert.ok(!labels(buildRows(entries, { ...base, recent: ['s:tomb'], filter: 'cha
 assert.deepEqual(pushRecent(['b', 'a', 'c'], 'a'), ['a', 'b', 'c']);
 assert.equal(pushRecent(Array.from({ length: 20 }, (_, i) => `k${i}`), 'new').length, RECENT_LIMIT);
 
-// ---- The atlas contract (docs/guides/rig/04-atlas-contract.md): library, controls and playing rules ----
-
-const DIRS = ['S', 'SW', 'W', 'NW', 'N', 'NE', 'E', 'SE'];
-const facings = DIRS.map((_, d) => Math.PI / 2 + (d * 2 * Math.PI) / 8);
+// ---- The runtime's library and actors in the view (the rules themselves are tested in tests/runtime/) ----
 
 function asset(folder: string, key: string): AssetFileMeta {
   return { project: 'p', root: 'projects', subpath: `${folder}/${key}.png`, filename: `${key}.png`, format: 'png', size: 1, mtime: 1, url: `/${folder}/${key}.png`, width: 800, height: 800, atlas: `${folder}/${key}.json`, sheet: null, sourceMtime: null, engine: 'volume', atlasInfo: null };
-}
-
-interface ClipSpec {
-  key: string;
-  action: string;
-  clipKind: 'idle' | 'locomotion' | 'action';
-  frames: number;
-  fps?: number;
-  loop?: boolean;
-  hold?: boolean;
-  groundSpeed?: number;
-  events?: Array<{ frame: number; name: string }>;
-  tags?: string[];
-  /** Cell width in exported px; the anchor sits in the middle of it. */
-  frameWidth?: number;
-  travel?: number[];
-  sockets?: AtlasSockets;
-}
-
-function sheet(spec: ClipSpec, manifest?: CharacterManifest): Atlas {
-  return {
-    meta: {
-      mode: 'directions', frameCount: spec.frames, directions: DIRS, directionFacings: facings, pivot: { x: (spec.frameWidth ?? 100) / 2, y: 90 },
-      frameWidth: spec.frameWidth ?? 100, frameHeight: 100, fps: spec.fps ?? 10, scale: 2,
-      data: {
-        role: 'character', skeleton: 'humanoid', key: spec.key, action: spec.action, clipKind: spec.clipKind, loop: spec.loop ?? spec.clipKind !== 'action',
-        hold: spec.hold ?? false, tags: spec.tags, groundSpeed: spec.groundSpeed ?? 0, events: spec.events ?? [], travel: spec.travel, sockets: spec.sockets,
-        ...(manifest ? { character: manifest } : {}),
-      },
-    },
-    frames: {},
-  };
 }
 
 const specs: ClipSpec[] = [
@@ -116,30 +82,11 @@ const mage = library.characters[0];
 assert.equal(mage.name, 'mage');
 assert.equal(mage.idle?.key, 'idle');
 assert.deepEqual(mage.locomotion.map((c) => c.key), ['walk', 'run']);
-// Numbered actions: attack first, then skill, then the rest, whatever order the manifest lists them in. Hit and death keep their own keys.
-assert.deepEqual(mage.actions.map((c) => c.key), ['slash', 'howl', 'dodge']);
-assert.equal(mage.hit?.key, 'hit');
-assert.equal(mage.death?.key, 'death');
-assert.deepEqual(mage.warnings, ['arm length differs between skins']);
-assert.equal(mage.locomotion[1].speed, 160, 'groundSpeed is in logical px: multiply by scale');
-assert.equal(mage.actions[0].cancelFrame, 5);
-assert.deepEqual(mage.actions[0].travel?.slice(0, 3), [0, 4, 8], 'travel is scaled to exported px');
+assert.deepEqual(mage.actions.map((c) => c.key), ['slash', 'howl', 'dodge'], 'bound by the runtime (its rules: tests/runtime/library.test.ts)');
+assert.deepEqual([mage.locomotion[1].groundSpeed, mage.locomotion[1].scale], [80, 2], 'groundSpeed is in world units (logical px): the view multiplies it by scale');
+assert.deepEqual(mage.actions[0].travel?.slice(0, 3), [0, 2, 4], 'travel is in world units too');
+assert.deepEqual([mage.actions[0].asset.subpath, mage.actions[0].asset.url, mage.actions[0].asset.path], ['characters/mage/slash.png', '/characters/mage/slash.png', 'characters/mage/slash'], 'a clip keeps the asset it was read from, and the runtime\'s path');
 
-// A clip the manifest marks unusable (made for what the character does not hold) is not played, even when its sheet exists.
-const holding: CharacterManifest = { ...manifest, clips: [{ key: 'slash', usable: false, wields: { main: ['blade'] } } as unknown as CharacterManifest['clips'][number]], controls: { ...manifest.controls, actions: { ...manifest.controls.actions, attack: [] } } };
-const holder = buildLibrary(assets, new Map(specs.map((c) => [`characters/mage/${c.key}.png`, sheet(c, holding)]))).characters[0];
-assert.ok(!holder.clips.some((c) => c.key === 'slash'), 'not among its clips');
-assert.deepEqual(holder.actions.map((c) => c.key), ['howl', 'dodge'], 'nor among its actions');
-assert.equal(holder.clips.length, specs.length - 1, 'the rest are untouched');
-// Older atlases (no manifest, no action): classify from clipKind / groundSpeed / loop, never from names.
-const old = new Map(specs.slice(0, 4).map((c) => [`characters/mage/${c.key}.png`, (() => { const a = sheet(c); delete a.meta.data!.action; delete a.meta.data!.key; return a; })()]));
-const legacy = buildLibrary(assets.slice(0, 4), old).characters[0];
-assert.equal(legacy.idle?.key, 'idle');
-assert.deepEqual(legacy.locomotion.map((c) => c.key), ['walk', 'run']);
-assert.deepEqual(legacy.actions.map((c) => c.key), ['slash']);
-assert.equal(legacy.hit, null);
-assert.equal(mage.tilt, 30, 'the camera tilt comes from the manifest');
-assert.equal(legacy.tilt, 48, 'without a manifest the tilt is 48');
 // A gear item names its wearer as text (`character: 'guard'`): it is an object to place, not a character, and not a crash.
 const gearAtlas = (() => { const a = sheet({ key: 'helm', action: 'idle', clipKind: 'idle', frames: 1 }); a.meta.data = { role: 'gear', part: 'helm', label: 'Elmo', group: 'head', character: 'guard' }; return a; })();
 const withGear = buildLibrary([...assets, asset('gear', 'helm')], new Map([...withManifest, ['gear/helm.png', gearAtlas]]));
@@ -149,15 +96,20 @@ assert.equal(listEntries(withGear).find((e) => e.key === 'sprite:gear/helm.png')
 const props = buildLibrary([asset('props', 'chest')], new Map([['props/chest.png', (() => { const a = sheet(specs[0]); a.meta.data = { role: 'prop' }; return a; })()]]));
 assert.equal(props.characters.length, 0, 'a prop is not a character');
 assert.equal(props.sprites.length, 1);
+// An atlas that is not one (no `meta` object) is left out, like one that failed to load; cells listed in another packer's
+// shape play on the grid. Neither takes the Playground down.
+const odd = (frames: unknown, meta: unknown = { mode: 'strip', frameCount: 2, frameWidth: 4, frameHeight: 4 }) => ({ meta, frames }) as unknown as Atlas;
+const oddLibrary = buildLibrary([asset('props', 'array'), asset('props', 'none'), asset('props', 'broken'), asset('props', 'chest')], new Map([
+  ['props/array.png', odd([])],
+  ['props/none.png', odd(null)],
+  ['props/broken.png', odd({}, [])],
+  ['props/chest.png', odd({})],
+]));
+assert.deepEqual(oddLibrary.sprites.map((s) => s.id), ['props/array.png', 'props/none.png', 'props/chest.png'], 'the broken atlas is left out, the rest stay');
+assert.deepEqual(oddLibrary.sprites[0].clip.rects(0)[1], { x: 4, y: 0, width: 4, height: 4 }, 'cells on the grid');
 
-// Facing: the row nearest to the heading (screen angles: x right, y down; S looks at the camera).
-const atlasS = sheet(specs[0]);
-assert.equal(rowFor(atlasS, Math.PI / 2), 0, 'down is S');
-assert.equal(rowFor(atlasS, Math.PI), 2, 'left is W');
-assert.equal(rowFor(atlasS, 0), 6, 'right is E');
-assert.equal(rowFor(atlasS, -Math.PI / 2), 4, 'up is N');
-
-// Playing rules.
+// Playing, through the view (the rules are the runtime's: tests/runtime/actor.test.ts): events are emitted as they fire,
+// positions are actor units (exported px).
 const events: string[] = [];
 // `start` and `end` are the beginning and the end of an action, not events of its sheet: effects are cued on them (tested with the effects below).
 const emit = (e: ClipEvent) => e.name !== 'start' && e.name !== 'end' && events.push(`${e.clip.key}:${e.frame}:${e.name}`);
@@ -168,33 +120,10 @@ const spawn = () => newActor(1, mage.idle!, 100, 200, mage);
 const slash = mage.actions[0];
 const howl = mage.actions[1];
 
-// 3. priority + 4. interruption: an action is replaced from its cancel event on, hit and death interrupt anything.
+// Events, in frame order, once each, emitted by the view as the runtime returns them; `startClip` refuses what priority refuses.
 let a = spawn();
 assert.ok(startClip(a, slash, emit));
-assert.ok(!canStart(a, howl), 'an action cannot be replaced before its cancel event');
-tick(a, 0.55); // frame 5 at 10 fps
-assert.ok(canStart(a, howl), 'from the cancel event on it can');
-assert.ok(canStart(a, mage.hit!), 'hit interrupts');
-assert.ok(startClip(a, mage.hit!, emit));
-assert.ok(!canStart(a, slash), 'an attack never interrupts a hit');
-assert.ok(canStart(a, mage.death!), 'death interrupts a hit');
-assert.ok(startClip(a, mage.death!, emit));
-assert.ok(!canStart(a, mage.hit!), 'nothing follows death');
-
-// 5. a hold clip freezes on its last frame until reset.
-tick(a, 1);
-assert.ok(a.held && a.act === null, 'death ends held');
-assert.ok(!canStart(a, slash));
-reset(a);
-assert.ok(a.held === null && canStart(a, slash), 'reset brings it back');
-
-// 5. a normal action returns to idle.
-a = spawn();
-startClip(a, mage.actions[2], emit); // dodge, no cancel
-tick(a, 1);
-assert.equal(a.act, null);
-
-// 6. events, in frame order, once each; `release` comes with the `spawn:<socket>` of its frame.
+assert.equal(startClip(a, howl, emit), false, 'not before the slash\'s cancel event');
 events.length = 0;
 a = spawn();
 startClip(a, slash, emit);
@@ -302,6 +231,13 @@ tick(a, 1.2);
 assert.equal(Math.round(a.x), 100);
 assert.equal(Math.round(a.y), 200 + 20, 'travel 20 logical units × scale 2, squashed by sin(30°) = 0.5 going down the screen');
 
+// A point of the view set on an actor (a drag, the scene moving under it) moves its floor point there.
+a = spawn();
+a.x += 24;
+a.y -= 10;
+assert.deepEqual([a.x, a.y], [124, 190]);
+assert.ok(Math.abs(a.pos.x - 62) < 1e-9 && Math.abs(a.pos.y - 190 / (2 * 0.5)) < 1e-9, 'on the floor: x over the scale, y over the scale and sin(tilt)');
+
 // 2. moving: at groundSpeed × scale along the input, Shift takes the fastest gait.
 a = spawn();
 for (let t = 0; t < 1; t += 0.01) stepPlayer(a, { dx: 1, dy: 0, run: false }, 0.01, { width: 5000, height: 5000 }, emit);
@@ -318,16 +254,45 @@ for (let t = 0; t < 1; t += 0.01) stepPlayer(a, { dx: 1, dy: 1, run: false }, 0.
 assert.equal(a.row, 7, 'facing south-east');
 assert.ok(Math.abs(a.x - 100 - 80 / Math.SQRT2) < 1);
 assert.ok(Math.abs(a.y - 200 - (80 / Math.SQRT2) * 0.5) < 1);
-// Moving cancels an action only from its cancel event on.
-a = spawn();
-startClip(a, slash, emit);
-stepPlayer(a, { dx: 1, dy: 0, run: false }, 0.01, { width: 5000, height: 5000 }, emit);
-assert.ok(a.act, 'still attacking before cancel');
-tick(a, 0.6);
-a.act ??= null;
-startClip(a, slash, emit);
-tick(a, 0.55);
-stepPlayer(a, { dx: 1, dy: 0, run: false }, 0.01, { width: 5000, height: 5000 }, emit);
-assert.equal(a.act, null, 'walking cancels the attack after its cancel event');
 
-console.log('✅ playground palette + atlas contract checks passed');
+// Points the view puts somewhere read back exactly, though the floor keeps them in world units: through the sample's 48°
+// camera, 192.5 px would come back as 192.49999999999997, and the canvas would round the sprite a pixel off.
+const tilted = buildLibrary(assets, new Map(specs.map((c) => [`characters/mage/${c.key}.png`, sheet(c, { ...manifest, camera: { tilt: 48, heightBoost: 1.2 } })]))).characters[0];
+const ky48 = Math.sin((48 * Math.PI) / 180);
+assert.notEqual((192.5 / (2 * ky48)) * ky48 * 2, 192.5, 'the round trip this guards against');
+const exact = newActor(7, tilted.idle!, 300.5, 192.5, tilted);
+assert.deepEqual([exact.x, exact.y], [300.5, 192.5], 'a spawn at half pixels');
+assert.ok(Math.abs(exact.pos.y - 192.5 / (2 * ky48)) < 1e-9, 'while its floor point is in world units');
+exact.y = 377.5;
+exact.x = 0.1 + 0.2;
+assert.deepEqual([exact.x, exact.y], [0.1 + 0.2, 377.5], 'a drag to any point');
+for (let t = 0; t < 1; t += 0.01) stepPlayer(exact, { dx: 1, dy: 0, run: false }, 0.01, { width: 5000, height: 5000 }, emit);
+assert.equal(exact.y, 377.5, 'walking east keeps its row of pixels');
+for (let t = 0; t < 2; t += 0.01) stepPlayer(exact, { dx: 0, dy: 1, run: true }, 0.01, { width: 5000, height: 400.5 }, emit);
+assert.equal(exact.y, 400.5, 'the view\'s edge, exactly');
+for (let t = 0; t < 2; t += 0.01) stepPlayer(exact, { dx: -1, dy: 0, run: true }, 0.01, { width: 5000, height: 400.5 }, emit);
+assert.deepEqual([exact.x, exact.y], [60, 400.5], 'and its side (a 100 px cell keeps 60 px of room)');
+
+// The view draws each sheet at its own export scale, so a clip moves its sprite by its own `meta.scale`: a walk exported at
+// scale 1 for a character at scale 2 covers 40 px a second, not 80 (the runtime moves 40 world units either way).
+const halfWalk = sheet(specs[1], manifest);
+halfWalk.meta.scale = 1;
+const halved = buildLibrary(assets, new Map([...withManifest, ['characters/mage/walk.png', halfWalk]])).characters[0];
+const strider = newActor(8, halved.idle!, 100, 200, halved);
+for (let t = 0; t < 1 - 1e-9; t += 0.01) stepPlayer(strider, { dx: 1, dy: 0, run: false }, 0.01, { width: 5000, height: 5000 }, emit);
+assert.ok(Math.abs(strider.x - 100 - 40) < 1e-6, `40 px at its own scale (${strider.x})`);
+
+// The view draws a frame's rectangle as it is, trimmed or not, at the feet less the pivot: without `meta.pivot` the feet
+// are at the middle of that rectangle's bottom, as the playground always drew a packed sprite. The runtime's own
+// `shownFrame` measures the untrimmed cell instead, for hosts that draw the trimmed part at its offset in it.
+const packedAtlas = {
+  meta: { mode: 'strip', frameCount: 1, frameWidth: 100, frameHeight: 100, scale: 2, data: { role: 'prop' } },
+  frames: { frame_0: { x: 3, y: 5, width: 40, height: 60, ox: 30, oy: 20, cellW: 100, cellH: 100 } },
+} as Atlas;
+const packedSprite = newActor(9, buildLibrary([asset('props', 'packed')], new Map([['props/packed.png', packedAtlas]])).sprites[0].clip, 100, 200);
+assert.deepEqual(currentFrame(packedSprite).pivot, { x: 20, y: 60 }, 'the middle of the drawn rectangle\'s bottom');
+assert.deepEqual(currentFrame(packedSprite).rect, { x: 3, y: 5, width: 40, height: 60, ox: 30, oy: 20, cellW: 100, cellH: 100 });
+assert.deepEqual(shownFrame(packedSprite).pivot, { x: 50, y: 100 }, 'the runtime\'s: the untrimmed cell\'s');
+assert.deepEqual(currentFrame(a).pivot, a.clip.atlas.meta.pivot, 'a sheet\'s own pivot is the pivot either way');
+
+console.log('✅ playground palette + view checks passed');

@@ -1,10 +1,11 @@
-import { canStep, cellAt, footprintOf, layoutScene, moveIn, sceneNavigation, type Grid, type SceneData, type SceneItem, type ScenePieceInfo, type SceneNavigation, type SceneryCatalog } from '@core/volume';
+import { footprintOf, layoutScene, sceneNavigation, type Grid, type SceneData, type SceneItem, type ScenePieceInfo, type SceneNavigation, type SceneryCatalog } from '@core/volume';
+import { BODY_RADIUS as RUNTIME_BODY_RADIUS, flightStop as stopOnFloor, moveIn } from '@diorama/runtime';
 
 /** The scale the scene is drawn at: the sheets' export scale, so a scene and a character share one pixel size. */
 export const WORLD_SCALE = 2;
 
-/** World units a character's body reaches from its feet: it stops this far short of a wall. */
-export const BODY_RADIUS = 9;
+/** World units a character's body reaches from its feet: it stops this far short of a wall (the runtime's `BODY_RADIUS`). */
+export const BODY_RADIUS = RUNTIME_BODY_RADIUS;
 
 /** The scene's pieces by id. */
 const pieceIn = (catalog: SceneryCatalog, id: string): ScenePieceInfo | undefined => catalog.pieces.find((p) => p.id === id);
@@ -348,29 +349,10 @@ export function clipFrames(live: Live): (SceneItem & { clip: { name: string; fra
 
 /**
  * Where something that flies along a path on the floor is stopped (view points, actor units): the last point it can
- * reach before a cell that cannot be entered, a wall or a shut door, or null when the way is clear. The path is followed
- * in steps of a fraction of a cell, and a step across a corner needs one of its two ways round to be open.
+ * reach before a cell that cannot be entered, a wall or a shut door, or null when the way is clear (the runtime's
+ * `flightStop`, on the floor).
  */
 export function flightStop(live: Live, grid: Grid, mapping: Mapping, from: { x: number; y: number }, to: { x: number; y: number }): { x: number; y: number } | null {
-  const a = toWorld(mapping, from);
-  const b = toWorld(mapping, to);
-  const steps = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / (grid.cell.x * 0.2)));
-  let before = a;
-  let cell = cellAt(grid, a);
-  for (let i = 1; i <= steps; i++) {
-    const point = { x: a.x + ((b.x - a.x) * i) / steps, y: a.y + ((b.y - a.y) * i) / steps };
-    const next = cellAt(grid, point);
-    if (next.col !== cell.col || next.row !== cell.row) {
-      const sideways = { col: next.col, row: cell.row };
-      const along = { col: cell.col, row: next.row };
-      const open =
-        next.col !== cell.col && next.row !== cell.row
-          ? (canStep(live.nav, cell, sideways) && canStep(live.nav, sideways, next)) || (canStep(live.nav, cell, along) && canStep(live.nav, along, next))
-          : canStep(live.nav, cell, next);
-      if (!open) return toView(mapping, before);
-      cell = next;
-    }
-    before = point;
-  }
-  return null;
+  const stop = stopOnFloor(live.nav, grid, toWorld(mapping, from), toWorld(mapping, to));
+  return stop && toView(mapping, stop);
 }

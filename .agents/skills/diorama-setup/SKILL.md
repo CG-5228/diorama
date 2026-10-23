@@ -37,7 +37,7 @@ npm test
 npx tsc --noEmit -p tsconfig.json
 ```
 
-- `npm test` runs every suite under `tests/`: the engine (`tests/engine/`: core, volume, rig and the dependency boundaries of [docs/ARCHITECTURE.md](../../../docs/ARCHITECTURE.md)), the documentation (`tests/docs/`: the snippets of the skills and guides compile, and every link and path they name exists), the commands (`tests/cli/`) and the viewer's logic (`tests/viewer/`). The command checks create temporary projects under `projects/`, export them through Chromium, and remove them afterwards. A passing run therefore confirms that the exporter and the review commands render.
+- `npm test` runs every suite under `tests/`: the engine (`tests/engine/`: core, volume, rig and the dependency boundaries of [docs/ARCHITECTURE.md](../../../docs/ARCHITECTURE.md)), the documentation (`tests/docs/`: the snippets of the skills and guides compile, and every link and path they name exists), the runtime (`tests/runtime/`: `@diorama/runtime` on synthetic sheets and on fixtures cut from the sample's export, and its conformance traces), the viewer's logic (`tests/viewer/`) and the commands (`tests/cli/`). The command checks create temporary projects under `projects/`, export them through Chromium, and remove them afterwards. A passing run therefore confirms that the exporter and the review commands render.
 - The `tsc` command reports errors from every folder it covers, including `projects/` and `examples/`. Errors in `core/`, `tools/`, `templates/` and `viewer/` mean the setup is broken. Errors in `projects/` are not caused by setup and are not blocking.
 
 ## 4. Open the viewer

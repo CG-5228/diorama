@@ -285,6 +285,7 @@ export default defineConfig({
       '@core/volume': resolve(__dirname, 'core/volume/index.ts'),
       '@core/rig': resolve(__dirname, 'core/rig/index.ts'),
       '@core': resolve(__dirname, 'core/index.ts'),
+      '@diorama/runtime': resolve(__dirname, 'packages/runtime/src/index.ts'),
     },
   },
   build: {

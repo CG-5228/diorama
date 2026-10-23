@@ -187,6 +187,9 @@ function Info({ atlas, asset, frameCount }: { atlas: Atlas | undefined; asset: A
   const meta = atlas?.meta;
   const exportedPath = projectFile(asset.root, asset.project, `assets/${asset.subpath}`);
   const sheetPath = asset.sheet ? projectFile(asset.root, asset.project, `sheets/${asset.sheet}`) : null;
+  // A piece's clip sheet names its clip with an object (frames, fps, from, to): show its name. JSON can hold null there.
+  const written = meta?.data?.clip;
+  const clip = typeof written === 'object' && written !== null ? written.name : written;
   const rows: Array<[string, string | undefined]> = [
     [t('preview.data.sheet'), meta?.width && meta.height ? `${meta.width}×${meta.height}` : asset.width && asset.height ? `${asset.width}×${asset.height}` : undefined],
     [t('preview.data.frame'), meta?.frameWidth ? `${meta.frameWidth}×${meta.frameHeight}` : undefined],
@@ -197,7 +200,7 @@ function Info({ atlas, asset, frameCount }: { atlas: Atlas | undefined; asset: A
     [t('preview.data.pivot'), meta?.pivot ? `${number(meta.pivot.x, { maximumFractionDigits: 2 })}, ${number(meta.pivot.y, { maximumFractionDigits: 2 })}` : undefined],
     [t('preview.data.speed'), meta?.data?.groundSpeed ? t('units.worldPerSecond', { value: number(meta.data.groundSpeed, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }) : undefined],
     [t('preview.data.skeleton'), meta?.data?.skeleton],
-    [t('preview.data.clip'), meta?.data?.clip],
+    [t('preview.data.clip'), clip],
     [t('preview.data.loop'), meta?.data?.loop === undefined ? undefined : meta.data.loop ? t('common.yes') : t('common.no')],
     [t('preview.data.modified'), date(asset.mtime)],
   ];

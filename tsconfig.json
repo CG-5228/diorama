@@ -15,16 +15,19 @@
       "@core/draw": ["core/draw/index.ts"],
       "@core/volume": ["core/volume/index.ts"],
       "@core/rig": ["core/rig/index.ts"],
+      "@diorama/runtime": ["packages/runtime/src/index.ts"],
       "@/*": ["viewer/src/*"]
     }
   },
   "include": [
     "core/**/*",
+    "packages/**/*",
     "tools/**/*",
     "viewer/**/*",
     "templates/**/*",
     "projects/**/*",
     "examples/**/*",
-    "tests/engine/clip-keys.test.ts"
+    "tests/engine/clip-keys.test.ts",
+    "tests/runtime/contract.test.ts"
   ]
 }

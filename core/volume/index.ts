@@ -40,7 +40,7 @@ export { Grid, EDGE, CORNER, edgeMask, cornerMask, cornerMaskShape } from './gri
 export { defineSpace, SPACE_PRESETS, screenHeight, heightOf, spaceData, scaleFigure, type SpaceProfile, type SpaceScale, type SpaceOptions, type SpacePreset, type SpacePresetName, type SpaceHeight, type WallPlacement } from './space.js';
 export { playhead, keyed, loopWave, type ClipKeys } from './clip-motion.js';
 export { defineEffect, validateEffects, drawEffectFrame, effectCell, effectLayer, effectRng, type EffectKind, type EffectContext, type EffectPiece, type EffectInfo, type EffectCatalog, type EffectAssetOptions } from './effects.js';
-export { sceneNavigation, pieceBlocks, canStep, findPath, cellAt, moveIn, type SceneNavigation, type NavCell } from './navigation.js';
+export { sceneNavigation, pieceBlocks, type SceneNavigation, type NavCell } from './navigation.js';
 export { floorTile, floorBlob, FLOOR_EDGE, type FloorTile, type FloorEdge, type FloorTileOptions } from './floor-tile.js';
 export {
   drawScene,

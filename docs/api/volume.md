@@ -62,10 +62,6 @@ Tilted orthographic camera with one project light, local frames that turn object
   - [`effectRng`](#effectrng)
   - [`sceneNavigation`](#scenenavigation)
   - [`pieceBlocks`](#pieceblocks)
-  - [`canStep`](#canstep)
-  - [`findPath`](#findpath)
-  - [`cellAt`](#cellat)
-  - [`moveIn`](#movein)
   - [`floorTile`](#floortile)
   - [`floorBlob`](#floorblob)
   - [`FLOOR_EDGE`](#floor_edge)
@@ -975,51 +971,6 @@ function pieceBlocks(info: ScenePieceInfo, state?: string | undefined): boolean
 
 ---
 
-### `canStep`
-
-Whether a character can step from a cell to a 4-neighbour: the target can be entered and no wall or closed door stands between.
-
-```ts
-function canStep(nav: SceneNavigation, from: NavCell, to: NavCell): boolean
-```
-
----
-
-### `findPath`
-
-The cheapest 4-neighbour path from one cell to another (A*), both ends included, or null.
-
-```ts
-function findPath(nav: SceneNavigation, from: NavCell, to: NavCell): NavCell[] | null
-```
-
----
-
-### `cellAt`
-
-The cell a point of the floor (world units, cell (0, 0) centred on the origin) stands in.
-
-```ts
-function cellAt(grid: Grid, p: { x: number; y: number; }): NavCell
-```
-
----
-
-### `moveIn`
-
-Moves a character standing at `p` (world units on the floor) by `delta`, with a body of `radius`,
-sliding along what blocks: each axis moves on its own and stops `radius` short of an edge it cannot
-cross (a wall, a closed door, a cell that cannot be entered), and the body is pushed clear of the
-posts of walls on borders (piers, pillars; `postRadius`, default a fifth of a cell). Long moves are
-taken in steps of at most half a cell, so nothing is tunnelled through. For free movement in the
-playground and in games; grid games step with `canStep` instead.
-
-```ts
-function moveIn(nav: SceneNavigation, grid: Grid, p: { x: number; y: number; }, delta: { x: number; y: number; }, radius: number, postRadius?: number): { x: number; y: number; }
-```
-
----
-
 ### `floorTile`
 
 Paints one floor frame: a whole tile (mask 15) or a dual-grid transition. Everything is painted
@@ -1770,7 +1721,7 @@ interface SceneNavigation {
   doors: { index: number; piece: string; col: number; row: number; edge: "N" | "W"; state?: string | undefined; open: boolean; }[];
   /** Things to use (`nav.interact` of their piece, in a state of its `interactIn`): chests, levers, breakables, doors. `cells` are the cells a character uses them from. */
   interactables: { index: number; piece: string; kind: string; col: number; row: number; state?: string | undefined; cells: NavCell[]; }[];
-  /** Walls on borders: the vertices where a blocking wall stands, `posts[row][col]` for the vertex at the top-left corner of cell (col, row), (rows + 1) × (cols + 1): piers and lone pillars a body cannot walk through even where no edge is closed (`moveIn` keeps clear of them). */
+  /** Walls on borders: the vertices where a blocking wall stands, `posts[row][col]` for the vertex at the top-left corner of cell (col, row), (rows + 1) × (cols + 1): piers and lone pillars a body cannot walk through even where no edge is closed (`moveIn` of `@diorama/runtime` keeps clear of them). */
   posts: boolean[][];
 }
 ```

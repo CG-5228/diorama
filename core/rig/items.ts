@@ -70,6 +70,23 @@ export interface Rarity {
   color: string;
 }
 
+/**
+ * What an item icon's atlas says about its item (`meta.data.item`, role 'icon'): the catalog's fields, the gear part it
+ * equips (`gear`, the part's id) and that part's equipment slot (`equip`, when the gear catalog gives the part one).
+ */
+export interface ItemIconData {
+  id: string;
+  label: string;
+  kind: string;
+  rarity: string;
+  rarityLabel: string;
+  rarityColor: string;
+  stack: number;
+  description?: string;
+  gear?: string;
+  equip?: string;
+}
+
 /** A box in logical pixels. */
 export interface IconBox {
   x: number;
@@ -242,13 +259,14 @@ export function defineItemIcon(o: ItemIconOptions): AssetDefinition {
   const size = o.items.icon.size;
   const pad = o.items.icon.padding ?? Math.round(size * 0.12);
   const equip = item.gear ? o.items.gear?.catalog.parts.find(p => p.id === item.gear!.part)?.equip : undefined;
+  const data: ItemIconData = { id: item.id, label: item.label, kind: item.kind, rarity: rarityKey, rarityLabel: rarity.label, rarityColor: rarity.color, stack: item.stack ?? 1, ...(item.description ? { description: item.description } : {}), ...(item.gear ? { gear: item.gear.part } : {}), ...(equip ? { equip } : {}) };
   return defineAsset({
     width: size,
     height: size,
     scale: o.scale ?? 2,
     data: {
       role: 'icon',
-      item: { id: item.id, label: item.label, kind: item.kind, rarity: rarityKey, rarityLabel: rarity.label, rarityColor: rarity.color, stack: item.stack ?? 1, ...(item.description ? { description: item.description } : {}), ...(item.gear ? { gear: item.gear.part } : {}), ...(equip ? { equip } : {}) },
+      item: data,
     },
     render({ ctx }) {
       const box: IconBox = { x: 0, y: 0, w: size, h: size };

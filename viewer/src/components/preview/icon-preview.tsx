@@ -191,7 +191,7 @@ export function IconPreview({ asset, projectAssets, onSelect }: { asset: AssetFi
                   [t('preview.icon.id'), item.id],
                   [t('preview.icon.stack'), item.stack !== undefined ? t('preview.icon.perSlot', { count: item.stack }) : undefined],
                   [t('preview.icon.rarityColor'), item.rarityColor],
-                  [t('preview.icon.gearPart'), item.gear?.part],
+                  [t('preview.icon.gearPart'), item.gear],
                   [t('preview.icon.icon'), atlas?.meta.frameWidth ? t('units.px', { value: `${atlas.meta.frameWidth}×${atlas.meta.frameHeight}` }) : undefined],
                 ].filter((row): row is [string, string] => row[1] !== undefined).map(([key, value]) => (
                   <div key={key} className="flex justify-between gap-3">

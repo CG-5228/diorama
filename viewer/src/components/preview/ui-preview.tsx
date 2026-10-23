@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { capPlacement, fillRect, layoutText, minimumSize, nineSlice, stretchFill } from '@diorama/runtime';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,6 @@ import { Rich, useT } from '@/i18n';
 import { clipFrames, type Atlas, type Rect } from '@/lib/atlas';
 import { isTyping, useWindowKeydown } from '@/lib/hotkeys';
 import type { AssetFileMeta } from '@/lib/types';
-import { capPlacement, fillRect, layoutText, minimumSize, nineSlice, stretchFill } from '@/lib/ui-sheet';
 import { usePref } from '@/lib/use-pref';
 import { cn } from '@/lib/utils';
 import { Section } from './inspector';

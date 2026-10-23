@@ -77,9 +77,15 @@ const ALIASES: Record<string, string> = {
   '@core/rig': 'core/rig/index',
 };
 
+/** The packages games and the viewer share (packages/), by the name they are imported with. */
+const PACKAGES: Record<string, string> = {
+  '@diorama/runtime': 'packages/runtime/src/index',
+};
+
 /** The repository path (no extension) a specifier lands on, or undefined for a package. */
 function target(file: string, spec: string): string | undefined {
   if (spec in ALIASES) return ALIASES[spec];
+  if (spec in PACKAGES) return PACKAGES[spec];
   if (spec.startsWith('@core/')) return `core/${spec.slice('@core/'.length)}`;
   if (spec.startsWith('@/')) return `viewer/src/${spec.slice(2)}`;
   if (!spec.startsWith('.')) return undefined;
@@ -178,11 +184,52 @@ for (const file of scanFiles('core')) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// 3. Nothing imports tests/.
+// 3. The packages: @diorama/runtime imports nothing (not core/, not a package, not Node; the DOM is
+//    left out by its own tsconfig, which tests/runtime/standalone.test.ts compiles it with), core
+//    never imports a package (the producer and the players share the files, not code), and
+//    everything else reaches a package through its alias, never by a path into packages/.
+// ---------------------------------------------------------------------------------------------
+
+const RUNTIME = 'packages/runtime';
+const runtimeFiles = scanFiles(RUNTIME);
+for (const file of runtimeFiles) {
+  for (const spec of specifiersOf(file)) {
+    const landed = target(file, spec);
+    if (!spec.startsWith('.') || !landed || !inside(landed, RUNTIME)) {
+      report(`${rel(file)} imports "${spec}"${landed ? ` (${landed})` : ''}: @diorama/runtime imports nothing outside packages/runtime (no core/, no packages, no node: modules).`);
+    }
+  }
+}
+for (const file of scanFiles('core')) {
+  for (const spec of specifiersOf(file)) {
+    if (spec in PACKAGES || spec.startsWith('@diorama/')) report(`${rel(file)} imports "${spec}": core never imports the packages that play its files.`);
+  }
+}
+
+/**
+ * Outside packages/, a package is reached through its alias (`@diorama/runtime`), never by a path into packages/: tsx
+ * resolves the tsconfig paths, so the tools and the tests use the alias as the viewer does.
+ */
+function pathIntoPackage(file: string, spec: string): string | null {
+  if (!spec.startsWith('.')) return null;
+  const landed = target(file, spec);
+  if (!landed || !inside(landed, 'packages') || inside(rel(file), 'packages')) return null;
+  return `${rel(file)} imports "${spec}" (${landed}): reach a package through its alias (${Object.keys(PACKAGES).join(', ')}), not by a path into packages/.`;
+}
+for (const file of [...outsideEngine, ...scanFiles('tests'), ...scanFiles('scripts')]) {
+  for (const spec of specifiersOf(file)) {
+    const problem = pathIntoPackage(file, spec);
+    if (problem) report(problem);
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// 4. Nothing imports tests/.
 // ---------------------------------------------------------------------------------------------
 
 const everythingButTests = [
   ...scanFiles('core'),
+  ...scanFiles('packages'),
   ...scanFiles('tools'),
   ...scanFiles('scripts'),
   ...scanFiles('viewer'),
@@ -199,7 +246,7 @@ for (const file of everythingButTests) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// 4. The checker itself: the rules above can only fail if these hold.
+// 5. The checker itself: the rules above can only fail if these hold.
 // ---------------------------------------------------------------------------------------------
 
 assert.equal(target(resolve('core/draw/shapes/shape.ts'), '../../volume/camera.js'), 'core/volume/camera', 'a relative import resolves to its repository path');
@@ -209,6 +256,16 @@ assert.equal(layerOf('core/random'), 'top');
 assert.equal(layerOf('tools/cli'), undefined);
 assert.ok(specifiersOf(resolve('core/index.ts')).includes('./asset.js'), 'the scanner reads the specifiers of a file');
 assert.ok(scanFiles('core').length > 20 && scanFiles('viewer').length > 20, 'the scanner finds the engine and the viewer');
+assert.ok(runtimeFiles.length > 10 && runtimeFiles.some(f => rel(f) === `${RUNTIME}/src/index.ts`), 'the scanner finds the runtime');
+assert.equal(target(resolve('viewer/src/a.ts'), '@diorama/runtime'), 'packages/runtime/src/index', 'a package resolves to its entry file');
+assert.equal(target(resolve(`${RUNTIME}/src/actor.ts`), './frames.js'), `${RUNTIME}/src/frames`);
+assert.ok(specifiersOf(resolve(`${RUNTIME}/src/index.ts`)).every(spec => spec.startsWith('./')), 'the runtime\'s entry re-exports its own modules');
+assert.ok(pathIntoPackage(resolve('viewer/src/probe-path.ts'), '../../packages/runtime/src/actor.js'), 'a path into packages/ from the viewer is refused');
+assert.ok(pathIntoPackage(resolve('tests/runtime/probe.test.ts'), '../../packages/runtime/src/index.js'), 'from a test too, even to the entry file');
+assert.ok(pathIntoPackage(resolve('tools/probe.ts'), '../packages/runtime/src/actor.js'), 'a tool may not reach inside a package');
+assert.ok(pathIntoPackage(resolve('tools/probe.ts'), '../packages/runtime/src/index.js'), 'nor name its entry file: tsx resolves the alias for tools too');
+assert.equal(pathIntoPackage(resolve('viewer/src/probe-path.ts'), '@diorama/runtime'), null, 'the alias is the way in');
+assert.equal(pathIntoPackage(resolve(`${RUNTIME}/src/actor.ts`), './frames.js'), null, 'a package\'s own files are its own business');
 assert.deepEqual(specifiersOf(resolve('tests/engine/boundary.test.ts')).filter(spec => spec.startsWith('.')), [], 'comments and strings do not count as imports');
 
 assert.equal(problems.length, 0, `Boundary problems:\n${problems.map(p => `  - ${p}`).join('\n')}`);

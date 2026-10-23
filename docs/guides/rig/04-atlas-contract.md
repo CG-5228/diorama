@@ -1,6 +1,6 @@
 # The character atlas contract (`@core/rig`)
 
-**Purpose.** This page lists what a game, the viewer's playground or any other player can rely on in the exported files of a character. It also gives the rules for playing them. Producers (skins, clips) are covered in guides [02](02-gaits-and-clips.md) and [03](03-skins-and-character-assets.md); this page is for consumers.
+**Purpose.** This page lists what a game, the viewer's playground or any other player can rely on in the exported files of a character. It also gives the rules for playing them. Producers (skins, clips) are covered in guides [02](02-gaits-and-clips.md) and [03](03-skins-and-character-assets.md); this page is for consumers. `@diorama/runtime` plays these rules in pure TypeScript, for games and the playground alike ([packages/runtime/README.md](../../../packages/runtime/README.md)).
 
 ---
 
@@ -57,7 +57,7 @@ Every sheet's JSON repeats the whole character manifest, so reading any one shee
 
 ## 5. Playing rules
 
-1. **Default state:** `controls.idle`, looping.
+1. **Default state:** `controls.idle`, looping, or a **stance**: a game can make a looping clip the base instead of idle (a defend pose, a cast loop). Actions, hit and death still play over it and the character returns to it after them; walking shows the gait, and stopping shows the stance again. Resetting the character drops it.
 2. **Moving:** pick a `controls.move` clip by input (walk, or run with a modifier). Move the sprite at its `groundSpeed` along the input direction and show the nearest facing row. On screen, ground distances along the view shrink with the camera tilt: for a world direction (dx, dy) of unit length, the screen velocity is `(dx, dy × sin(camera.tilt)) × groundSpeed × scale` px/s, with `camera` from the manifest. At that exact speed the planted feet stay on the floor in every direction.
 3. **Priority:** death > hit > other actions (attack, skill, dodge, jump, interact, emote, spawn) > locomotion > idle. A higher priority always interrupts a lower one.
 4. **Interrupting an action:**
@@ -76,6 +76,8 @@ Every sheet's JSON repeats the whole character manifest, so reading any one shee
    - `stay`: at the socket where the event fired, once (or looping until the clip ends, for loops).
    - `follow`: tracking the socket's position frame by frame while the clip plays.
    - `fly`: a projectile leaves the socket along the facing the action started with, at `travel.speed` (on screen, its depth component shrinks by sin(tilt) like a character's), showing the effect row nearest its heading; it ends after `travel.range` or where the scene's navigation blocks it, and plays its `follows` effect there.
+   - **Aimed fly:** a game may aim a `fly` cue at a point on the floor instead (a target): the projectile heads for that point and shows the row nearest that heading.
+   - **Effect events:** an effect sheet's own `events` fire as its frames are reached (on every lap of a loop), and `end` when it ends. A projectile's damage lands on the `hit` of the effect it `follows`, or where the projectile ends when that effect has no `hit` (or there is none).
    - Effects with `layer: 'ground'` are drawn under every standing thing; `air` effects are sorted with them by the point on the floor under their origin: the socket's position with its height dropped, never the socket lowered by the effect's `height`.
    - The effect's `height` says where its own floor marks are drawn (a projectile's pool of light is `height` below its origin), not where to place it: the origin goes on the socket. A kit cues effects with floor marks from a socket at about that height, or makes one effect per height.
    - Rows: a `fly` effect shows the row nearest its heading, and `stay` or `follow` effects the row nearest the actor's facing. `meta.directionFacings` gives each row's heading (a 16-facing sheet names its rows `D0`…`D15`, `D0` facing south).

@@ -1,118 +1,31 @@
-import type { Atlas, EffectCue, EffectMeta, Rect } from '../atlas';
-import { clipFrames } from '../atlas';
+import {
+  cues, cuesOn, effectSheetOf as effectSheetFrom, facingOf, frameIndex, liftAt, rowOfHeading, shown, stepFx as stepRuntimeFx,
+  type ClipEvent as RuntimeClipEvent, type EffectCue, type EffectSheet as RuntimeEffectSheet, type Fx as RuntimeFx, type Vec2,
+} from '@diorama/runtime';
+import type { Atlas } from '../atlas';
 import type { AssetFileMeta } from '../types';
-import { facingOf, frameIndex, rowFor, shown, type Active, type Actor, type ClipEvent } from './actor';
+import type { Actor, ClipEvent } from './actor';
 import { socketPoint } from './effects';
-import type { Character, Clip } from './library';
+import type { Character } from './library';
+import { drawnOf, floorAt, fxInView, placeFx, sheetRef, velocityOf, viewOfFx, type AssetRef, type Drawn, type Fx } from './view';
 
 /**
- * Visual effects in the playground, following docs/guides/rig/04-atlas-contract.md §5 rule 9: a character cues effects on
- * the events of its clips (`meta.data.character.effects`), each effect is a sheet (`role: 'vfx'`) with its frames across
- * and its facings down, pivoted on the effect's origin. This module is pure: the scene calls it with the actors, the time
- * and what the floor allows, and draws what it returns.
+ * Visual effects in the playground: the runtime's effects (`@diorama/runtime`, contract §5 rule 9: cues on events, stay,
+ * follow, fly) in the view's actor units. The runtime decides what plays, its rows, ages and ends, what follows what and
+ * where a projectile is stopped; the view draws each effect where it draws the frame it came from: on the socket of the
+ * frame that cued it (`effects.ts: socketPoint`), on its socket frame by frame for one that follows, moved by its
+ * velocity in actor units for a projectile, and where that one ended for its impact, which faces the way the projectile
+ * crossed the view. The scene calls it with the actors' events, the time and what the view and the floor allow, and draws
+ * what it returns.
  */
 
-/** An effect's sheet, read from its atlas. */
-export interface EffectSheet {
-  id: string;
-  asset: AssetFileMeta;
-  atlas: Atlas;
-  kind: string;
-  frames: number;
-  fps: number;
-  loop: boolean;
-  layer: 'ground' | 'air';
-  /** World units: where the effect draws its own floor marks (a projectile's pool of light is this far below its origin). It does not place the effect: the origin goes on the socket. */
-  height: number;
-  /** Radius it reaches, world units. */
-  size: number;
-  events: { frame: number; name: string }[];
-  travel: { speed: number; range: number | undefined } | null;
-  /** The effect played where this one ends. */
-  follows: string | null;
-  /** Exported px per world unit. */
-  scale: number;
-  /** The effect's origin inside a frame, exported px. */
-  pivot: { x: number; y: number };
-  /** How many rows (facings) the sheet has. */
-  rows: number;
-  /** The frames of one row. */
-  rects: (row: number) => Rect[];
-}
+export { frameOfFx, hasCues } from '@diorama/runtime';
+export type { Fx };
 
-/** Where a kind of effect is drawn when its sheet does not say: area and cast effects on the ground, the rest sorted in among the things standing. */
-const GROUND_KINDS = new Set(['area', 'cast']);
+export type EffectSheet = RuntimeEffectSheet<AssetRef>;
 
-/** The effect a sheet describes, or null when it is not an effect sheet. */
-export function effectSheetOf(asset: AssetFileMeta, atlas: Atlas): EffectSheet | null {
-  const data = atlas.meta.data;
-  if (data?.role !== 'vfx') return null;
-  const meta: Partial<EffectMeta> = data.effect ?? {};
-  const kind = meta.kind ?? 'burst';
-  const frames = meta.frames ?? atlas.meta.frameCount ?? 1;
-  const cache = new Map<number, Rect[]>();
-  const scale = atlas.meta.scale ?? 1;
-  const frameWidth = atlas.meta.frameWidth ?? 0;
-  const frameHeight = atlas.meta.frameHeight ?? 0;
-  return {
-    id: meta.id ?? asset.subpath.split('/').pop()!.replace(/\.[^.]+$/, ''),
-    asset,
-    atlas,
-    kind,
-    frames,
-    fps: meta.fps ?? atlas.meta.fps ?? 12,
-    loop: meta.loop ?? false,
-    layer: meta.layer ?? (GROUND_KINDS.has(kind) ? 'ground' : 'air'),
-    height: meta.height ?? 0,
-    size: meta.size ?? 0,
-    events: meta.events ?? [],
-    travel: meta.travel ? { speed: meta.travel.speed, range: meta.travel.range } : null,
-    follows: meta.follows ?? null,
-    scale,
-    pivot: atlas.meta.pivot ? { x: atlas.meta.pivot.x, y: atlas.meta.pivot.y } : { x: frameWidth / 2, y: frameHeight / 2 },
-    rows: Math.max(1, atlas.meta.directions?.length ?? 1),
-    rects: (row) => {
-      let rects = cache.get(row);
-      if (!rects) cache.set(row, (rects = clipFrames(atlas, 'default', Math.min(row, Math.max(0, (atlas.meta.directions?.length ?? 1) - 1)))));
-      return rects;
-    },
-  };
-}
-
-/** The sheet's row that faces nearest a heading (a screen angle, like the sheets' facings); the only row of a round effect. */
-export const rowOfHeading = (sheet: EffectSheet, heading: number) => (sheet.rows > 1 ? Math.min(sheet.rows - 1, rowFor(sheet.atlas, heading)) : 0);
-
-/** Whether a character cues effects at all: a character that does keeps the generic rings out of its way. */
-export const hasCues = (character: Character | null) => !!character && Object.values(character.effects).some((cues) => cues.length > 0);
-
-/** The cues of a clip that play on an event. */
-export const cuesOn = (character: Character | null, clipKey: string, name: string): EffectCue[] => (character?.effects[clipKey] ?? []).filter((cue) => cue.on === name);
-
-/** A playing effect. Positions are the effect's origin on the screen, in actor units (exported pixels). */
-export interface Fx {
-  sheet: EffectSheet;
-  x: number;
-  y: number;
-  /** The sheet's row it shows. */
-  row: number;
-  /** Seconds since it began. */
-  age: number;
-  motion: 'stay' | 'follow' | 'fly';
-  /**
-   * Screen pixels its origin lies above the floor under it: the height of the socket it left from (the actor's floor point less
-   * the socket's y), never the effect's own `height`. It is where the effect stands for depth, and for what blocks it.
-   */
-  lift: number;
-  /** `follow`: the actor whose socket it tracks. */
-  follow?: { actor: Actor; socket: string };
-  /** A looping effect ends with the action it was cued in (or when the actor changes its base clip). */
-  until?: { actor: Actor; act: Active | null; clip: Clip };
-  /** `fly`: velocity in actor units per second, world units flown and the range they end at. */
-  fly?: { vx: number; vy: number; flown: number; speed: number; range: number };
-  /** The character that cued it: its camera sets how a depth distance reads on the screen. */
-  character: Character | null;
-  done: boolean;
-}
+/** The effect an exported asset's atlas describes, or null when it is not an effect sheet. */
+export const effectSheetOf = (asset: AssetFileMeta, atlas: Atlas): EffectSheet | null => effectSheetFrom(sheetRef(asset), atlas);
 
 /** Everything a step needs to know about the world around the effects. */
 export interface FxWorld {
@@ -126,124 +39,100 @@ export interface FxWorld {
   blocked?: (from: { x: number; y: number }, to: { x: number; y: number }) => { x: number; y: number } | null;
 }
 
-/** Projectiles without a range fly this far (world units) before they end. */
-const DEFAULT_RANGE = 150;
+/** The socket a cue plays at: its own, else the `spawn:<socket>` of the frame that fired, else the centre. */
+const socketNamed = (cue: EffectCue, siblings: string[]) => cue.at ?? siblings.find((n) => n.startsWith('spawn:'))?.slice('spawn:'.length) ?? 'center';
 
-/**
- * How high an origin on an actor's socket is above the floor under it, on the screen: the socket's position with its height
- * dropped lands on the actor's floor point (contract §5 rule 9), so it is the distance down to the actor's feet.
- */
-export const liftAt = (actor: Pick<Actor, 'y'>, origin: { y: number }) => Math.max(0, actor.y - origin.y);
+/** Where an effect starts on a frame without the socket or a centre: this many actor units above the feet. */
+const NO_SOCKET = 60;
 
-const tiltFactor = (character: Character | null) => Math.sin(((character?.tilt ?? 48) * Math.PI) / 180);
-
-/** The point the cue starts at: its socket (or the `spawn:<socket>` of its frame, else the centre) or the feet; null when there is none to be found. */
-function originOf(event: ClipEvent, cue: EffectCue): { x: number; y: number } | null {
-  const { actor, clip, row, frame, siblings } = event;
-  const named = cue.at ?? siblings.find((n) => n.startsWith('spawn:'))?.slice('spawn:'.length) ?? 'center';
-  if (named === 'feet') return { x: actor.x, y: actor.y };
-  const point = socketPoint(actor, clip, row, frame, named) ?? socketPoint(actor, clip, row, frame, 'center');
-  return point ? { x: point.x, y: point.y } : { x: actor.x, y: actor.y - 60 };
+/** Where the view draws a cue's effect as it starts: on its socket in the frame that fired (else the centre), or at the feet. */
+function startOf(event: ClipEvent, cue: EffectCue): Drawn {
+  const { actor, clip, row, frame } = event;
+  const named = socketNamed(cue, event.siblings);
+  const origin = named === 'feet' ? { x: actor.x, y: actor.y } : (socketPoint(actor, clip, row, frame, named) ?? socketPoint(actor, clip, row, frame, 'center') ?? { x: actor.x, y: actor.y - NO_SOCKET });
+  return { x: origin.x, y: origin.y, lift: liftAt(actor, origin) };
 }
 
 /**
- * The effects a clip's event cues, ready to play: `stay` where it started, `follow` its socket, `fly` along the facing the
- * action started with (`event.row`), at the sheet's travel speed, its depth part shrunk by the camera's tilt.
- * `missing` lists the cues whose sheets are not in the project: nothing to play for them.
+ * The effects a clip's event cues, ready to play in the view. `missing` lists the cues whose sheets are not in the
+ * project: nothing to play for them. The view draws an effect sheet at its own export scale, so a projectile crosses the
+ * view at its own sheet's rate (`travel.speed × meta.scale` px per second, the depth part shrunk by the tilt), whatever
+ * the scale of the character that cued it; it ends after the same time, at `travel.range`.
  */
 export function playCues(event: ClipEvent, character: Character | null, sheets: Map<string, EffectSheet>): { fx: Fx[]; missing: string[] } {
-  const fx: Fx[] = [];
-  const missing: string[] = [];
-  for (const cue of cuesOn(character, event.clip.key, event.name)) {
-    const sheet = sheets.get(cue.effect);
-    if (!sheet) {
-      missing.push(cue.effect);
-      continue;
+  const missing = cuesOn(character, event.clip.key, event.name).filter((cue) => !sheets.has(cue.effect)).map((cue) => cue.effect);
+  // The runtime plays the cues of the actor's character whose sheets are there, in their order.
+  const playing = cuesOn(event.actor.character, event.clip.key, event.name).filter((cue) => sheets.has(cue.effect));
+  const played = cues(event as RuntimeClipEvent<AssetRef>, sheets);
+  const heading = facingOf(event.clip.atlas, event.row);
+  played.forEach((fx, i) => {
+    let velocity: Vec2 | undefined;
+    if (fx.fly) {
+      const view = viewOfFx(fx);
+      const own = fx.sheet.scale / view.scale;
+      fx.fly.vx *= own;
+      fx.fly.vy *= own;
+      const speed = fx.fly.speed * fx.sheet.scale;
+      velocity = { x: Math.cos(heading) * speed, y: Math.sin(heading) * speed * view.ky };
     }
-    const origin = originOf(event, cue);
-    if (!origin) continue;
-    const motion = cue.motion ?? 'stay';
-    const heading = facingOf(event.clip.atlas, event.row);
-    const base: Fx = { sheet, x: origin.x, y: origin.y, row: 0, age: 0, motion, lift: liftAt(event.actor, origin), character, done: false };
-    if (motion === 'fly' && sheet.travel) {
-      const speed = sheet.travel.speed * sheet.scale;
-      base.row = rowOfHeading(sheet, heading);
-      base.fly = { vx: Math.cos(heading) * speed, vy: Math.sin(heading) * speed * tiltFactor(character), flown: 0, speed: sheet.travel.speed, range: sheet.travel.range ?? DEFAULT_RANGE };
-    } else if (motion === 'follow') {
-      base.follow = { actor: event.actor, socket: cue.at ?? event.siblings.find((n) => n.startsWith('spawn:'))?.slice('spawn:'.length) ?? 'center' };
-      base.row = rowOfHeading(sheet, heading);
-    } else {
-      base.motion = motion === 'fly' ? 'stay' : motion;
-      base.row = rowOfHeading(sheet, heading);
-    }
-    // A loop plays until the action it was cued in is over.
-    if (sheet.loop && base.motion !== 'fly') base.until = { actor: event.actor, act: event.actor.act, clip: event.actor.clip };
-    fx.push(base);
-  }
-  return { fx, missing };
+    placeFx(fx, startOf(event, playing[i]), velocity);
+  });
+  return { fx: played.map((fx) => fxInView(fx)), missing };
 }
-
-/** The frame an effect shows at an age: a loop wraps, a one-shot holds its last until it is done. */
-export const frameOfFx = (fx: Pick<Fx, 'sheet' | 'age'>) => {
-  const frame = Math.floor(fx.age * fx.sheet.fps);
-  return fx.sheet.loop ? frame % fx.sheet.frames : Math.min(frame, fx.sheet.frames - 1);
-};
 
 /** Where the effect stands on the floor, for sorting it among what stands: the point under its origin. */
 export const floorY = (fx: Pick<Fx, 'y' | 'lift'>) => fx.y + fx.lift;
 
-/** The effect that follows a projectile where it ended, played once at the point it ended at. */
-function impactOf(fx: Fx, at: { x: number; y: number }, sheets: Map<string, EffectSheet>, character: Character | null): Fx | null {
-  const next = fx.sheet.follows ? sheets.get(fx.sheet.follows) : undefined;
-  if (!next) return null;
-  const heading = fx.fly ? Math.atan2(fx.fly.vy / tiltFactor(character), fx.fly.vx) : 0;
-  return { sheet: next, x: at.x, y: at.y, row: rowOfHeading(next, heading), age: 0, motion: 'stay', lift: fx.lift, character, done: false };
+const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
+
+/** Where the view draws a following effect after a step: on its socket in the frame shown now (where it was, when that frame has none), at its height above the feet. */
+function following(fx: RuntimeFx<AssetRef>, was: Drawn): Drawn {
+  const { socket } = fx.follow!;
+  const actor = fx.follow!.actor as Actor;
+  const now = shown(actor);
+  const point = socket === 'feet' ? { x: actor.x, y: actor.y } : (socketPoint(actor, now.clip, now.row, frameIndex(now.clip, now.time, now.loops), socket) ?? was);
+  return { x: point.x, y: point.y, lift: liftAt(actor, point) };
 }
 
 /**
- * Moves the effects on by `dt` seconds. A projectile flies along its heading until its range runs out, it leaves the view
- * or the floor stops it, and plays the effect it `follows` there; a following effect tracks its socket; a looping one ends
- * with the action it was cued in; a one-shot ends after its last frame. Returns the effects still playing.
+ * Moves the effects on by `dt` seconds. A projectile ends where its range runs out, where the floor stops it or where it
+ * leaves the view (at its edge), and plays the effect it `follows` there. Returns the effects still playing.
  */
 export function stepFx(effects: Fx[], dt: number, world: FxWorld): Fx[] {
-  const alive: Fx[] = [];
-  const spawned: Fx[] = [];
-  for (const fx of effects) {
-    const { character } = fx;
-    fx.age += dt;
-    if (fx.until) {
-      const { actor, act, clip } = fx.until;
-      const same = act ? actor.act === act : actor.act === null && actor.clip === clip;
-      if (!same) fx.done = true;
-    }
-    if (fx.follow && !fx.done) {
-      const { actor, socket } = fx.follow;
-      if (socket === 'feet') [fx.x, fx.y] = [actor.x, actor.y];
-      else {
-        const now = shown(actor);
-        const point = socketPoint(actor, now.clip, now.row, frameIndex(now.clip, now.time, now.loops), socket);
-        if (point) [fx.x, fx.y] = [point.x, point.y];
-      }
-      fx.lift = liftAt(actor, fx);
-    }
-    if (fx.fly && !fx.done) {
-      const step = { x: fx.fly.vx * dt, y: fx.fly.vy * dt };
-      const to = { x: fx.x + step.x, y: fx.y + step.y };
-      fx.fly.flown += fx.fly.speed * dt;
-      const stop = world.blocked?.({ x: fx.x, y: fx.y + fx.lift }, { x: to.x, y: to.y + fx.lift });
-      const outside = to.x < 0 || to.x > world.bounds.width || to.y + fx.lift < 0 || to.y + fx.lift > world.bounds.height;
-      if (stop || outside || fx.fly.flown >= fx.fly.range) {
-        const end = stop ? { x: stop.x, y: stop.y - fx.lift } : { x: Math.max(0, Math.min(world.bounds.width, to.x)), y: Math.max(-fx.lift, Math.min(world.bounds.height - fx.lift, to.y)) };
-        const impact = impactOf(fx, end, world.sheets, character);
-        if (impact) spawned.push(impact);
-        fx.done = true;
-      } else {
-        fx.x = to.x;
-        fx.y = to.y;
-      }
-    }
-    if (!fx.sheet.loop && !fx.fly && fx.age * fx.sheet.fps >= fx.sheet.frames) fx.done = true;
-    if (!fx.done) alive.push(fx);
+  const before = new Map(effects.map((e) => [e.fx, drawnOf(e.fx)]));
+  // Where each projectile is drawn after this step if it flies on (`ahead`), and where it ended if it stops (`end`).
+  const flights = new Map<RuntimeFx<AssetRef>, { ahead: Vec2; end: Vec2 }>();
+  const { fx } = stepRuntimeFx(
+    effects.map((e) => e.fx),
+    dt,
+    {
+      effects: world.sheets,
+      blocked: (_from, _to, flying) => {
+        const was = before.get(flying)!;
+        const velocity = velocityOf(flying)!;
+        const ahead = { x: was.x + velocity.x * dt, y: was.y + velocity.y * dt };
+        const { width, height } = world.bounds;
+        // The floor points under the origin, and the view's edges, in actor units.
+        const stop = world.blocked?.({ x: was.x, y: was.y + was.lift }, { x: ahead.x, y: ahead.y + was.lift }) ?? null;
+        const outside = ahead.x < 0 || ahead.x > width || ahead.y + was.lift < 0 || ahead.y + was.lift > height;
+        const end = stop ? { x: stop.x, y: stop.y - was.lift } : { x: clamp(ahead.x, 0, width), y: clamp(ahead.y, -was.lift, height - was.lift) };
+        flights.set(flying, { ahead, end });
+        return stop || outside ? floorAt(viewOfFx(flying), { x: end.x, y: end.y + was.lift }) : null;
+      },
+    },
+  );
+  for (const playing of fx) {
+    const ended = playing.from ? flights.get(playing.from) : undefined;
+    const flight = flights.get(playing);
+    if (ended) {
+      // The impact's row faces the projectile's heading on the floor, read from its velocity in the view (the depth part
+      // grown back by the tilt): a shot halfway between two of the impact's rows shows the one it always showed here.
+      const from = playing.from!;
+      const velocity = velocityOf(from)!;
+      playing.row = rowOfHeading(playing.sheet, Math.atan2(velocity.y / viewOfFx(from).ky, velocity.x));
+      placeFx(playing, { ...ended.end, lift: before.get(from)!.lift });
+    } else if (flight) placeFx(playing, { ...flight.ahead, lift: before.get(playing)!.lift });
+    else if (playing.follow) placeFx(playing, following(playing, before.get(playing)!));
   }
-  return [...alive, ...spawned];
+  return fx.map((playing) => fxInView(playing));
 }

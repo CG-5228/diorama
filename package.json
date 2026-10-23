@@ -30,6 +30,7 @@
     "test": "tsx tests/run.ts",
     "test:engine": "tsx tests/run.ts engine",
     "test:docs": "tsx tests/run.ts docs",
+    "test:runtime": "tsx tests/run.ts runtime",
     "test:cli": "tsx tests/run.ts cli",
     "test:viewer": "tsx tests/run.ts viewer"
   },

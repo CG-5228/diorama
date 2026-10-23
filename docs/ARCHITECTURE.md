@@ -11,6 +11,8 @@ diorama/
 │   ├── volume/           volumes, camera, space profile, scenery, navigation, effects
 │   ├── rig/              skeletons, clips, characters, gear, items
 │   └── *.ts              asset contract, random, noise, colors, sheet packing, HUD pieces (ui.ts), index
+├── packages/             what games and the viewer share to play the exports (README.md in each)
+│   └── runtime/          @diorama/runtime: the atlas contract in pure TypeScript, no DOM, no dependencies
 ├── docs/
 │   ├── ARCHITECTURE.md   this file
 │   ├── guides/           how-to guides, by module: volume/, rig/ (the draw guide is core/draw/README.md)
@@ -22,9 +24,10 @@ diorama/
 ├── tests/
 │   ├── run.ts            runs the suites below (npm test)
 │   ├── engine/           core (draw, interface assets), volume, rig and the dependency boundaries
-│   ├── cli/              commands, including the layout check
 │   ├── docs/             snippets, links and paths of the markdown
-│   └── viewer/           viewer logic
+│   ├── runtime/          the runtime package: its rules, standalone compile, contract types, conformance traces
+│   ├── viewer/           viewer logic
+│   └── cli/              commands, including the layout check
 ├── viewer/               the app (src/) and its dev server (server/)
 ├── examples/             Soulkeeper, the sample game (examples/soulkeeper); its assets/ and review/ are not versioned
 ├── projects/             your projects, one folder each: not versioned by Diorama (only projects/README.md);
@@ -42,12 +45,20 @@ The module guides live in [docs/guides/](guides/README.md) and answer "when do I
 ### Dependency direction
 
 ```
-draw  <-  volume  <-  rig
+draw  <-  volume  <-  rig                 core/: the engine, the producer of the files
 ```
 
+```
+@diorama/runtime          imports nothing (not core/, not the DOM)
+    ^
+  viewer (the Playground, the previews), and games                 the players of the files
+```
+
+- Core and the runtime share no code: they share the exported JSON (the atlas contract). Core writes it and the runtime reads it; `tests/runtime/contract.test.ts` checks that core's producer types fit the runtime's.
+- `@diorama/runtime` (`packages/runtime`) imports only its own files: no `core/`, no package, no `node:` module, and no DOM (its `tsconfig.json` has lib ES2022 alone). Code outside `core/` reaches it through the `@diorama/runtime` alias (`tsconfig.json`, `vite.config.ts`), never by a path into `packages/`.
 - `draw` imports no other engine module (only the low-level `random`, `noise` and `color` of `core/`); `volume` imports `draw` and never `rig`; `rig` imports `volume` and `draw`.
 - The top-level files of `core/` (`asset.ts`, `ui.ts`, `random.ts`...) import neither `volume` nor `rig`; the HUD helpers of `ui.ts` build on `asset.ts`, and the HUD pieces a project writes with them draw with `draw`.
-- `core` never imports `tools/`, `viewer/`, `projects/`, `examples/` or `tests/`.
+- `core` never imports `tools/`, `viewer/`, `packages/`, `projects/`, `examples/` or `tests/`: nothing outside `core/`.
 - Projects, examples, templates and tools import the engine only through `@core`, `@core/draw`, `@core/volume` and `@core/rig`, never a path inside `core/` and never an `internal/` folder.
 - The viewer reaches the engine only through the same `@core` aliases.
 - Nothing imports `tests/`.
@@ -190,11 +201,12 @@ They are errors. `src/theme.ts` holds the palette, so its color literals are the
 | Determinism (no `Math.random`, no clock, no raw colors outside `src/theme.ts`) | `npm run check -- <project>` (`tools/lint.ts`); `tests/cli/cli.test.ts` writes each pattern and checks the message, and checks that `examples/soulkeeper` passes |
 | No export from code with type errors | `npm run export` (`tools/typecheck.ts`, shared with `check`); `tests/cli/cli.test.ts` checks the refusal and `--force` |
 | A new kit works with its commands | `tests/cli/cli.test.ts` runs `new-kit` for each kit, its generator, `new-scene`, the export and `check --strict` |
-| The dependency direction, the public entrypoints, nothing imports `tests/` | `tests/engine/boundary.test.ts` (scans every import of `core/`, `tools/`, `viewer/`, `templates/`, `examples/` and `projects/`) |
+| The dependency direction, the public entrypoints, nothing imports `tests/` | `tests/engine/boundary.test.ts` (scans every import of `core/`, `packages/`, `tools/`, `scripts/`, `viewer/`, `templates/`, `examples/` and `projects/`, and those of `tests/` for paths into `packages/`) |
+| The runtime compiles alone (lib ES2022, no DOM, no dependencies) and core's producer types fit its contract types | `tests/runtime/standalone.test.ts`; `tests/runtime/contract.test.ts` (part of `npx tsc --noEmit -p .`) |
 | Snippets in the guides and skills compile; every markdown link, heading link and backticked repository path exists | `tests/docs/docs.test.ts` |
-| The engine, the commands and the viewer's logic | `tests/engine/`, `tests/cli/`, `tests/viewer/` |
+| The engine, the runtime, the commands and the viewer's logic | `tests/engine/`, `tests/runtime/` (with conformance traces of the sample's characters, `tests/runtime/conformance/`), `tests/cli/`, `tests/viewer/` |
 
-`npm test` runs all four suites through `tests/run.ts` (every `*.test.ts` under `tests/engine/`, `tests/docs/`, `tests/viewer/` and `tests/cli/`, then a summary of which passed); `npm run test:engine`, `test:docs`, `test:viewer` and `test:cli` run one. A test file outside those folders fails the run, so a new test cannot be left out.
+`npm test` runs all five suites through `tests/run.ts` (every `*.test.ts` under `tests/engine/`, `tests/docs/`, `tests/runtime/`, `tests/viewer/` and `tests/cli/`, in that order, then a summary of which passed); `npm run test:engine`, `test:docs`, `test:runtime`, `test:viewer` and `test:cli` run one. A test file outside those folders fails the run, so a new test cannot be left out.
 
 ## What reads what
 
@@ -205,4 +217,4 @@ src/  <-  sheets/  --export-->  assets/  <--  viewer, games
 
 - The exporter imports each sheet, renders it in headless Chromium and writes `assets/` at the sheet's path. It never reads `assets/` or `review/`.
 - The viewer shows the exported `assets/` of every project and loads the kits in `src/` for its editors (the customizer and the scene painter); what it saves goes through the commands (`new-outfit-character`, `new-scene`), so it lands in `src/` and `sheets/` like any hand-written file. It never reads `review/`.
-- A game reads `assets/`: the PNG and the atlas JSON next to it (`meta.data` carries the contract, see [rig guide 04](guides/rig/04-atlas-contract.md)).
+- A game reads `assets/`: the PNG and the atlas JSON next to it (`meta.data` carries the contract, see [rig guide 04](guides/rig/04-atlas-contract.md)). `@diorama/runtime` reads and plays the JSON for it; the viewer's Playground plays its characters and effects with the same package, and still places effects on screen with its own pixel arithmetic, which a test holds to the runtime's positions ([packages/runtime/README.md](../packages/runtime/README.md)).

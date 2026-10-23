@@ -8,7 +8,7 @@
 
 It builds on guide 04 (kits, space profile, scenes). The engine gives the mechanics; the pieces' looks and timing are the project's art.
 
-**API reference:** [`docs/api/volume.md`](../../api/volume.md): `PieceClip`, `PieceNav`, `PieceContext.state` / `.clip`, `ScenePlacement.state` / `.edge`, `defineTileSet` (`state`, `clip`, `variant`), `sceneNavigation`, `canStep`, `findPath`, `moveIn`, `cellAt`, `pieceBlocks`.
+**API reference:** [`docs/api/volume.md`](../../api/volume.md): `PieceClip`, `PieceNav`, `PieceContext.state` / `.clip`, `ScenePlacement.state` / `.edge`, `defineTileSet` (`state`, `clip`, `variant`), `sceneNavigation`, `pieceBlocks`. Moving on the navigation is the players' part: [`docs/api/runtime.md`](../../api/runtime.md) (`@diorama/runtime`): `canStep`, `findPath`, `moveIn`, `cellAt`, `flightStop`.
 
 ---
 
@@ -67,11 +67,13 @@ How pieces count (`nav`, else the group's default):
 - **Doors** block their edge until their state is passable.
 - **`nav.interact`** lists a piece in `interactables`: 'door', 'chest', 'lever', 'break', or the project's own kinds; **`nav.interactIn`** limits it to some states, so a chest once opened or an urn once broken drops out.
 
-Helpers for the playground and for games:
+Moving on it is done by the players, not the engine, with `@diorama/runtime` ([`packages/runtime/README.md`](../../../packages/runtime/README.md)). A game reads the navigation from the scene sheet's atlas (`meta.data.navigation`, with its `grid`); the viewer's playground builds the same navigation from the project's source with `sceneNavigation` and moves on it with the same helpers:
 - `canStep(nav, from, to)`: a 4-neighbour step for grid movement;
 - `findPath(nav, from, to)`: the cheapest path (A*), or null;
 - `cellAt(grid, p)` and `moveIn(nav, grid, p, delta, radius, postRadius?)`: free movement on the floor (world units) that slides along walls, stops a body's radius short of what blocks, keeps clear of wall posts, and takes long moves in half-cell steps so nothing is tunnelled through;
-- `sceneNavigation(scene, catalog, { open: { 3: true } })`: recomputes it with doors opened or shut by prop index, as a game changes them.
+- `flightStop(nav, grid, from, to)`: where something flying along the floor (a projectile) is stopped by a cell that cannot be entered, a wall or a shut door.
+
+In the engine, `sceneNavigation(scene, catalog, { open: { 3: true } })` recomputes the navigation with doors opened or shut by prop index, as a game changes them.
 
 ## 4. Characters in the scene
 

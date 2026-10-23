@@ -23,6 +23,7 @@ const docFiles = [
   ...guideDir('docs/guides/volume'),
   ...guideDir('docs/guides/rig'),
   resolve('core/draw/README.md'),
+  resolve('packages/runtime/README.md'),
   resolve('projects/README.md'),
   resolve('templates/optional/STYLE.md'),
   resolve('.agents/skills/diorama/SKILL.md'),
@@ -181,7 +182,7 @@ function anchorsOf(file: string): Set<string> {
 }
 
 /** Top-level names a backticked path can start with. */
-const REPO_ROOTS = ['.agents', '.claude', 'core', 'docs', 'tools', 'scripts', 'templates', 'tests', 'viewer', 'examples', 'projects'];
+const REPO_ROOTS = ['.agents', '.claude', 'core', 'docs', 'packages', 'tools', 'scripts', 'templates', 'tests', 'viewer', 'examples', 'projects'];
 const REPO_FILES = new Set(['README.md', 'LICENSE', 'THIRD_PARTY.md', 'package.json', 'package-lock.json', 'tsconfig.json', 'vite.config.ts', 'index.html', 'dev.sh', 'dev.bat', 'components.json']);
 
 /**

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { capPlacement, fillRect, layoutText, minimumSize, nineSlice, stretchFill } from '../../viewer/src/lib/ui-sheet';
-import { eventsByFrame, eventsOf, type Atlas } from '../../viewer/src/lib/atlas';
+import { buildLibrary, capPlacement, clipFrames, eventsByFrame, eventsOf, fillRect, layoutText, minimumSize, nineSlice, stretchFill, type Atlas } from '@diorama/runtime';
+import { fixtureSheets } from './helpers';
 
 console.log('🧪 Checking the interface sheets (nine-slice stretch, bars, bitmap font text, effect events)...\n');
 
@@ -74,5 +74,35 @@ assert.deepEqual([...eventsByFrame(effect)], [[1, ['hit']], [3, ['fade']]]);
 const clip: Atlas = { meta: { data: { events: [{ frame: 2, name: 'cancel' }] } }, frames: {} };
 assert.deepEqual(eventsOf(clip), [{ frame: 2, name: 'cancel' }]);
 assert.deepEqual(eventsOf(undefined), []);
+
+// 5. The sample's interface sheets (cut from its export): a bar's layers and fill box, a font's glyphs.
+const sample = new Map(fixtureSheets('ui').map((s) => [s.asset.path, s.atlas!]));
+const bar = sample.get('ui/health-bar')!;
+const barData = bar.meta.data!;
+assert.deepEqual(barData.layers?.slice(0, 3), ['back', 'fill', 'frame'], 'a bar lists its layers in sheet order');
+assert.deepEqual(fillRect(barData.fillBox!, 1, barData.grows ?? 'right'), barData.fillBox, 'full, the fill is its box');
+assert.equal(clipFrames(bar, 'default', 0).length, barData.layers!.length, 'one frame per layer');
+assert.deepEqual(clipFrames(bar, 'default', 0), barData.layers!.map((_, i) => bar.frames[`frame_${i}`]), 'the cells its export wrote, by name (`frame_<n>`)');
+assert.ok(clipFrames(bar, 'default', 0).every((cell, i) => cell.y === 0 && cell.x === i * bar.meta.frameWidth!), 'side by side, one per layer');
+const damage = sample.get('ui/damage-font')!.meta.data!.font!;
+const set = layoutText(damage, '123');
+assert.deepEqual(set.glyphs.map((g) => [g.char, g.index]), [['1', damage.chars.indexOf('1')], ['2', damage.chars.indexOf('2')], ['3', damage.chars.indexOf('3')]]);
+assert.equal(set.height, damage.cell.h);
+const panel = sample.get('ui/dialog-panel')!;
+const panelInsets = panel.meta.data!.nineSlice!;
+const scale = panel.meta.scale ?? 1;
+const wide = nineSlice(clipFrames(panel, 'default', 0)[0], panelInsets, scale, 400 * scale, 120 * scale);
+assert.equal(wide.length, 9, 'the dialog panel stretches in nine parts');
+// What a game reads from the library: a portrait frame's window and a cursor's hotspot (and its states, one row each).
+const ui = buildLibrary(fixtureSheets('ui')).ui;
+assert.deepEqual([...ui.keys()].sort(), ['ui/cursor', 'ui/damage-font', 'ui/dialog-panel', 'ui/health-bar', 'ui/portrait-frame']);
+const portrait = ui.get('ui/portrait-frame')!;
+assert.deepEqual([portrait.kind, portrait.window, portrait.hotspot], ['portrait-frame', { x: 9, y: 9, w: 46, h: 54 }, null], 'where the portrait goes, logical px');
+const cursor = ui.get('ui/cursor')!;
+assert.deepEqual([cursor.kind, cursor.hotspot, cursor.window, cursor.states], ['cursor', { x: 3, y: 3 }, null, ['normal', 'interact', 'attack']]);
+assert.deepEqual(cursor.atlas.meta.pivot?.logical, cursor.hotspot!, 'the pivot marks the hotspot too');
+const directions = cursor.atlas.meta.directions!;
+assert.deepEqual(cursor.states.map((_, row) => clipFrames(cursor.atlas, 'default', row)[0]), directions.map((d) => cursor.atlas.frames[`${d}_0`]), 'a state per row, its cell by name');
+assert.equal(ui.get('ui/health-bar')!.cap?.width, 3);
 
 console.log('✅ interface checks passed');

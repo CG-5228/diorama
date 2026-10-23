@@ -40,9 +40,6 @@ import {
   drawEffectFrame,
   type EffectCatalog,
   type EffectContext,
-  canStep,
-  findPath,
-  moveIn,
   floorTile,
   masksOf,
   type PieceContext,
@@ -746,28 +743,11 @@ const centroid = (f: Face) => f.points.reduce((s, p) => vec3(s.x + p.x / f.point
   assert.equal(nav.posts.length, 4, 'posts are the vertices');
   assert.ok(nav.posts[0][0] && !nav.posts[2][2], 'where the walls stand');
   assert.ok(nav.interactables.find(i => i.kind === 'chest')!.cells.some(c => c.col === 2 && c.row === 1), 'a chest is used from the cells beside it');
-  assert.ok(canStep(nav, { col: 0, row: 1 }, { col: 0, row: 2 }));
-  assert.ok(!canStep(nav, { col: 0, row: 1 }, { col: 1, row: 1 }), 'not into the urn');
-  const path = findPath(nav, { col: 0, row: 1 }, { col: 2, row: 1 })!;
-  assert.ok(path && path.every(c => nav.cost[c.row][c.col] > 0) && path.length === 5, 'the path goes round the urn');
-  assert.equal(findPath(nav, { col: 0, row: 0 }, { col: 3, row: 1 }), null, 'no path into a blocked cell');
+  // Moving on it (canStep, findPath, moveIn) is the players' part: tests/runtime/navigation.test.ts walks the same hall.
   const doorTest = seamTestScene(living, 'door');
   assert.deepEqual(validateScene(doorTest, living), []);
   assert.deepEqual(doorTest.props.map(p => [p.edge, p.state]), [['N', undefined], ['W', 'open']], 'a door in its default and next states');
   assert.equal(seamTestScene(living, 'urn').props.length, 2, 'a prop in each of its states');
-  // Free movement slides along walls: walking north into the north wall stops a radius short of it.
-  const start = { x: space.grid.center(0, 0).x, y: space.grid.center(0, 0).y };
-  const moved = moveIn(nav, space.grid, start, { x: 0, y: -30 }, 6);
-  near(moved.y, space.grid.center(0, 0).y - space.grid.cell.y / 2 + 6, 1e-3);
-  const slid = moveIn(nav, space.grid, start, { x: 5, y: -30 }, 6);
-  near(slid.x, start.x + 5, 1e-6);
-  // A long move is taken in steps: it cannot tunnel through the closed door or the urn.
-  const below = { x: space.grid.center(1, 2).x, y: space.grid.center(1, 2).y };
-  const pushed = moveIn(nav, space.grid, below, { x: 0, y: -200 }, 6);
-  assert.ok(pushed.y > space.grid.center(1, 1).y + space.grid.cell.y / 2 - 6 - 1e-3, 'the urn stops a long move in front of it');
-  // The posts of the north wall keep a body clear even where it walks along the wall.
-  const nearPost = moveIn(nav, space.grid, { x: space.grid.vertex(1, 0).x + 2, y: space.grid.center(1, 0).y }, { x: 0, y: -20 }, 6);
-  assert.ok(Math.hypot(nearPost.x - space.grid.vertex(1, 0).x, nearPost.y - space.grid.vertex(1, 0).y) >= 6 + space.grid.cell.x * 0.2 - 1e-6, 'a body keeps clear of a pier');
   // Frames tip and roll for hinged and tumbling parts.
   const tipped = Frame3.facing(vec3(0, 0, 0), 0).pitched(90);
   near(tipped.forward.z, 1, 1e-9);

@@ -1,4 +1,5 @@
-import type { FontMeta, Insets, Rect, UiBox } from './atlas';
+import type { Rect } from './contract/atlas.js';
+import type { FontMeta, Insets, UiBox } from './contract/ui.js';
 
 /** What an interface sheet gives a game, as pure geometry (core/ui.ts): how a nine-slice stretches, how a bar fills, how a bitmap font sets text. */
 

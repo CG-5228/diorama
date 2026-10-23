@@ -1,3 +1,4 @@
+import { frameSocket } from '@diorama/runtime';
 import { facingOf, type Actor, type ClipEvent } from './actor';
 
 /** Short-lived things the events of a clip make appear: the skill's projectile, hit and landing rings. */
@@ -18,18 +19,15 @@ export interface SocketPoint {
   depth: number;
 }
 
-/** A socket in the scene: the cell origin plus [x, y] × scale (contract §5.8), for the frame shown at that moment. */
+/**
+ * A socket in the scene, in actor units, for a frame of a clip: where the view draws that pixel of the frame, the cell's
+ * origin (the actor less the pivot) plus the socket's [x, y] × scale (contract §5.8, the runtime's `frameSocket`).
+ */
 export function socketPoint(actor: Actor, clip: ClipEvent['clip'], row: number, frame: number, name: string): SocketPoint | null {
-  const sockets = clip.atlas.meta.data?.sockets;
-  const index = sockets?.names.indexOf(name) ?? -1;
-  if (!sockets || index < 0) return null;
-  const directions = clip.atlas.meta.directions ?? [];
-  const key = directions.length > 1 ? `${directions[row]}_${frame}` : `frame_${frame}`;
-  const entry = sockets.frames[key]?.[index];
-  if (!entry) return null;
-  const scale = clip.atlas.meta.scale ?? 1;
+  const socket = frameSocket(clip, row, frame, name);
+  if (!socket) return null;
   const pivot = clip.atlas.meta.pivot ?? { x: 0, y: 0 };
-  return { x: actor.x - pivot.x + entry[0] * scale, y: actor.y - pivot.y + entry[1] * scale, depth: entry[2] };
+  return { x: actor.x - pivot.x + socket.x, y: actor.y - pivot.y + socket.y, depth: socket.depth };
 }
 
 /** Turns a clip event into what the player sees (contract §5.6). */

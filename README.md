@@ -40,12 +40,13 @@ Every folder has one job, written down in [docs/ARCHITECTURE.md](docs/ARCHITECTU
 
 ```
 core/        the engine: @core, @core/draw, @core/volume, @core/rig
+packages/    @diorama/runtime: plays the exported files in a game (and in the viewer's Playground)
 docs/        guides (docs/guides/), the generated API reference (docs/api/), ARCHITECTURE.md
 tools/       the command line and the exporter
 scripts/     the doctor and the API reference generator
 templates/   what new-project copies (theme.ts, STYLE.md)
 viewer/      the web app
-tests/       engine, docs, cli and viewer suites
+tests/       engine, docs, runtime, viewer and cli suites
 examples/    Soulkeeper, the sample game (examples/soulkeeper)
 projects/    your projects, one folder each; not versioned by Diorama
 .agents/     skills for coding agents

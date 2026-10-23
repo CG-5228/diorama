@@ -1,13 +1,14 @@
 /**
  * Diorama - public API reference generator.
  *
- * Inspects the four engine entrypoints (`@core`, `@core/draw`, `@core/volume`, `@core/rig`) with the
- * TypeScript Compiler API, extracts exported symbols, JSDoc, signatures and types,
- * and writes the single API reference into `docs/api/`:
+ * Inspects the four engine entrypoints (`@core`, `@core/draw`, `@core/volume`, `@core/rig`) and the
+ * runtime package (`@diorama/runtime`) with the TypeScript Compiler API, extracts exported symbols,
+ * JSDoc, signatures and types, and writes the single API reference into `docs/api/`:
  * - `core.md`                  `@core`
  * - `draw-geometry.md`, `draw-paths.md`, `draw-styles.md`, `draw-textures.md`  `@core/draw`
  * - `volume.md`                `@core/volume`
  * - `rig.md`                   `@core/rig`
+ * - `runtime.md`               `@diorama/runtime`
  *
  * Every exported symbol must land in exactly one file. The generator fails otherwise. Generated pages
  * that no target writes any more (a module that was removed or renamed) are deleted.
@@ -101,6 +102,16 @@ const TARGETS: Target[] = [
       filename: 'rig.md',
       title: '@core/rig - Skeletons, Gaits, Clips & Character Sheets',
       description: 'Procedural characters and creatures for `@core/volume`: skeletons as data (humanoids, quadrupeds, invented bodies), gaits with planted feet and an exported ground speed, two-bone IK, clips built on attack beats, and `defineCharacterAsset`, which renders a project skin in every facing with the clip data in the atlas JSON.',
+      select: ALL,
+    }],
+  },
+  {
+    spec: '@diorama/runtime',
+    entry: resolve('packages/runtime/src/index.ts'),
+    groups: [{
+      filename: 'runtime.md',
+      title: '@diorama/runtime - Playing the Atlas Contract',
+      description: 'Pure TypeScript with no DOM and no dependencies, shared by games and the viewer: reads exported sheets (`readSheet`, `dependenciesOf`, `buildLibrary`), plays characters in floor world units (`createActor`, `play`, `steer`, `advance`, `stance`, `socketAt`), the effects they cue (`cues`, `stepFx`), movement on a scene\'s navigation (`moveIn`, `findPath`, `flightStop`), one depth order (`depthKey`), floor-to-screen projections and the geometry of interface pieces.',
       select: ALL,
     }],
   },

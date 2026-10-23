@@ -77,4 +77,4 @@ export {
 export { wieldOf, wieldsOf, checkWield, weaponSockets, type Wielded, type WieldCheck } from './wield.js';
 export { swapCandidates, swapBlocker, swapPiece, equipPart, removePiece, type OutfitEdit, type SwapBlocker } from './outfit-edit.js';
 export { defineGearAsset, type GearAssetOptions } from './gear-asset.js';
-export { defineItemIcon, validateItems, itemRng, type ItemInfo, type ItemCatalog, type ItemPiece, type ItemContext, type Rarity, type IconBox, type ItemIconOptions } from './items.js';
+export { defineItemIcon, validateItems, itemRng, type ItemIconData, type ItemInfo, type ItemCatalog, type ItemPiece, type ItemContext, type Rarity, type IconBox, type ItemIconOptions } from './items.js';
