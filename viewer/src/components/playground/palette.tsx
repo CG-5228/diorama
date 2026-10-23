@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Field, FieldDescription, FieldLegend, FieldSet, FieldTitle } from '@/components/ui/field';
 import { Kbd } from '@/components/ui/kbd';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { useT } from '@/i18n';
 import type { Entry } from '@/lib/playground/catalog';
 import type { Armed, Character, Library } from '@/lib/playground/library';
 import { PlacementList } from './placement-list';
@@ -19,20 +20,21 @@ interface Props {
 }
 
 export function Palette({ library, entries, recent, player, onPlayer, armed, onArm }: Props) {
+  const { t } = useT();
   const directions = armed?.type === 'sprite' ? (armed.clip.atlas.meta.directions ?? []) : [];
   return (
     <aside className="flex min-h-0 w-80 shrink-0 flex-col gap-5 border-r p-4">
       {library.characters.length > 0 && (
         <FieldSet>
-          <FieldLegend variant="label" className="mb-0 text-muted-foreground uppercase">Personagem</FieldLegend>
+          <FieldLegend variant="label" className="mb-0 text-muted-foreground uppercase">{t('playground.palette.character')}</FieldLegend>
           <PlayerPicker characters={library.characters} player={player} onPlayer={onPlayer} />
           {player && <Controls character={player} />}
         </FieldSet>
       )}
 
       <FieldSet className="min-h-0 flex-1">
-        <FieldLegend variant="label" className="mb-0 text-muted-foreground uppercase">Colocar na cena</FieldLegend>
-        <FieldDescription>Escolha um item e clique na cena. Clique direito remove; Esc cancela.</FieldDescription>
+        <FieldLegend variant="label" className="mb-0 text-muted-foreground uppercase">{t('playground.palette.place')}</FieldLegend>
+        <FieldDescription>{t('playground.palette.placeHint')}</FieldDescription>
         <PlacementList
           entries={entries}
           recent={recent}
@@ -43,7 +45,7 @@ export function Palette({ library, entries, recent, player, onPlayer, armed, onA
         />
         {armed?.type === 'sprite' && directions.length > 1 && (
           <Field>
-            <FieldTitle id="playground-facing">Direção</FieldTitle>
+            <FieldTitle id="playground-facing">{t('playground.palette.direction')}</FieldTitle>
             <ToggleGroup type="single" variant="outline" size="sm" spacing={0} aria-labelledby="playground-facing" value={String(armed.row)} onValueChange={(row) => row && onArm({ ...armed, row: Number(row) })} className="flex-wrap">
               {directions.map((name, row) => <ToggleGroupItem key={name} value={String(row)}>{name}</ToggleGroupItem>)}
             </ToggleGroup>
@@ -56,14 +58,15 @@ export function Palette({ library, entries, recent, player, onPlayer, armed, onA
 
 /** The keys of the controlled character, straight from its manifest controls: what each one plays. */
 function Controls({ character }: { character: Character }) {
+  const { t } = useT();
   const { locomotion, actions, hit, death, warnings } = character;
   const rows: Array<[keys: Array<string | number>, label: string, kind?: string]> = [
-    [['W', 'A', 'S', 'D'], locomotion[0]?.key ?? 'mover', locomotion[0]?.kind],
+    [['W', 'A', 'S', 'D'], locomotion[0]?.key ?? t('playground.controls.move'), locomotion[0]?.kind],
     ...(locomotion.length > 1 ? [[['Shift'], locomotion.at(-1)!.key, locomotion.at(-1)!.kind] as [string[], string, string]] : []),
-    ...actions.map((action, i) => [[i === 0 ? 'Espaço' : i + 1], action.key, action.kind] as [Array<string | number>, string, string]),
+    ...actions.map((action, i) => [[i === 0 ? t('keys.space') : i + 1], action.key, action.kind] as [Array<string | number>, string, string]),
     ...(hit ? [[['H'], hit.key, hit.kind] as [string[], string, string]] : []),
     ...(death ? [[['K'], death.key, death.kind] as [string[], string, string]] : []),
-    ...(death || actions.some((a) => a.hold) ? [[['R'], 'reiniciar'] as [string[], string]] : []),
+    ...(death || actions.some((a) => a.hold) ? [[['R'], t('playground.controls.restart')] as [string[], string]] : []),
   ];
   return (
     <>

@@ -8,10 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command';
 import { Kbd } from '@/components/ui/kbd';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { createTranslator, LANGS, useT } from '@/i18n';
 import { useWindowKeydown } from '@/lib/hotkeys';
 import { projectsQuery } from '@/lib/queries';
 import { SECTION_PATHS, type Section } from '@/lib/sections';
 import { NovoModal } from '@/modals/novo-modal';
+
+/** An example project is found by the word for it in every language, whichever one the interface speaks. */
+const EXAMPLE_KEYWORDS = LANGS.map((lang) => createTranslator(lang).t('projects.switcher.example'));
 
 /** The project's initial on a small tile: what the switcher shows in place of a logo for each project. */
 function ProjectTile({ name }: { name: string }) {
@@ -27,6 +31,7 @@ export function ProjectSwitcher({ project, section }: { project: string | undefi
   const { data: projects } = useSuspenseQuery(projectsQuery);
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const { t } = useT();
 
   useWindowKeydown((e) => {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -43,23 +48,23 @@ export function ProjectSwitcher({ project, section }: { project: string | undefi
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" role="combobox" aria-expanded={open} aria-label="Trocar de projeto" className="max-w-64 gap-2">
+        <Button variant="ghost" size="sm" role="combobox" aria-expanded={open} aria-label={t('projects.switcher.label')} className="max-w-64 gap-2">
           {project ? <ProjectTile name={project} /> : null}
-          <span className="truncate">{project ?? 'Escolher projeto'}</span>
+          <span className="truncate">{project ?? t('projects.switcher.choose')}</span>
           <ChevronsUpDownIcon data-icon="inline-end" />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-72 gap-0 p-0">
         <Command>
-          <CommandInput placeholder="Buscar projeto…" aria-label="Buscar projeto" />
+          <CommandInput placeholder={t('projects.switcher.searchPlaceholder')} aria-label={t('projects.switcher.searchLabel')} />
           <CommandList>
-            <CommandEmpty>Nenhum projeto encontrado.</CommandEmpty>
-            <CommandGroup heading="Projetos">
+            <CommandEmpty>{t('projects.switcher.empty')}</CommandEmpty>
+            <CommandGroup heading={t('projects.switcher.heading')}>
               {projects.map((p) => (
-                <CommandItem key={p.name} value={p.name} keywords={p.root === 'examples' ? ['exemplo', 'example'] : undefined} data-checked={p.name === project} onSelect={() => choose(p.name)}>
+                <CommandItem key={p.name} value={p.name} keywords={p.root === 'examples' ? EXAMPLE_KEYWORDS : undefined} data-checked={p.name === project} onSelect={() => choose(p.name)}>
                   <ProjectTile name={p.name} />
                   <span className="truncate">{p.name}</span>
-                  {p.root === 'examples' && <Badge variant="outline">exemplo</Badge>}
+                  {p.root === 'examples' && <Badge variant="outline">{t('projects.switcher.example')}</Badge>}
                   <span className="ml-auto text-muted-foreground tabular-nums">{p.assetCount}</span>
                 </CommandItem>
               ))}
@@ -69,20 +74,20 @@ export function ProjectSwitcher({ project, section }: { project: string | undefi
               {/* Always listed: a search that finds nothing is often a project that does not exist yet. */}
               <CommandItem
                 forceMount
-                value="novo projeto criar"
+                value={`${t('projects.switcher.new')} ${t('common.create')}`}
                 onSelect={() => {
                   setOpen(false);
                   void NiceModal.show(NovoModal, { tab: 'new-project' });
                 }}
               >
                 <FolderPlusIcon />
-                Novo projeto
+                {t('projects.switcher.new')}
               </CommandItem>
             </CommandGroup>
           </CommandList>
         </Command>
         <div className="flex items-center gap-1 border-t px-2.5 py-1.5 text-muted-foreground">
-          <Kbd>⌘K</Kbd> abre e fecha
+          <Kbd>⌘K</Kbd> {t('projects.switcher.toggleHint')}
         </div>
       </PopoverContent>
     </Popover>

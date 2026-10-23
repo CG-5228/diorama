@@ -2,8 +2,9 @@ import { memo } from 'react';
 import { heightsOf, type SceneryCatalog, type SpaceHeight } from '@core/volume';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useT } from '@/i18n';
 import { pieceOf, type EraseLayer } from '@/lib/scenery/edit';
-import { ERASE_LABELS, GROUP_LABELS, TOOL_HINTS, TOOL_LABELS, type Tool } from '@/lib/scenery/labels';
+import type { Tool } from '@/lib/scenery/labels';
 import { canFlip } from '@/lib/scenery/edit';
 import { FacingControl, HeightSelect, SideControl, StateSelect, VariantSelect } from './prop-fields';
 import { PieceThumb } from './piece-thumb';
@@ -39,6 +40,7 @@ interface Props {
  * or the cell under the pointer changes with it. A narrow panel scrolls the controls and cuts the hint (in full in its tooltip).
  */
 export const ToolOptions = memo(function ToolOptions({ catalog, tool, brush, eraseLayer, onEraseLayer, propDir, propVariant, onPropDir, onPropVariant, placeState, onPlaceState, doorFlip, onDoorFlip, wallHeight, onWallHeight }: Props) {
+  const { t } = useT();
   const Icon = TOOL_ICONS[tool];
   const id = tool === 'floor' || tool === 'fill' ? brush.floor : tool === 'wall' ? brush.wall : tool === 'door' ? brush.door : tool === 'prop' ? brush.prop : null;
   const info = id ? pieceOf(catalog, id) : undefined;
@@ -54,7 +56,7 @@ export const ToolOptions = memo(function ToolOptions({ catalog, tool, brush, era
       <div className="flex shrink-0 items-center gap-4">
       <span className="flex items-center gap-1.5 font-medium whitespace-nowrap">
         <Icon />
-        {TOOL_LABELS[tool]}
+        {t(`scenery.tools.${tool}`)}
       </span>
 
       {(tool === 'floor' || tool === 'wall' || tool === 'door' || tool === 'prop' || tool === 'fill') &&
@@ -63,11 +65,11 @@ export const ToolOptions = memo(function ToolOptions({ catalog, tool, brush, era
             <PieceThumb catalog={catalog} info={info} size="sm" />
             <span className="flex max-w-48 flex-col leading-tight">
               <span className="truncate">{info.label}</span>
-              <span className="truncate text-muted-foreground">{GROUP_LABELS[info.group]}</span>
+              <span className="truncate text-muted-foreground">{t(`scenery.groups.${info.group}`)}</span>
             </span>
           </span>
         ) : (
-          <span className="whitespace-nowrap text-muted-foreground">Escolha uma peça no painel.</span>
+          <span className="whitespace-nowrap text-muted-foreground">{t('scenery.choosePiece')}</span>
         ))}
 
       {facings > 1 && <FacingControl count={facings} value={propDir} onTurn={(by) => onPropDir((((propDir + by) % facings) + facings) % facings)} />}
@@ -78,8 +80,8 @@ export const ToolOptions = memo(function ToolOptions({ catalog, tool, brush, era
       {heights.length > 0 && info && <HeightSelect heights={heights} units={heightsOf(info, catalog)} value={wallHeight} onChange={onWallHeight} className="w-44" />}
 
       {tool === 'erase' && (
-        <ToggleGroup type="single" variant="outline" size="sm" spacing={0} aria-label="Camada da borracha" value={eraseLayer} onValueChange={(value) => value && onEraseLayer(value as EraseLayer)}>
-          {ERASE_LAYERS.map((layer) => <ToggleGroupItem key={layer} value={layer}>{ERASE_LABELS[layer]}</ToggleGroupItem>)}
+        <ToggleGroup type="single" variant="outline" size="sm" spacing={0} aria-label={t('scenery.eraserLayer')} value={eraseLayer} onValueChange={(value) => value && onEraseLayer(value as EraseLayer)}>
+          {ERASE_LAYERS.map((layer) => <ToggleGroupItem key={layer} value={layer}>{t(`scenery.eraseLayers.${layer}`)}</ToggleGroupItem>)}
         </ToggleGroup>
       )}
 
@@ -87,9 +89,9 @@ export const ToolOptions = memo(function ToolOptions({ catalog, tool, brush, era
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="min-w-8 flex-1 truncate text-right text-muted-foreground">{TOOL_HINTS[tool]}</span>
+          <span className="min-w-8 flex-1 truncate text-right text-muted-foreground">{t(`scenery.hints.${tool}`)}</span>
         </TooltipTrigger>
-        <TooltipContent className="max-w-sm">{TOOL_HINTS[tool]}</TooltipContent>
+        <TooltipContent className="max-w-sm">{t(`scenery.hints.${tool}`)}</TooltipContent>
       </Tooltip>
     </div>
   );

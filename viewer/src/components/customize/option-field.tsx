@@ -3,6 +3,7 @@ import { Field, FieldLabel } from '@/components/ui/field';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
+import { useT } from '@/i18n';
 
 interface Props {
   id: string;
@@ -13,6 +14,7 @@ interface Props {
 
 /** One adjustable option of a part: a slider for numbers, a switch for booleans, a list for choices. */
 export function OptionField({ id, option, value, onChange }: Props) {
+  const { number } = useT();
   switch (option.type) {
     case 'number': {
       const current = typeof value === 'number' ? value : option.default;
@@ -20,7 +22,7 @@ export function OptionField({ id, option, value, onChange }: Props) {
         <Field>
           <div className="flex items-center justify-between gap-2">
             <FieldLabel htmlFor={id}>{option.label}</FieldLabel>
-            <span className="font-mono text-muted-foreground tabular-nums">{Number(current.toFixed(3))}</span>
+            <span className="font-mono text-muted-foreground tabular-nums">{number(current, { maximumFractionDigits: 3 })}</span>
           </div>
           <Slider
             id={id}

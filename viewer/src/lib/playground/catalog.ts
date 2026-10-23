@@ -1,4 +1,5 @@
 import { basename, dirname, stripExtension } from '../format';
+import type { Translator } from '../../i18n/core';
 import type { AssetFileMeta } from '../types';
 import type { Armed, Library } from './library';
 
@@ -6,22 +7,33 @@ import type { Armed, Library } from './library';
 export type EntryKind = 'character' | 'animated' | 'still';
 export type KindFilter = 'all' | 'character' | 'object';
 
+/** What an entry says under its name, as numbers: `entrySubtitle` turns it into words in the language of the screen. */
+export type EntryDetail = { type: 'character'; clips: number } | { type: 'sprite'; frames: number; facings: number };
+
 export interface Entry {
   key: string;
   kind: EntryKind;
   name: string;
-  /** The folder the entry is listed under. */
+  /** The folder the entry is listed under; `ROOT` for the top of the project. */
   group: string;
-  subtitle: string;
+  detail: EntryDetail;
   cover: AssetFileMeta;
   armed: Armed;
 }
 
+/** A header is the block of recent entries (`recent`, which has no label of its own) or one folder (its path, `ROOT` for none). */
 export type Row =
-  | { type: 'header'; key: string; label: string; count: number; collapsed: boolean }
+  | { type: 'header'; key: string; kind: 'recent' | 'folder'; label: string; count: number; collapsed: boolean }
   | { type: 'entry'; key: string; entry: Entry };
 
-const ROOT = '(raiz)';
+/** The group of an entry at the top of the project, which the list names in the language of the screen. */
+export const ROOT = '';
+
+/** "3 animations", "8 frames · 8 directions": the line under an entry's name. */
+export function entrySubtitle(detail: EntryDetail, { plural, t }: Pick<Translator, 'plural' | 't'>): string {
+  if (detail.type === 'character') return plural('assets.card.animations', detail.clips);
+  return [detail.frames > 1 ? plural('playground.entry.frames', detail.frames) : t('playground.entry.still'), detail.facings > 1 ? t('playground.entry.directions', { count: detail.facings }) : ''].filter(Boolean).join(' · ');
+}
 
 export function listEntries(library: Library): Entry[] {
   const characters = library.characters.map<Entry>((character) => {
@@ -31,7 +43,7 @@ export function listEntries(library: Library): Entry[] {
       kind: 'character',
       name: character.name,
       group: dirname(character.folder) || ROOT,
-      subtitle: `${character.clips.length} ${character.clips.length === 1 ? 'animação' : 'animações'}`,
+      detail: { type: 'character', clips: character.clips.length },
       cover: first.asset,
       armed: { key: `character:${character.id}`, type: 'character', character },
     };
@@ -44,7 +56,7 @@ export function listEntries(library: Library): Entry[] {
       kind: frameCount > 1 ? 'animated' : 'still',
       name: atlas.meta.data?.label ?? basename(stripExtension(asset.subpath)),
       group: dirname(asset.subpath) || ROOT,
-      subtitle: [frameCount > 1 ? `${frameCount} frames` : 'estático', facings > 1 ? `${facings} direções` : ''].filter(Boolean).join(' · '),
+      detail: { type: 'sprite', frames: frameCount, facings },
       cover: asset,
       armed: { key: `sprite:${sprite.id}`, type: 'sprite', clip: sprite.clip, row: 0 },
     };
@@ -69,7 +81,7 @@ interface RowOptions {
   recent: readonly string[];
 }
 
-/** Flat rows: a "Recentes" block, then one header per folder followed by its entries. */
+/** Flat rows: a block of recent entries, then one header per folder followed by its entries. */
 export function buildRows(entries: Entry[], { query, filter, collapsed, recent }: RowOptions): Row[] {
   const searching = query.trim() !== '';
   const visible = entries.filter((e) => inFilter(e, filter) && matches(e, query));
@@ -78,7 +90,7 @@ export function buildRows(entries: Entry[], { query, filter, collapsed, recent }
   if (!searching) {
     const recents = recent.map((key) => visible.find((e) => e.key === key)).filter((e): e is Entry => e !== undefined);
     if (recents.length > 0) {
-      rows.push({ type: 'header', key: 'recent', label: 'Recentes', count: recents.length, collapsed: false });
+      rows.push({ type: 'header', key: 'recent', kind: 'recent', label: '', count: recents.length, collapsed: false });
       for (const entry of recents) rows.push({ type: 'entry', key: `recent|${entry.key}`, entry });
     }
   }
@@ -88,7 +100,7 @@ export function buildRows(entries: Entry[], { query, filter, collapsed, recent }
   for (const [group, members] of [...groups].sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))) {
     // A search opens every folder: collapsing only helps when browsing.
     const isCollapsed = !searching && collapsed.has(group);
-    rows.push({ type: 'header', key: `group|${group}`, label: group, count: members.length, collapsed: isCollapsed });
+    rows.push({ type: 'header', key: `group|${group}`, kind: 'folder', label: group, count: members.length, collapsed: isCollapsed });
     if (isCollapsed) continue;
     for (const entry of members.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))) {
       rows.push({ type: 'entry', key: entry.key, entry });

@@ -7,9 +7,9 @@ import { Kbd } from '@/components/ui/kbd';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Rich, useT } from '@/i18n';
 import { copyText } from '@/lib/clipboard';
 import { COMPASS, eventsOf, type Atlas } from '@/lib/atlas';
-import { formatDate } from '@/lib/format';
 import { projectFile } from '@/lib/project-paths';
 import type { AssetFileMeta } from '@/lib/types';
 import { ZOOMS, type Backdrop, type Player, type Zoom } from './use-player';
@@ -38,6 +38,7 @@ const onCompass = (directions: string[]) => directions.every((name) => COMPASS.f
 
 export function Inspector({ player, asset, directionIndex, onDirection, onHighlight, top }: Props) {
   const { atlas, kind, directions, frames, fps, atlasFps, fpsOverride, setFpsOverride, index, seek } = player;
+  const { t, number } = useT();
   const eventList = eventsOf(atlas);
   const sheetFrames = kind === 'sheet' && atlas ? Object.entries(atlas.frames) : [];
 
@@ -45,11 +46,11 @@ export function Inspector({ player, asset, directionIndex, onDirection, onHighli
     <div className="h-full min-h-0 overflow-y-auto border-l bg-card/40">
       {top}
       {kind === 'animated' && frames.length > 1 && (
-        <Section title="Reprodução">
+        <Section title={t('preview.inspector.playback')}>
           <Field>
-            <FieldLabel htmlFor="preview-fps">FPS</FieldLabel>
+            <FieldLabel htmlFor="preview-fps">{t('preview.inspector.fps')}</FieldLabel>
             <div className="flex items-center gap-3">
-              <Slider min={1} max={60} step={1} value={[Math.round(fps)]} aria-label="FPS" onValueChange={([value]) => setFpsOverride(value)} />
+              <Slider min={1} max={60} step={1} value={[Math.round(fps)]} aria-label={t('preview.inspector.fps')} onValueChange={([value]) => setFpsOverride(value)} />
               <Input
                 id="preview-fps"
                 type="number"
@@ -59,30 +60,33 @@ export function Inspector({ player, asset, directionIndex, onDirection, onHighli
                 value={Math.round(fps * 10) / 10}
                 onChange={(e) => setFpsOverride(Math.max(1, Math.min(60, Number(e.target.value) || 1)))}
               />
-              <Button variant="ghost" size="icon" aria-label="Voltar ao FPS do atlas" disabled={fpsOverride === null} onClick={() => setFpsOverride(null)}>
+              <Button variant="ghost" size="icon" aria-label={t('preview.inspector.resetFps')} disabled={fpsOverride === null} onClick={() => setFpsOverride(null)}>
                 <RotateCcwIcon />
               </Button>
             </div>
-            {fpsOverride !== null && <FieldDescription>Atlas: {atlasFps} fps</FieldDescription>}
+            {fpsOverride !== null && <FieldDescription>{t('preview.inspector.atlasFps', { fps: number(atlasFps, { maximumFractionDigits: 2 }) })}</FieldDescription>}
           </Field>
         </Section>
       )}
 
       {directions.length > 1 && !onCompass(directions) && (
-        <Section title="Direção">
-          <Slider min={0} max={directions.length - 1} step={1} value={[Math.min(directionIndex, directions.length - 1)]} aria-label="Direção" onValueChange={([value]) => onDirection(value)} />
+        <Section title={t('preview.inspector.direction')}>
+          <Slider min={0} max={directions.length - 1} step={1} value={[Math.min(directionIndex, directions.length - 1)]} aria-label={t('preview.inspector.direction')} onValueChange={([value]) => onDirection(value)} />
           <FieldDescription>
-            <span className="font-mono text-foreground">{directions[Math.min(directionIndex, directions.length - 1)]}</span> · {Math.min(directionIndex, directions.length - 1) + 1} de {directions.length}. <Kbd>↑</Kbd> <Kbd>↓</Kbd> giram.
+            <Rich
+              id="preview.inspector.directionSlider"
+              vars={{ name: directions[Math.min(directionIndex, directions.length - 1)], index: Math.min(directionIndex, directions.length - 1) + 1, total: directions.length }}
+            />
           </FieldDescription>
         </Section>
       )}
 
       {directions.length > 1 && onCompass(directions) && (
-        <Section title="Direção">
+        <Section title={t('preview.inspector.direction')}>
           <ToggleGroup
             type="single"
             variant="outline"
-            aria-label="Direção"
+            aria-label={t('preview.inspector.direction')}
             value={String(directionIndex)}
             onValueChange={(value) => value && onDirection(Number(value))}
             className="grid w-fit grid-cols-3 gap-1 self-center"
@@ -91,46 +95,46 @@ export function Inspector({ player, asset, directionIndex, onDirection, onHighli
               if (!name) return <span key={i} className="grid place-items-center text-muted-foreground tabular-nums">{directions[directionIndex]}</span>;
               const at = directions.indexOf(name);
               return (
-                <ToggleGroupItem key={name} value={at < 0 ? `missing-${name}` : String(at)} disabled={at < 0} className="w-11 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground" title={at < 0 ? `${name} não existe neste asset` : `${name} · ${at + 1}`}>
+                <ToggleGroupItem key={name} value={at < 0 ? `missing-${name}` : String(at)} disabled={at < 0} className="w-11 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground" title={at < 0 ? t('preview.inspector.directionMissing', { name }) : `${name} · ${at + 1}`}>
                   {name}
                 </ToggleGroupItem>
               );
             })}
           </ToggleGroup>
           <FieldDescription>
-            <Kbd>↑</Kbd> <Kbd>↓</Kbd> ou <Kbd>1</Kbd>–<Kbd>{directions.length}</Kbd>. A linha 1 olha para a câmera (S); cada linha gira no sentido horário.
+            <Rich id="preview.inspector.compassHint" vars={{ count: directions.length }} />
           </FieldDescription>
         </Section>
       )}
 
-      <Section title="Vista">
+      <Section title={t('preview.inspector.view')}>
         <Field orientation="horizontal">
-          <FieldTitle id="preview-zoom-label">Zoom</FieldTitle>
+          <FieldTitle id="preview-zoom-label">{t('preview.inspector.zoom')}</FieldTitle>
           <ToggleGroup type="single" variant="outline" size="sm" spacing={0} aria-labelledby="preview-zoom-label" value={String(player.zoom)} onValueChange={(value) => value && player.setZoom((value === 'fit' ? 'fit' : Number(value)) as Zoom)}>
-            <ToggleGroupItem value="fit">Fit</ToggleGroupItem>
-            {ZOOMS.map((z) => <ToggleGroupItem key={z} value={String(z)}>{z}×</ToggleGroupItem>)}
+            <ToggleGroupItem value="fit">{t('preview.inspector.fit')}</ToggleGroupItem>
+            {ZOOMS.map((z) => <ToggleGroupItem key={z} value={String(z)}>{t('units.times', { value: z })}</ToggleGroupItem>)}
           </ToggleGroup>
         </Field>
         <Field orientation="horizontal">
-          <FieldTitle id="preview-backdrop-label">Fundo</FieldTitle>
+          <FieldTitle id="preview-backdrop-label">{t('preview.inspector.background')}</FieldTitle>
           <ToggleGroup type="single" variant="outline" size="sm" spacing={0} aria-labelledby="preview-backdrop-label" value={player.backdrop} onValueChange={(value) => value && player.setBackdrop(value as Backdrop)}>
-            <ToggleGroupItem value="checker">Xadrez</ToggleGroupItem>
-            <ToggleGroupItem value="dark">Escuro</ToggleGroupItem>
-            <ToggleGroupItem value="light">Claro</ToggleGroupItem>
+            <ToggleGroupItem value="checker">{t('preview.inspector.checker')}</ToggleGroupItem>
+            <ToggleGroupItem value="dark">{t('preview.inspector.dark')}</ToggleGroupItem>
+            <ToggleGroupItem value="light">{t('preview.inspector.light')}</ToggleGroupItem>
           </ToggleGroup>
         </Field>
         <Field orientation="horizontal">
           <Switch id="preview-pivot" checked={player.showPivot} disabled={!atlas?.meta.pivot} onCheckedChange={player.setShowPivot} />
-          <FieldLabel htmlFor="preview-pivot">Pivô <Kbd>P</Kbd></FieldLabel>
+          <FieldLabel htmlFor="preview-pivot">{t('preview.inspector.pivot')} <Kbd>P</Kbd></FieldLabel>
         </Field>
         <Field orientation="horizontal">
           <Switch id="preview-bounds" checked={player.showBounds} onCheckedChange={player.setShowBounds} />
-          <FieldLabel htmlFor="preview-bounds">Bordas do frame <Kbd>G</Kbd></FieldLabel>
+          <FieldLabel htmlFor="preview-bounds">{t('preview.inspector.frameEdges')} <Kbd>G</Kbd></FieldLabel>
         </Field>
       </Section>
 
       {kind === 'animated' && (
-        <Section title={`Eventos${eventList.length ? ` · ${eventList.length}` : ''}`}>
+        <Section title={`${t('preview.inspector.events')}${eventList.length ? ` · ${eventList.length}` : ''}`}>
           {eventList.length > 0 ? (
             <ul className="flex max-h-56 flex-col gap-0.5 overflow-auto">
               {eventList.map((event, i) => (
@@ -143,13 +147,13 @@ export function Inspector({ player, asset, directionIndex, onDirection, onHighli
               ))}
             </ul>
           ) : (
-            <FieldDescription>Este clip não declara eventos.</FieldDescription>
+            <FieldDescription>{t('preview.inspector.noEvents')}</FieldDescription>
           )}
         </Section>
       )}
 
       {sheetFrames.length > 0 && (
-        <Section title={`Frames · ${sheetFrames.length}`}>
+        <Section title={`${t('preview.inspector.frames')} · ${sheetFrames.length}`}>
           <ul className="flex max-h-56 flex-col gap-0.5 overflow-auto">
             {sheetFrames.map(([name, rect]) => (
               <li key={name}>
@@ -171,7 +175,7 @@ export function Inspector({ player, asset, directionIndex, onDirection, onHighli
         </Section>
       )}
 
-      <Section title="Dados">
+      <Section title={t('preview.inspector.data')}>
         <Info atlas={atlas} asset={asset} frameCount={frames.length} />
       </Section>
     </div>
@@ -179,22 +183,23 @@ export function Inspector({ player, asset, directionIndex, onDirection, onHighli
 }
 
 function Info({ atlas, asset, frameCount }: { atlas: Atlas | undefined; asset: AssetFileMeta; frameCount: number }) {
+  const { t, number, date } = useT();
   const meta = atlas?.meta;
   const exportedPath = projectFile(asset.root, asset.project, `assets/${asset.subpath}`);
   const sheetPath = asset.sheet ? projectFile(asset.root, asset.project, `sheets/${asset.sheet}`) : null;
   const rows: Array<[string, string | undefined]> = [
-    ['Sheet', meta?.width && meta.height ? `${meta.width}×${meta.height}` : asset.width && asset.height ? `${asset.width}×${asset.height}` : undefined],
-    ['Frame', meta?.frameWidth ? `${meta.frameWidth}×${meta.frameHeight}` : undefined],
-    ['Frames', meta?.frameCount ? `${meta.frameCount}${meta.directions?.length ? ` × ${meta.directions.length} direções` : ''}` : frameCount > 1 ? String(frameCount) : undefined],
-    ['Escala', meta?.scale ? `${meta.scale}×` : undefined],
-    ['FPS', meta?.fps ? String(meta.fps) : undefined],
-    ['Duração', meta?.data?.seconds ? `${meta.data.seconds.toFixed(2)} s` : undefined],
-    ['Pivô', meta?.pivot ? `${meta.pivot.x}, ${meta.pivot.y}` : undefined],
-    ['Velocidade', meta?.data?.groundSpeed ? `${meta.data.groundSpeed.toFixed(1)} u/s` : undefined],
-    ['Esqueleto', meta?.data?.skeleton],
-    ['Clip', meta?.data?.clip],
-    ['Loop', meta?.data?.loop === undefined ? undefined : meta.data.loop ? 'sim' : 'não'],
-    ['Modificado', formatDate(asset.mtime)],
+    [t('preview.data.sheet'), meta?.width && meta.height ? `${meta.width}×${meta.height}` : asset.width && asset.height ? `${asset.width}×${asset.height}` : undefined],
+    [t('preview.data.frame'), meta?.frameWidth ? `${meta.frameWidth}×${meta.frameHeight}` : undefined],
+    [t('preview.data.frames'), meta?.frameCount ? (meta.directions?.length ? t('preview.data.framesWithDirections', { frames: meta.frameCount, directions: meta.directions.length }) : String(meta.frameCount)) : frameCount > 1 ? String(frameCount) : undefined],
+    [t('preview.data.scale'), meta?.scale ? t('units.times', { value: number(meta.scale) }) : undefined],
+    [t('preview.data.fps'), meta?.fps ? number(meta.fps, { maximumFractionDigits: 2 }) : undefined],
+    [t('preview.data.duration'), meta?.data?.seconds ? t('units.seconds', { value: number(meta.data.seconds, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }) : undefined],
+    [t('preview.data.pivot'), meta?.pivot ? `${number(meta.pivot.x, { maximumFractionDigits: 2 })}, ${number(meta.pivot.y, { maximumFractionDigits: 2 })}` : undefined],
+    [t('preview.data.speed'), meta?.data?.groundSpeed ? t('units.worldPerSecond', { value: number(meta.data.groundSpeed, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }) : undefined],
+    [t('preview.data.skeleton'), meta?.data?.skeleton],
+    [t('preview.data.clip'), meta?.data?.clip],
+    [t('preview.data.loop'), meta?.data?.loop === undefined ? undefined : meta.data.loop ? t('common.yes') : t('common.no')],
+    [t('preview.data.modified'), date(asset.mtime)],
   ];
   return (
     <>
@@ -207,11 +212,11 @@ function Info({ atlas, asset, frameCount }: { atlas: Atlas | undefined; asset: A
         ))}
       </dl>
       <div className="flex flex-col gap-1">
-        <Button variant="outline" size="sm" className="justify-start font-mono" onClick={() => void copyText(exportedPath, 'Caminho do arquivo')}>
+        <Button variant="outline" size="sm" className="justify-start font-mono" onClick={() => void copyText(exportedPath, t('preview.data.filePathLabel'))}>
           <span className="truncate">{exportedPath}</span>
         </Button>
         {sheetPath && (
-          <Button variant="outline" size="sm" className="justify-start font-mono" onClick={() => void copyText(sheetPath, 'Caminho do .ts')}>
+          <Button variant="outline" size="sm" className="justify-start font-mono" onClick={() => void copyText(sheetPath, t('preview.data.sheetPathLabel'))}>
             <span className="truncate">{sheetPath}</span>
           </Button>
         )}

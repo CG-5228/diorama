@@ -73,7 +73,7 @@ For example, a helm exports its dome geometry, so a crest can rest on it without
 
 - **One source of truth:** keep each character's outfit as data (`src/characters/<name>/outfit.ts` exporting `OUTFIT`). Build its skin with `outfitFromData(OUTFIT, CATALOG)`, so the viewer's customizer edits exactly what the game exports.
 - **A variant** is a new character with the same skeleton, clips and cell and another outfit:
-  - With the viewer's Customizar tab: pick a character, change pieces, options and materials, save.
+  - With the viewer's Customize tab: pick a character, change pieces, options and materials, save.
   - From the command line: `npm run new-outfit-character -- <project> <name> --from <character> --outfit <file.json>` writes `src/characters/<name>/outfit.ts`, `character.ts` and one sheet per clip in `sheets/characters/<name>/`.
   - Clip factories shared by several characters live in one module (`src/characters/shared/humanoid-clips.ts`), not inside another character's folder.
 - **A new material for a variant** (steel, brass) is a new key in the theme's `VOLUMES`. Check it against the style (soul fire is pivot-v2-2d's only saturated accent) and write it in `STYLE.md`.

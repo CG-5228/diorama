@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
 import { FieldLegend, FieldSet } from '@/components/ui/field';
 import { addPiece, movePiece, removePiece, setHost } from '@/lib/outfit/edit';
-import { plural } from '@/lib/format';
+import { useT } from '@/i18n';
 import { AddPieceModal, type Placement } from '@/modals/add-piece-modal';
 import type { Edit } from '@/lib/outfit/use-draft';
 import { PieceCard } from './piece-card';
@@ -21,10 +21,11 @@ interface Props {
 
 /** The outfit as a form: the body underneath, a material for each role, and the pieces in drawing order. */
 export function OutfitEditor({ project, catalog, outfit, onEdit }: Props) {
+  const { t, plural } = useT();
   const remove = (index: number) => {
     const { removed } = removePiece(outfit, catalog, index);
     onEdit((o) => removePiece(o, catalog, index).outfit);
-    if (removed > 1) toast(`Removeu também ${plural(removed - 1, 'complemento que dependia', 'complementos que dependiam')} dela`);
+    if (removed > 1) toast(plural('customize.editor.alsoRemoved', removed - 1));
   };
 
   const add = () =>
@@ -47,17 +48,17 @@ export function OutfitEditor({ project, catalog, outfit, onEdit }: Props) {
 
       <FieldSet className="min-w-0">
         <div className="flex items-center justify-between gap-2">
-          <FieldLegend variant="label" className="mb-0">Peças <span className="font-normal text-muted-foreground tabular-nums">{outfit.pieces.length}</span></FieldLegend>
+          <FieldLegend variant="label" className="mb-0">{t('customize.editor.pieces')} <span className="font-normal text-muted-foreground tabular-nums">{outfit.pieces.length}</span></FieldLegend>
           <Button size="sm" variant="outline" onClick={add}>
             <PlusIcon data-icon="inline-start" />
-            Adicionar peça
+            {t('customize.editor.add')}
           </Button>
         </div>
         {outfit.pieces.length === 0 ? (
           <Empty className="border border-dashed">
             <EmptyHeader>
-              <EmptyTitle>Nenhuma peça</EmptyTitle>
-              <EmptyDescription>O personagem aparece só com o corpo. Adicione peças do kit.</EmptyDescription>
+              <EmptyTitle>{t('customize.editor.none')}</EmptyTitle>
+              <EmptyDescription>{t('customize.editor.noneHint')}</EmptyDescription>
             </EmptyHeader>
           </Empty>
         ) : (

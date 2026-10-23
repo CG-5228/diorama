@@ -3,6 +3,7 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 import { FolderPlusIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import { Rich, useT } from '@/i18n';
 import { projectsQuery } from '@/lib/queries';
 import { NovoModal } from '@/modals/novo-modal';
 
@@ -23,17 +24,18 @@ export const Route = createFileRoute('/')({
 });
 
 function NoProjects() {
+  const { t } = useT();
   return (
     <Empty className="h-full">
       <EmptyHeader>
         <EmptyMedia variant="icon"><FolderPlusIcon /></EmptyMedia>
-        <EmptyTitle>Nenhum projeto ainda</EmptyTitle>
+        <EmptyTitle>{t('projects.none.title')}</EmptyTitle>
         <EmptyDescription>
-          Um projeto agrupa os assets de um jogo: código em <code>src/</code>, um arquivo por imagem exportada em <code>sheets/</code> e os arquivos exportados em <code>assets/</code>.
+          <Rich id="projects.none.description" />
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
-        <Button onClick={() => void NiceModal.show(NovoModal, { tab: 'new-project' })}>Criar projeto</Button>
+        <Button onClick={() => void NiceModal.show(NovoModal, { tab: 'new-project' })}>{t('projects.none.create')}</Button>
       </EmptyContent>
     </Empty>
   );

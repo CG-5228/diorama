@@ -2,39 +2,39 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Kbd } from '@/components/ui/kbd';
+import { useT } from '@/i18n';
 import type { HudInfo } from '@/lib/playground/actor';
-
-const stateLabel: Record<HudInfo['state'], string> = { idle: 'parado', moving: 'movendo', action: 'ação', hold: 'travado (hold)' };
 
 /** What the controlled character is playing: the clip, its frame and the last event it fired; with a scene, the last thing a piece of it did, and what E would use. */
 export function Hud({ info, onUse }: { info: HudInfo | null; onUse: () => void }) {
+  const { t } = useT();
   if (!info) return null;
   return (
     <Card size="sm" className="pointer-events-none absolute bottom-3 left-3 w-56 gap-1 bg-card/60">
       <CardContent>
         <dl className="flex flex-col gap-1">
           <div className="flex items-center justify-between gap-2">
-            <dt className="text-muted-foreground">Clip</dt>
+            <dt className="text-muted-foreground">{t('playground.hud.clip')}</dt>
             <dd className="flex items-center gap-1.5">
               <span className="font-medium">{info.clip}</span>
               <Badge variant="outline">{info.kind}</Badge>
             </dd>
           </div>
           <div className="flex items-center justify-between gap-2">
-            <dt className="text-muted-foreground">Estado</dt>
-            <dd>{stateLabel[info.state]} · {info.direction}</dd>
+            <dt className="text-muted-foreground">{t('playground.hud.state')}</dt>
+            <dd>{t(`playground.hud.states.${info.state}`)} · {info.direction}</dd>
           </div>
           <div className="flex items-center justify-between gap-2">
-            <dt className="text-muted-foreground">Frame</dt>
+            <dt className="text-muted-foreground">{t('playground.hud.frame')}</dt>
             <dd className="font-mono tabular-nums">f{info.frame} / f{info.frames - 1}</dd>
           </div>
           <div className="flex items-center justify-between gap-2">
-            <dt className="text-muted-foreground">Evento</dt>
+            <dt className="text-muted-foreground">{t('playground.hud.event')}</dt>
             <dd className="truncate font-mono">{info.event ?? '—'}</dd>
           </div>
           {info.world && (
             <div className="flex items-center justify-between gap-2">
-              <dt className="text-muted-foreground">Cenário</dt>
+              <dt className="text-muted-foreground">{t('playground.hud.scene')}</dt>
               <dd className="truncate font-mono">{info.scene ?? '—'}</dd>
             </div>
           )}

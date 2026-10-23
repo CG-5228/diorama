@@ -2,6 +2,7 @@ import type { SceneData, SceneryCatalog } from '@core/volume';
 import { ChevronDownIcon, MapIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useT } from '@/i18n';
 import type { SavedScene } from '@/lib/scenery/catalog';
 import { SceneSettings } from './scene-settings';
 
@@ -19,13 +20,14 @@ interface Props {
 
 /** The scene in use, named on the toolbar; its menu opens another, starts a blank one, and sets its size and materials. */
 export function SceneMenu({ catalog, scene, saved, loaded, unsaved, onEdit, onLoad }: Props) {
+  const { t } = useT();
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="max-w-56 gap-2" aria-label="Cena: abrir, tamanho e materiais">
+        <Button variant="outline" size="sm" className="max-w-56 gap-2" aria-label={t('scenery.menu.label')}>
           <MapIcon data-icon="inline-start" />
-          <span className="truncate">{loaded ?? 'Sem nome'}</span>
-          {unsaved && <span aria-label="Alterações não salvas" className="size-1.5 shrink-0 rounded-full bg-primary" />}
+          <span className="truncate">{loaded ?? t('scenery.unnamed')}</span>
+          {unsaved && <span aria-label={t('scenery.menu.unsavedChanges')} className="size-1.5 shrink-0 rounded-full bg-primary" />}
           <ChevronDownIcon data-icon="inline-end" />
         </Button>
       </PopoverTrigger>

@@ -2,6 +2,7 @@ import { queryOptions } from '@tanstack/react-query';
 import { api } from './api';
 import type { AssetFileMeta } from './types';
 import type { Atlas } from './atlas';
+import { currentTranslator } from '../i18n/store';
 import { projectUrl } from './project-paths';
 
 export const projectsQuery = queryOptions({
@@ -30,7 +31,7 @@ export const atlasQuery = (asset: AssetFileMeta) =>
     staleTime: Infinity,
     queryFn: async (): Promise<Atlas> => {
       const res = await fetch(`${projectUrl(asset.root, asset.project, `assets/${asset.atlas}`)}?t=${asset.mtime}`);
-      if (!res.ok) throw new Error(`Não foi possível ler ${asset.atlas}.`);
+      if (!res.ok) throw new Error(currentTranslator().t('errors.readFile', { path: asset.atlas ?? '' }));
       return res.json();
     },
   });

@@ -1,4 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
+import { currentTranslator } from '../i18n/store';
 import type { AssetFileMeta } from './types';
 
 /** An image cut out of a sheet: a data URL and its size in px. */
@@ -26,7 +27,7 @@ const decode = (src: string) =>
   new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image();
     image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error(`Não foi possível ler ${src}.`));
+    image.onerror = () => reject(new Error(currentTranslator().t('errors.readFile', { path: src })));
     image.src = src;
   });
 

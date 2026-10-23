@@ -7,6 +7,7 @@ import { Field, FieldLabel } from '@/components/ui/field';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { useT } from '@/i18n';
 import { buildSkin, clipOf, directionLabel, framesOf, paintFrame } from '@/lib/outfit/render';
 import { usePref } from '@/lib/use-pref';
 import { DirectionStrip } from './direction-strip';
@@ -26,6 +27,7 @@ interface Props {
  * only when the outfit, the clip, the frame, the facing or the zoom change.
  */
 export function PreviewPanel({ character, catalog, outfit, unusable }: Props) {
+  const { t, plural, number } = useT();
   // Building a skin is the engine's work: only an edit of the outfit redoes it, never a frame of the animation.
   const built = useMemo(() => buildSkin(outfit, catalog), [outfit, catalog]);
   // An outfit with problems cannot be built: the last one that could stays on screen, with the problems above it.
@@ -74,14 +76,14 @@ export function PreviewPanel({ character, catalog, outfit, unusable }: Props) {
 
   useEffect(() => {
     if (!canvas.current || !skin) return;
-    setDrawError(paintFrame(canvas.current, character, skin, clipKey, frame, direction, zoom * (window.devicePixelRatio || 1)));
-  }, [character, skin, clipKey, frame, direction, zoom]);
+    setDrawError(paintFrame(canvas.current, character, skin, clipKey, frame, direction, zoom * (window.devicePixelRatio || 1), t));
+  }, [character, skin, clipKey, frame, direction, zoom, t]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 p-4">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <Field orientation="horizontal" className="w-auto">
-          <FieldLabel htmlFor="preview-clip">Clipe</FieldLabel>
+          <FieldLabel htmlFor="preview-clip">{t('customize.preview.clip')}</FieldLabel>
           <Select value={clipKey} onValueChange={(key) => { setClipKey(key); setFrame(0); }}>
             <SelectTrigger id="preview-clip" size="sm" className="w-36"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -89,7 +91,7 @@ export function PreviewPanel({ character, catalog, outfit, unusable }: Props) {
                 {clipKeys.map((key) => (
                   <SelectItem key={key} value={key}>
                     {key}
-                    {unusable?.has(key) && <TriangleAlertIcon aria-label={`Feito para ${unusable.get(key)}`} className="text-amber-500" />}
+                    {unusable?.has(key) && <TriangleAlertIcon aria-label={t('customize.preview.madeFor', { needs: unusable.get(key) ?? '' })} className="text-amber-500" />}
                   </SelectItem>
                 ))}
               </SelectGroup>
@@ -98,47 +100,47 @@ export function PreviewPanel({ character, catalog, outfit, unusable }: Props) {
         </Field>
         <Button variant="outline" size="sm" onClick={() => setPlaying((p) => !p)}>
           {playing ? <PauseIcon data-icon="inline-start" /> : <PlayIcon data-icon="inline-start" />}
-          {playing ? 'Pausar' : 'Reproduzir'}
+          {playing ? t('customize.preview.pause') : t('customize.preview.play')}
         </Button>
         <Field orientation="horizontal" className="w-auto">
-          <FieldLabel id="preview-zoom">Zoom</FieldLabel>
+          <FieldLabel id="preview-zoom">{t('customize.preview.zoom')}</FieldLabel>
           <ToggleGroup type="single" variant="outline" size="sm" spacing={0} aria-labelledby="preview-zoom" value={String(zoom)} onValueChange={(value) => value && setZoom(Number(value))}>
-            {ZOOMS.map((z) => <ToggleGroupItem key={z} value={z}>{z}×</ToggleGroupItem>)}
+            {ZOOMS.map((z) => <ToggleGroupItem key={z} value={z}>{t('units.times', { value: z })}</ToggleGroupItem>)}
           </ToggleGroup>
         </Field>
-        <span className="font-mono text-muted-foreground tabular-nums">{directionLabel(direction)} · f{frame} / f{frames - 1} · {Math.round(fps * 10) / 10} fps</span>
+        <span className="font-mono text-muted-foreground tabular-nums">{t('customize.preview.status', { direction: directionLabel(direction), frame, last: frames - 1, fps: number(fps, { maximumFractionDigits: 1 }) })}</span>
       </div>
 
       {built.problems.length > 0 && (
         <Alert variant="destructive">
           <TriangleAlertIcon />
-          <AlertTitle>{built.problems.length === 1 ? 'O outfit tem um problema' : `O outfit tem ${built.problems.length} problemas`}</AlertTitle>
+          <AlertTitle>{plural('customize.preview.problems', built.problems.length)}</AlertTitle>
           <AlertDescription>
             <ul className="list-disc pl-4">
               {built.problems.map((problem) => <li key={problem}>{problem}</li>)}
             </ul>
-            {skin && <p className="mt-1">O preview mostra a última versão que dava para desenhar.</p>}
+            {skin && <p className="mt-1">{t('customize.preview.lastDrawable')}</p>}
           </AlertDescription>
         </Alert>
       )}
       {drawError && (
         <Alert variant="destructive">
           <TriangleAlertIcon />
-          <AlertTitle>Uma peça falhou ao desenhar</AlertTitle>
+          <AlertTitle>{t('customize.preview.drawFailed')}</AlertTitle>
           <AlertDescription className="font-mono">{drawError}</AlertDescription>
         </Alert>
       )}
 
       <div className="checker pixelated relative grid min-h-0 flex-1 place-items-center overflow-auto rounded-lg border p-4">
         {skin ? (
-          <canvas ref={canvas} style={{ width: character.width * zoom, height: character.height * zoom }} aria-label={`${character.label}, direção ${directionLabel(direction)}`} />
+          <canvas ref={canvas} style={{ width: character.width * zoom, height: character.height * zoom }} aria-label={t('customize.preview.canvas', { character: character.label, direction: directionLabel(direction) })} />
         ) : (
-          <p className="text-muted-foreground">Corrija o outfit para ver o personagem.</p>
+          <p className="text-muted-foreground">{t('customize.preview.fix')}</p>
         )}
       </div>
 
       <Field>
-        <FieldLabel htmlFor="preview-frame">Quadro</FieldLabel>
+        <FieldLabel htmlFor="preview-frame">{t('customize.preview.frame')}</FieldLabel>
         <Slider
           id="preview-frame"
           min={0}

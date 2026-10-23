@@ -13,25 +13,21 @@ import { Kbd } from '@/components/ui/kbd';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Rich, useT } from '@/i18n';
+import type { TFn } from '@/i18n';
 import { projectsQuery } from '@/lib/queries';
 import { useCli } from '@/lib/mutations';
 import { useModalDialog } from '@/lib/use-modal-dialog';
 import type { Engine, NovoTab } from '@/lib/types';
 
-/** What each engine makes, for the engine select. */
-const ENGINES: Array<{ id: Engine; label: string }> = [
-  { id: 'volume', label: 'volume · props, cenário, efeitos' },
-  { id: 'rig', label: 'rig · personagens e criaturas' },
-];
+/** The engines, for the engine select (what each makes is in the dictionary). */
+const ENGINES: Engine[] = ['volume', 'rig'];
 
 /** Frames a new asset starts with: a prop is still, a clip of a character is a cycle. */
 const DEFAULT_FRAMES: Record<Engine, string> = { volume: '1', rig: '8' };
 
 /** The skeletons and clips `new-asset --engine rig` can start from (`@core/rig` presets). */
-const SKELETONS = [
-  { id: 'humanoid', label: 'humanoid · bípede' },
-  { id: 'quadruped', label: 'quadruped · quadrúpede' },
-] as const;
+const SKELETONS = ['humanoid', 'quadruped'] as const;
 const CLIPS = ['walk', 'run', 'idle', 'attack', 'hit', 'death'] as const;
 /** The clip's file name picks the preset when it is one of CLIPS, else walk. */
 const AUTO_CLIP = 'auto';
@@ -49,7 +45,7 @@ interface FormState {
   frames: string;
   fps: string;
   directions: string;
-  skeleton: (typeof SKELETONS)[number]['id'];
+  skeleton: (typeof SKELETONS)[number];
   clip: typeof AUTO_CLIP | (typeof CLIPS)[number];
   exportNow: boolean;
   sheet: 'none' | 'grid' | 'compact';
@@ -66,27 +62,28 @@ interface Props {
   subpath?: string;
 }
 
-const tabs: Array<{ id: NovoTab; label: string }> = [
-  { id: 'new-project', label: 'Projeto' },
-  { id: 'new-asset', label: 'Asset' },
-  { id: 'export', label: 'Exportar' },
+const tabs: Array<{ id: NovoTab; label: 'project' | 'asset' | 'export' }> = [
+  { id: 'new-project', label: 'project' },
+  { id: 'new-asset', label: 'asset' },
+  { id: 'export', label: 'export' },
 ];
 
 /** Mirrors the npm script the request becomes, so the dialog doubles as a CLI cheat sheet. */
-function cliLine(tab: NovoTab, v: FormState): string {
+function cliLine(tab: NovoTab, v: FormState, t: TFn): string {
+  const placeholderProject = t('modals.new.cliProject');
   switch (tab) {
     case 'new-project':
-      return `npm run new-project -- ${v.name || '<projeto>'}${v.style ? ' --style' : ''}`;
+      return `npm run new-project -- ${v.name || placeholderProject}${v.style ? ' --style' : ''}`;
     case 'new-asset': {
       const frames = Number(v.frames) > 1 ? ` --frames ${v.frames}` : '';
       const dirs = v.directions ? ` --directions ${v.directions}` : '';
-      const base = `npm run new-asset -- ${v.project || '<projeto>'} ${v.subpath || '<caminho>'} --engine ${v.engine}`;
+      const base = `npm run new-asset -- ${v.project || placeholderProject} ${v.subpath || t('modals.new.cliPath')} --engine ${v.engine}`;
       if (v.engine === 'rig') return `${base} --skeleton ${v.skeleton}${v.clip === AUTO_CLIP ? '' : ` --clip ${v.clip}`}${frames}${dirs}`;
       return `${base} --size ${v.size}${dirs}${frames}${Number(v.frames) > 1 ? ` --fps ${v.fps}` : ''}`;
     }
     case 'export': {
       const sheet = v.sheet === 'none' ? '' : ` --${v.sheet}${v.gap ? ` --gap=${v.gap}` : ''}${v.cols ? ` --cols=${v.cols}` : ''}${v.both ? ' --both' : ''}`;
-      return `npm run export -- ${v.project || '<projeto>'}${v.subpath ? ` ${v.subpath}` : ''}${sheet}${v.mockup ? ' --mockup' : ''}`;
+      return `npm run export -- ${v.project || placeholderProject}${v.subpath ? ` ${v.subpath}` : ''}${sheet}${v.mockup ? ' --mockup' : ''}`;
     }
   }
 }
@@ -102,6 +99,7 @@ function CheckField({ id, checked, onChange, children }: { id: string; checked: 
 
 export const NovoModal = NiceModal.create(({ tab: initialTab = 'new-asset', project: initialProject, subpath }: Props) => {
   const { modal, rootProps, contentProps } = useModalDialog();
+  const { t } = useT();
   const { data: projects } = useSuspenseQuery(projectsQuery);
   const navigate = useNavigate();
   const cli = useCli();
@@ -133,7 +131,7 @@ export const NovoModal = NiceModal.create(({ tab: initialTab = 'new-asset', proj
     const created = await cli.mutateAsync(payload);
     if (!created.ok) return;
     if (tab === 'new-project') {
-      toast.success('Projeto criado', { description: values.name });
+      toast.success(t('modals.new.projectCreated'), { description: values.name });
       void navigate({ to: '/p/$project', params: { project: values.name } });
       modal.hide();
     } else if (tab === 'new-asset') {
@@ -141,10 +139,10 @@ export const NovoModal = NiceModal.create(({ tab: initialTab = 'new-asset', proj
       if (values.exportNow) {
         const exported = await cli.mutateAsync({ command: 'export', project: values.project, subpath: values.subpath });
         if (!exported.ok) {
-          toast.error('Asset criado, mas o export falhou', { description: exported.output.split('\n').slice(-4).join('\n') });
+          toast.error(t('modals.new.assetExportFailed'), { description: exported.output.split('\n').slice(-4).join('\n') });
         }
       }
-      toast.success('Asset criado', { description: `${values.project}/${values.subpath}` });
+      toast.success(t('modals.new.assetCreated'), { description: `${values.project}/${values.subpath}` });
       void navigate({ to: '/p/$project', params: { project: values.project } });
       modal.hide();
     }
@@ -152,14 +150,14 @@ export const NovoModal = NiceModal.create(({ tab: initialTab = 'new-asset', proj
 
   const projectField = (
     <Field>
-      <FieldLabel htmlFor="novo-project">Projeto</FieldLabel>
+      <FieldLabel htmlFor="novo-project">{t('modals.new.project')}</FieldLabel>
       <Select value={values.project} onValueChange={(value) => set('project', value)}>
         <SelectTrigger id="novo-project" className="w-full">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
-            {projects.map((p) => <SelectItem key={p.name} value={p.name}>{p.root === 'examples' ? `${p.name} (exemplo)` : p.name}</SelectItem>)}
+            {projects.map((p) => <SelectItem key={p.name} value={p.name}>{p.root === 'examples' ? t('modals.new.exampleOption', { name: p.name }) : p.name}</SelectItem>)}
           </SelectGroup>
         </SelectContent>
       </Select>
@@ -167,13 +165,13 @@ export const NovoModal = NiceModal.create(({ tab: initialTab = 'new-asset', proj
   );
 
   const pending = cli.isPending;
-  const verb = tab === 'export' ? 'Exportar' : 'Criar';
+  const verb = tab === 'export' ? t('common.export') : t('common.create');
 
   return (
     <Dialog {...rootProps}>
       <DialogContent {...contentProps} className="sm:max-w-lg" aria-describedby={undefined}>
         <DialogHeader>
-          <DialogTitle>Novo</DialogTitle>
+          <DialogTitle>{t('modals.new.title')}</DialogTitle>
         </DialogHeader>
         <Tabs
           value={tab}
@@ -183,9 +181,9 @@ export const NovoModal = NiceModal.create(({ tab: initialTab = 'new-asset', proj
           }}
         >
           <TabsList>
-            {tabs.map((t) => (
-              <TabsTrigger key={t.id} value={t.id} disabled={t.id !== 'new-project' && projects.length === 0}>
-                {t.label}
+            {tabs.map((entry) => (
+              <TabsTrigger key={entry.id} value={entry.id} disabled={entry.id !== 'new-project' && projects.length === 0}>
+                {t(`modals.new.tabs.${entry.label}`)}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -202,11 +200,11 @@ export const NovoModal = NiceModal.create(({ tab: initialTab = 'new-asset', proj
             {tab === 'new-project' && (
               <>
                 <Field>
-                  <FieldLabel htmlFor="novo-name">Nome do projeto</FieldLabel>
-                  <Input id="novo-name" placeholder="meu-jogo" pattern="[a-z0-9][a-z0-9_\-]*" autoFocus {...text('name')} />
-                  <FieldDescription>Letras minúsculas, números, - e _.</FieldDescription>
+                  <FieldLabel htmlFor="novo-name">{t('modals.new.projectName')}</FieldLabel>
+                  <Input id="novo-name" placeholder={t('modals.new.projectNamePlaceholder')} pattern="[a-z0-9][a-z0-9_\-]*" autoFocus {...text('name')} />
+                  <FieldDescription>{t('modals.new.projectNameHint')}</FieldDescription>
                 </Field>
-                <CheckField id="novo-style" checked={values.style} onChange={(v) => set('style', v)}>Adicionar STYLE.md</CheckField>
+                <CheckField id="novo-style" checked={values.style} onChange={(v) => set('style', v)}>{t('modals.new.addStyle')}</CheckField>
               </>
             )}
 
@@ -214,84 +212,82 @@ export const NovoModal = NiceModal.create(({ tab: initialTab = 'new-asset', proj
               <>
                 {projectField}
                 <Field>
-                  <FieldLabel htmlFor="novo-subpath">Caminho do asset</FieldLabel>
+                  <FieldLabel htmlFor="novo-subpath">{t('modals.new.assetPath')}</FieldLabel>
                   <Input id="novo-subpath" placeholder={values.engine === 'rig' ? 'characters/wolf/walk' : 'props/barrel'} pattern={KEBAB_PATH} autoFocus {...text('subpath')} />
                   <FieldDescription>
-                    {values.engine === 'rig'
-                      ? <>Relativo a <code>sheets/</code>, sem extensão, em kebab-case: a pasta é o personagem, o arquivo é o clipe. O primeiro clipe cria o <code>character.ts</code> em <code>src/</code>.</>
-                      : <>Relativo a <code>sheets/</code>, sem extensão, em kebab-case. O desenho fica em <code>src/</code> e o sheet o reexporta.</>}
+                    <Rich id={values.engine === 'rig' ? 'modals.new.assetPathRig' : 'modals.new.assetPathVolume'} />
                   </FieldDescription>
                 </Field>
                 <div className="grid grid-cols-2 gap-4">
                   <Field>
-                    <FieldLabel htmlFor="novo-engine">Engine</FieldLabel>
+                    <FieldLabel htmlFor="novo-engine">{t('modals.new.engine')}</FieldLabel>
                     <Select value={values.engine} onValueChange={(value) => setEngine(value as Engine)}>
                       <SelectTrigger id="novo-engine" className="w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
-                          {ENGINES.map((e) => <SelectItem key={e.id} value={e.id}>{e.label}</SelectItem>)}
+                          {ENGINES.map((id) => <SelectItem key={id} value={id}>{t(`modals.new.engines.${id}`)}</SelectItem>)}
                         </SelectGroup>
                       </SelectContent>
                     </Select>
                   </Field>
                   {values.engine === 'rig' ? (
                     <Field>
-                      <FieldLabel htmlFor="novo-skeleton">Esqueleto</FieldLabel>
+                      <FieldLabel htmlFor="novo-skeleton">{t('modals.new.skeleton')}</FieldLabel>
                       <Select value={values.skeleton} onValueChange={(value) => set('skeleton', value as FormState['skeleton'])}>
                         <SelectTrigger id="novo-skeleton" className="w-full">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup>
-                            {SKELETONS.map((k) => <SelectItem key={k.id} value={k.id}>{k.label}</SelectItem>)}
+                            {SKELETONS.map((id) => <SelectItem key={id} value={id}>{t(`modals.new.skeletons.${id}`)}</SelectItem>)}
                           </SelectGroup>
                         </SelectContent>
                       </Select>
                     </Field>
                   ) : (
                     <Field>
-                      <FieldLabel htmlFor="novo-size">Tamanho</FieldLabel>
+                      <FieldLabel htmlFor="novo-size">{t('modals.new.size')}</FieldLabel>
                       <Input id="novo-size" className="font-mono" {...text('size')} />
                     </Field>
                   )}
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <Field>
-                    <FieldLabel htmlFor="novo-frames">Frames</FieldLabel>
+                    <FieldLabel htmlFor="novo-frames">{t('modals.new.frames')}</FieldLabel>
                     <Input id="novo-frames" type="number" min={1} className="font-mono" {...text('frames')} />
                   </Field>
                   {values.engine === 'rig' ? (
                     <Field>
-                      <FieldLabel htmlFor="novo-clip">Clipe</FieldLabel>
+                      <FieldLabel htmlFor="novo-clip">{t('modals.new.clip')}</FieldLabel>
                       <Select value={values.clip} onValueChange={(value) => set('clip', value as FormState['clip'])}>
                         <SelectTrigger id="novo-clip" className="w-full">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup>
-                            <SelectItem value={AUTO_CLIP}>auto</SelectItem>
+                            <SelectItem value={AUTO_CLIP}>{t('modals.new.clipAuto')}</SelectItem>
                             {CLIPS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                           </SelectGroup>
                         </SelectContent>
                       </Select>
-                      <FieldDescription>Auto: pelo nome do arquivo.</FieldDescription>
+                      <FieldDescription>{t('modals.new.clipHint')}</FieldDescription>
                     </Field>
                   ) : (
                     <Field>
-                      <FieldLabel htmlFor="novo-fps">FPS</FieldLabel>
+                      <FieldLabel htmlFor="novo-fps">{t('modals.new.fps')}</FieldLabel>
                       <Input id="novo-fps" type="number" min={1} className="font-mono" {...text('fps')} />
                     </Field>
                   )}
                   <Field>
-                    <FieldLabel htmlFor="novo-directions">Direções</FieldLabel>
+                    <FieldLabel htmlFor="novo-directions">{t('modals.new.directions')}</FieldLabel>
                     <Input id="novo-directions" type="number" min={1} className="font-mono" {...text('directions')} />
-                    <FieldDescription>1, 4 ou 8.</FieldDescription>
+                    <FieldDescription>{t('modals.new.directionsHint')}</FieldDescription>
                   </Field>
                 </div>
                 <CheckField id="novo-export-now" checked={values.exportNow} onChange={(v) => set('exportNow', v)}>
-                  Exportar logo após criar (o asset aparece na lista do projeto)
+                  {t('modals.new.exportNow')}
                 </CheckField>
               </>
             )}
@@ -300,23 +296,23 @@ export const NovoModal = NiceModal.create(({ tab: initialTab = 'new-asset', proj
               <>
                 {projectField}
                 <Field>
-                  <FieldLabel htmlFor="novo-export-path">Caminho</FieldLabel>
+                  <FieldLabel htmlFor="novo-export-path">{t('modals.new.path')}</FieldLabel>
                   <Input id="novo-export-path" placeholder="characters/wolf/" {...text('subpath')} />
                   <FieldDescription>
-                    Relativo a <code>sheets/</code>. Vazio exporta o projeto inteiro; <code>pasta/</code> exporta uma pasta.
+                    <Rich id="modals.new.exportPathHint" />
                   </FieldDescription>
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="novo-sheet">Saída</FieldLabel>
+                  <FieldLabel htmlFor="novo-sheet">{t('modals.new.output')}</FieldLabel>
                   <Select value={values.sheet} onValueChange={(value) => set('sheet', value as FormState['sheet'])}>
                     <SelectTrigger id="novo-sheet" className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
-                        <SelectItem value="none">Arquivos individuais</SelectItem>
-                        <SelectItem value="grid">Sheet em grade (--grid)</SelectItem>
-                        <SelectItem value="compact">Sheet compacto (--compact)</SelectItem>
+                        <SelectItem value="none">{t('modals.new.individual')}</SelectItem>
+                        <SelectItem value="grid">{t('modals.new.grid')}</SelectItem>
+                        <SelectItem value="compact">{t('modals.new.compact')}</SelectItem>
                       </SelectGroup>
                     </SelectContent>
                   </Select>
@@ -325,19 +321,19 @@ export const NovoModal = NiceModal.create(({ tab: initialTab = 'new-asset', proj
                   <>
                     <div className="grid grid-cols-2 gap-4">
                       <Field>
-                        <FieldLabel htmlFor="novo-gap">Gap (px)</FieldLabel>
+                        <FieldLabel htmlFor="novo-gap">{t('modals.new.gap')}</FieldLabel>
                         <Input id="novo-gap" type="number" min={0} placeholder="0" className="font-mono" {...text('gap')} />
                       </Field>
                       <Field>
-                        <FieldLabel htmlFor="novo-cols">Colunas</FieldLabel>
-                        <Input id="novo-cols" type="number" min={1} placeholder="auto" className="font-mono" {...text('cols')} />
+                        <FieldLabel htmlFor="novo-cols">{t('modals.new.cols')}</FieldLabel>
+                        <Input id="novo-cols" type="number" min={1} placeholder={t('modals.new.colsPlaceholder')} className="font-mono" {...text('cols')} />
                       </Field>
                     </div>
-                    <CheckField id="novo-both" checked={values.both} onChange={(v) => set('both', v)}>Também exportar os arquivos individuais</CheckField>
+                    <CheckField id="novo-both" checked={values.both} onChange={(v) => set('both', v)}>{t('modals.new.alsoIndividual')}</CheckField>
                   </>
                 )}
                 <CheckField id="novo-mockup" checked={values.mockup} onChange={(v) => set('mockup', v)}>
-                  Mockup: grava em review/mockups/, nunca em assets/
+                  {t('modals.new.mockup')}
                 </CheckField>
               </>
             )}
@@ -345,24 +341,24 @@ export const NovoModal = NiceModal.create(({ tab: initialTab = 'new-asset', proj
 
           <div className="flex items-baseline gap-2 rounded-md bg-muted/50 p-2">
             <Kbd>CLI</Kbd>
-            <code className="font-mono text-xs break-all">{cliLine(tab, values)}</code>
+            <code className="font-mono text-xs break-all">{cliLine(tab, values, t)}</code>
           </div>
 
           {(cli.data || cli.isError) && (
             <Alert variant={cli.data?.ok ? 'default' : 'destructive'}>
               <AlertDescription>
                 <pre className="max-h-48 overflow-auto font-mono text-xs whitespace-pre-wrap">
-                  {cli.data ? cli.data.output || (cli.data.ok ? 'Pronto.' : 'Falhou.') : cli.error?.message}
+                  {cli.data ? cli.data.output || (cli.data.ok ? t('modals.new.done') : t('modals.new.failed')) : cli.error?.message}
                 </pre>
               </AlertDescription>
             </Alert>
           )}
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => modal.hide()}>Fechar</Button>
+            <Button type="button" variant="outline" onClick={() => modal.hide()}>{t('common.close')}</Button>
             <Button type="submit" disabled={pending}>
               {pending && <Spinner data-icon="inline-start" />}
-              {pending ? (tab === 'export' ? 'Exportando…' : 'Criando…') : verb}
+              {pending ? (tab === 'export' ? t('modals.new.exporting') : t('modals.new.creating')) : verb}
             </Button>
           </DialogFooter>
         </form>

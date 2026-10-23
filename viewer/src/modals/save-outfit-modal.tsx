@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import { Rich, useT } from '@/i18n';
 import { api } from '@/lib/api';
 import { isValidCharacterName } from '@/lib/outfit/save';
 import { useModalDialog } from '@/lib/use-modal-dialog';
@@ -34,6 +35,7 @@ interface Saved {
 /** Saves the outfit as a new character of the project, exports its sheets, and links to where to see it. */
 export const SaveOutfitModal = NiceModal.create(({ project, characterId, outfit, skipped = [] }: Props) => {
   const { modal, rootProps, contentProps } = useModalDialog();
+  const { t, plural } = useT();
   const queryClient = useQueryClient();
   const [name, setName] = useState('');
   const [force, setForce] = useState(false);
@@ -56,52 +58,52 @@ export const SaveOutfitModal = NiceModal.create(({ project, characterId, outfit,
     <Dialog {...rootProps}>
       <DialogContent {...contentProps} className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Salvar como personagem</DialogTitle>
+          <DialogTitle>{t('modals.saveOutfit.title')}</DialogTitle>
           <DialogDescription>
-            Cria <code>src/characters/{name || '<nome>'}/</code> e os sheets em <code>sheets/characters/{name || '<nome>'}/</code> em <code>{project}</code> com este outfit e os clipes do personagem base que ele pode usar, e exporta as folhas.
+            <Rich id="modals.saveOutfit.description" vars={{ name: name || t('modals.saveOutfit.namePlaceholder'), project }} />
           </DialogDescription>
         </DialogHeader>
 
         <FieldGroup className="gap-3">
           <Field data-invalid={(name !== '' && !valid) || undefined}>
-            <FieldLabel htmlFor="outfit-name">Nome</FieldLabel>
+            <FieldLabel htmlFor="outfit-name">{t('modals.save.name')}</FieldLabel>
             <Input
               id="outfit-name"
               className="font-mono"
               autoComplete="off"
-              placeholder="guarda-dourado"
+              placeholder={t('modals.saveOutfit.example')}
               aria-invalid={name !== '' && !valid}
               value={name}
               disabled={save.isPending}
               onChange={(e) => { setName(e.target.value); save.reset(); }}
             />
-            {name !== '' && !valid ? <FieldError>Use letras minúsculas, números e hífen (ex.: guarda-dourado).</FieldError> : <FieldDescription>Letras minúsculas, números e hífen.</FieldDescription>}
+            {name !== '' && !valid ? <FieldError>{t('modals.saveOutfit.invalid', { example: t('modals.saveOutfit.example') })}</FieldError> : <FieldDescription>{t('modals.save.hint')}</FieldDescription>}
           </Field>
           <Field orientation="horizontal">
             <Checkbox id="outfit-force" checked={force} disabled={save.isPending} onCheckedChange={(checked) => setForce(checked === true)} />
-            <FieldLabel htmlFor="outfit-force" className="font-normal">Substituir se já existir</FieldLabel>
+            <FieldLabel htmlFor="outfit-force" className="font-normal">{t('modals.save.replace')}</FieldLabel>
           </Field>
         </FieldGroup>
 
         {skipped.length > 0 && !saved && (
           <Alert>
             <TriangleAlertIcon />
-            <AlertTitle>{skipped.length === 1 ? 'Um clipe fica de fora' : `${skipped.length} clipes ficam de fora`}</AlertTitle>
+            <AlertTitle>{plural('modals.saveOutfit.skipped', skipped.length)}</AlertTitle>
             <AlertDescription>
-              O personagem novo só ganha os clipes que o que ele segura permite. Não serão gerados: {skipped.map(([key, needs]) => `${key} (feito para ${needs})`).join(', ')}.
+              {t('modals.saveOutfit.skippedBody', { list: skipped.map(([key, needs]) => t('modals.saveOutfit.skippedItem', { key, needs })).join(', ') })}
             </AlertDescription>
           </Alert>
         )}
         {save.isError && (
           <Alert variant="destructive">
-            <AlertTitle>Não foi possível salvar</AlertTitle>
+            <AlertTitle>{t('modals.save.failed')}</AlertTitle>
             <AlertDescription><pre className="max-h-40 overflow-auto font-mono whitespace-pre-wrap">{save.error.message}</pre></AlertDescription>
           </Alert>
         )}
         {saved && (
           <Alert variant={saved.exported ? 'default' : 'destructive'}>
             <CheckIcon />
-            <AlertTitle>{saved.exported ? `Personagem ${saved.name} salvo e exportado` : `Personagem ${saved.name} salvo, mas o export falhou`}</AlertTitle>
+            <AlertTitle>{t(saved.exported ? 'modals.saveOutfit.saved' : 'modals.saveOutfit.savedExportFailed', { name: saved.name })}</AlertTitle>
             <AlertDescription>
               <pre className="max-h-40 overflow-auto font-mono whitespace-pre-wrap">{saved.output}</pre>
             </AlertDescription>
@@ -111,17 +113,17 @@ export const SaveOutfitModal = NiceModal.create(({ project, characterId, outfit,
         <DialogFooter>
           {saved ? (
             <>
-              <Button variant="outline" onClick={() => modal.hide()}>Fechar</Button>
+              <Button variant="outline" onClick={() => modal.hide()}>{t('common.close')}</Button>
               <Button asChild onClick={() => modal.hide()}>
-                <Link to="/p/$project/playground" params={{ project }}>Abrir no playground</Link>
+                <Link to="/p/$project/playground" params={{ project }}>{t('modals.saveOutfit.openPlayground')}</Link>
               </Button>
             </>
           ) : (
             <>
-              <Button variant="outline" onClick={() => modal.hide()}>Cancelar</Button>
+              <Button variant="outline" onClick={() => modal.hide()}>{t('common.cancel')}</Button>
               <Button disabled={!valid || save.isPending} onClick={() => save.mutate()}>
                 {save.isPending ? <Spinner data-icon="inline-start" /> : <SaveIcon data-icon="inline-start" />}
-                {save.isPending ? 'Salvando e exportando…' : 'Salvar e exportar'}
+                {save.isPending ? t('modals.save.saving') : t('modals.save.saveAndExport')}
               </Button>
             </>
           )}

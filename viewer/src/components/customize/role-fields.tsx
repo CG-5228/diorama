@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { useT } from '@/i18n';
 import { roleLabel } from '@/lib/outfit/labels';
 import { cn } from '@/lib/utils';
 import { MaterialSelect } from './material-select';
@@ -28,6 +29,7 @@ interface Props {
 /** A material for each role. Refinements ('metal accent') wait in a folded section: left alone they take the base role's. */
 export function RoleFields({ idPrefix, main, advanced, materials, value, noneLabel, advancedTitle, onChange }: Props) {
   const [open, setOpen] = useState(false);
+  const { t } = useT();
   const row = (role: string) => (
     <Field key={role} orientation="horizontal" className="items-center">
       <FieldLabel htmlFor={`${idPrefix}-${role}`} className="w-24 shrink-0 font-normal">{roleLabel(role)}</FieldLabel>
@@ -45,7 +47,7 @@ export function RoleFields({ idPrefix, main, advanced, materials, value, noneLab
             <Button variant="ghost" size="xs" className="-ml-2">
               <ChevronRightIcon data-icon="inline-start" className={cn('transition-transform', open && 'rotate-90')} />
               {advancedTitle}
-              <Badge variant="secondary" className="tabular-nums">{set > 0 ? `${set} de ${advanced.length}` : advanced.length}</Badge>
+              <Badge variant="secondary" className="tabular-nums">{set > 0 ? t('customize.roles.setOf', { set, total: advanced.length }) : advanced.length}</Badge>
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent>

@@ -6,6 +6,7 @@ import { floorY, hasCues, playCues, stepFx, type Fx } from '@/lib/playground/vfx
 import type { Armed, Character } from '@/lib/playground/library';
 import { isTyping } from '@/lib/hotkeys';
 import type { World } from '@/lib/scenery/background';
+import { useT } from '@/i18n';
 import { useLabel } from '@/lib/scenery/labels';
 import type { Live } from '@/lib/scenery/living';
 import { drawActor, drawEffects, drawFx, drawGround, drawNavLayer, drawStanding, drawWorldGround, pick, stableBox, worldAt, type SceneOptions } from './canvas-draw';
@@ -89,8 +90,9 @@ export function Scene({ player, images, options, armed, resetKey, onPlaced, onSe
   const placed = useRef<{ world: World; at: { x: number; y: number } } | null>(null);
   const held = useRef(new Set<string>());
   // The loop and the handlers read the latest props through this ref instead of restarting on every change.
-  const live = useRef({ images, options, armed, onPlaced, onSelect, onHud, onControl });
-  live.current = { images, options, armed, onPlaced, onSelect, onHud, onControl };
+  const { t } = useT();
+  const live = useRef({ images, options, armed, onPlaced, onSelect, onHud, onControl, t });
+  live.current = { images, options, armed, onPlaced, onSelect, onHud, onControl, t };
 
   const isMoving = () => MOVE_KEYS.some((k) => held.current.has(k));
   const isBusy = (actor: Actor | null) => actor !== null && (drag.current?.actor === actor || (actor === playerActor.current && isMoving()));
@@ -429,7 +431,7 @@ export function Scene({ player, images, options, armed, resetKey, onPlaced, onSe
                 ...hudOf(playerActor.current, isMoving()),
                 world: runtime.current !== null,
                 scene: last ? `${last.name} · ${last.piece} f${last.frame}` : null,
-                use: found?.thing ? useLabel(found.thing.kind, found.thing.clip, found.now.run.world.catalog.pieces.find((p) => p.id === found.thing!.piece)?.label ?? found.thing.piece, found.thing.to) : null,
+                use: found?.thing ? useLabel(live.current.t, found.thing.kind, found.thing.clip, found.now.run.world.catalog.pieces.find((p) => p.id === found.thing!.piece)?.label ?? found.thing.piece, found.thing.to) : null,
               }
             : null,
         );
@@ -502,7 +504,7 @@ export function Scene({ player, images, options, armed, resetKey, onPlaced, onSe
   return (
     <canvas
       ref={canvasRef}
-      aria-label="Cena do playground"
+      aria-label={t('playground.sceneLabel')}
       className="pixelated block size-full touch-none"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}

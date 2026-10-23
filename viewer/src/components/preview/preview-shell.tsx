@@ -9,7 +9,8 @@ import { DialogClose, DialogTitle } from '@/components/ui/dialog';
 import { Kbd } from '@/components/ui/kbd';
 import { Spinner } from '@/components/ui/spinner';
 import { isStale } from '@/lib/export-state';
-import { basename, dirname, formatBytes, stripExtension } from '@/lib/format';
+import { useT } from '@/i18n';
+import { basename, dirname, stripExtension } from '@/lib/format';
 import { isTyping, useWindowKeydown } from '@/lib/hotkeys';
 import { useReexport } from '@/lib/mutations';
 import type { AssetFileMeta } from '@/lib/types';
@@ -30,6 +31,7 @@ export type Peers = ReturnType<typeof usePeers>;
 /** The top of every preview: where the asset is, its size and export state, stepping through its peers, exporting again, closing. */
 export function PreviewHeader({ asset, peers }: { asset: AssetFileMeta; peers: Peers }) {
   const reexport = useReexport();
+  const { t, bytes } = useT();
   const folder = dirname(asset.subpath);
   const { position, go, stepsClips } = peers;
   return (
@@ -41,24 +43,24 @@ export function PreviewHeader({ asset, peers }: { asset: AssetFileMeta; peers: P
         <DialogTitle className="text-sm">{basename(stripExtension(asset.subpath))}</DialogTitle>
         {asset.engine && <EngineBadge engine={asset.engine} />}
         {asset.width && asset.height && <Badge variant="secondary" className="tabular-nums">{asset.width}×{asset.height}</Badge>}
-        <Badge variant="secondary" className="tabular-nums">{formatBytes(asset.size)}</Badge>
+        <Badge variant="secondary" className="tabular-nums">{bytes(asset.size)}</Badge>
         {isStale(asset) && <StaleBadge />}
       </div>
       <div className="flex shrink-0 items-center gap-1">
-        <Button variant="ghost" size="icon" aria-label="Anterior ([)" disabled={stepsClips && peers.peers.length === 1 ? true : !stepsClips && position <= 0} onClick={() => go(-1)}>
+        <Button variant="ghost" size="icon" aria-label={t('preview.shell.previous')} disabled={stepsClips && peers.peers.length === 1 ? true : !stepsClips && position <= 0} onClick={() => go(-1)}>
           <ChevronLeftIcon />
         </Button>
         <span className="text-muted-foreground tabular-nums">{position + 1}/{peers.peers.length}</span>
-        <Button variant="ghost" size="icon" aria-label="Próximo (])" disabled={!stepsClips && (position < 0 || position >= peers.peers.length - 1)} onClick={() => go(1)}>
+        <Button variant="ghost" size="icon" aria-label={t('preview.shell.next')} disabled={!stepsClips && (position < 0 || position >= peers.peers.length - 1)} onClick={() => go(1)}>
           <ChevronRightIcon />
         </Button>
         <Button variant="outline" size="sm" className="ml-2" disabled={!asset.sheet || reexport.isPending} onClick={() => reexport.mutate(asset)}>
           {reexport.isPending ? <Spinner data-icon="inline-start" /> : <RefreshCwIcon data-icon="inline-start" />}
-          Exportar de novo
+          {t('preview.shell.exportAgain')}
         </Button>
         <AssetMenuButton asset={asset} />
         <DialogClose asChild>
-          <Button variant="ghost" size="icon" aria-label="Fechar (Esc)">
+          <Button variant="ghost" size="icon" aria-label={t('preview.shell.close')}>
             <XIcon />
           </Button>
         </DialogClose>
@@ -69,6 +71,7 @@ export function PreviewHeader({ asset, peers }: { asset: AssetFileMeta; peers: P
 
 /** The preview of an asset that is not played frame by frame: the header, its own body, and the keys it answers to. */
 export function PreviewShell({ asset, peers, hints, children }: { asset: AssetFileMeta; peers: Peers; hints: ReactNode; children: ReactNode }) {
+  const { t } = useT();
   useWindowKeydown((e) => {
     if (e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
     if (e.key === '[') peers.go(-1);
@@ -81,7 +84,7 @@ export function PreviewShell({ asset, peers, hints, children }: { asset: AssetFi
       <PreviewHeader asset={asset} peers={peers} />
       <div className="flex min-h-0 flex-1 flex-col">{children}</div>
       <footer className="flex items-center gap-4 border-t px-4 py-1.5 text-xs text-muted-foreground">
-        <span><Kbd>[</Kbd> <Kbd>]</Kbd> asset</span>
+        <span><Kbd>[</Kbd> <Kbd>]</Kbd> {t('preview.footer.asset')}</span>
         {hints}
       </footer>
     </>

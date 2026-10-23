@@ -19,7 +19,7 @@ Fix a reference size and write it in `STYLE.md` before the first volume asset: f
 ## 3. Scenery kits
 
 - Build scenery as a kit of modules on the project grid (floor, wall straight, wall corner, wall end, door frame), each in its own asset or as rows of one sheet.
-- Every module shares the grid size, wall height and the same light, so modules tile without seams. Check the joins by placing the modules side by side in a scene (the viewer's Cenário tab, or `npm run scenery-test`).
+- Every module shares the grid size, wall height and the same light, so modules tile without seams. Check the joins by placing the modules side by side in a scene (the viewer's Scenery tab, or `npm run scenery-test`).
 - Walls use 4 directions; floors usually 1. Large background pieces with no facing use 1.
 
 ## 4. Armor and equipment

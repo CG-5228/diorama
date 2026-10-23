@@ -1,5 +1,7 @@
 import { drawCharacterFrame, outfitFromData, validateOutfit, type CharacterClip, type GearCatalog, type OutfitCharacterInfo, type OutfitData, type Skin } from '@core/rig';
 import { directionName, facingYaw } from '@core/volume';
+import type { TFn } from '../../i18n/core';
+import { currentTranslator } from '../../i18n/store';
 
 /** Directions of an exported sheet: row 0 faces the camera and each next one turns clockwise. */
 export const DIRECTION_COUNT = 8;
@@ -32,9 +34,9 @@ export const framesOf = (character: OutfitCharacterInfo, clip: CharacterClip) =>
  * `scale` (zoom times the device pixel ratio). Returns the error a part threw, if any: a part that breaks on one
  * pose must not take the page down.
  */
-export function paintFrame(canvas: HTMLCanvasElement, character: OutfitCharacterInfo, skin: Skin, clipKey: string, frame: number, direction: number, scale: number): string | null {
+export function paintFrame(canvas: HTMLCanvasElement, character: OutfitCharacterInfo, skin: Skin, clipKey: string, frame: number, direction: number, scale: number, t: TFn = currentTranslator().t): string | null {
   const entry = character.clips[clipKey];
-  if (!entry) return `O personagem não tem o clipe "${clipKey}".`;
+  if (!entry) return t('customize.preview.noClip', { clip: clipKey });
   const width = Math.round(character.width * scale);
   const height = Math.round(character.height * scale);
   if (canvas.width !== width || canvas.height !== height) {
@@ -42,7 +44,7 @@ export function paintFrame(canvas: HTMLCanvasElement, character: OutfitCharacter
     canvas.height = height;
   }
   const ctx = canvas.getContext('2d');
-  if (!ctx) return 'Canvas indisponível.';
+  if (!ctx) return t('errors.noCanvas');
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, width, height);
   ctx.setTransform(scale, 0, 0, scale, 0, 0);

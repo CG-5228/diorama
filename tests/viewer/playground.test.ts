@@ -27,7 +27,8 @@ assert.ok(!matches(entries[0], 'guard props'));
 assert.ok(matches(entries[0], ''));
 
 const base = { query: '', filter: 'all' as const, collapsed: new Set<string>(), recent: [] as string[] };
-const labels = (rows: ReturnType<typeof buildRows>) => rows.map((r) => (r.type === 'header' ? `# ${r.label} ${r.count}` : r.entry.name));
+// The block of recent entries has no name of its own: the list names it in the language of the screen.
+const labels = (rows: ReturnType<typeof buildRows>) => rows.map((r) => (r.type === 'header' ? `# ${r.kind === 'recent' ? 'recent' : r.label} ${r.count}` : r.entry.name));
 
 // One header per folder, folders and names sorted naturally (torch2 before torch10).
 assert.deepEqual(labels(buildRows(entries, base)), ['# characters 2', 'guard', 'wolf', '# fx 2', 'torch2', 'torch10', '# props 2', 'reliquary', 'tombstone']);
@@ -42,9 +43,9 @@ assert.deepEqual(labels(buildRows(entries, { ...base, collapsed })), ['# charact
 assert.deepEqual(labels(buildRows(entries, { ...base, collapsed, query: 'torch' })), ['# fx 2', 'torch2', 'torch10']);
 
 // Recents come first, only when not searching, and skip entries a filter hides.
-assert.deepEqual(labels(buildRows(entries, { ...base, recent: ['s:tomb', 'c:wolf', 'gone'] })).slice(0, 3), ['# Recentes 2', 'tombstone', 'wolf']);
-assert.ok(!labels(buildRows(entries, { ...base, recent: ['s:tomb'], query: 'wolf' })).includes('# Recentes 1'));
-assert.ok(!labels(buildRows(entries, { ...base, recent: ['s:tomb'], filter: 'character' })).some((l) => l.startsWith('# Recentes')));
+assert.deepEqual(labels(buildRows(entries, { ...base, recent: ['s:tomb', 'c:wolf', 'gone'] })).slice(0, 3), ['# recent 2', 'tombstone', 'wolf']);
+assert.ok(!labels(buildRows(entries, { ...base, recent: ['s:tomb'], query: 'wolf' })).includes('# recent 1'));
+assert.ok(!labels(buildRows(entries, { ...base, recent: ['s:tomb'], filter: 'character' })).some((l) => l.startsWith('# recent')));
 
 // Recents: newest first, no repeats, bounded.
 assert.deepEqual(pushRecent(['b', 'a', 'c'], 'a'), ['a', 'b', 'c']);

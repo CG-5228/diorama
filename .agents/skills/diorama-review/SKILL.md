@@ -1,6 +1,6 @@
 ---
 name: diorama-review
-description: Verify Diorama outputs before delivery. Covers the verification ladder, the numeric inspect command, contact sheets of every facing and frame, motion checks, and the viewer's Playground, Customizar and Cenário tabs. Use after an export, when a volume or rig asset must be judged, or when the user asks to see or review assets.
+description: Verify Diorama outputs before delivery. Covers the verification ladder, the numeric inspect command, contact sheets of every facing and frame, motion checks, and the viewer's Playground, Customize and Scenery tabs. Use after an export, when a volume or rig asset must be judged, or when the user asks to see or review assets.
 ---
 
 # Reviewing assets in Diorama
@@ -15,7 +15,7 @@ Go up the ladder only as far as the change needs. Each step is cheaper than the 
 2. **Exported.** `npm run --silent export -- <project> <subpath> --json` exits with code 0, and each output has a path that exists in `assets/`. After a full export, `npm run layout -- <project> --strict` is clean: every sheet has its export and no asset is left without its sheet.
 3. **Measured.** `npm run inspect -- <output.png> --json` returns numbers that match what the asset should be (see below).
 4. **Looked at.** Make a contact sheet (`npm run contact -- <output.png>`) and open it with the image viewer (the `Read` tool, using the absolute path it prints). Judge form, color and style against `STYLE.md`, in every row and every frame.
-5. **In context.** Open the viewer to see a character or a prop move from its exported atlas (Playground), a scene laid out the way a game would (Cenário), or an outfit on a body (Customizar). Only when the change needs it. See the sections below.
+5. **In context.** Open the viewer to see a character or a prop move from its exported atlas (Playground), a scene laid out the way a game would (Scenery), or an outfit on a body (Customize). Only when the change needs it. See the sections below.
 
 Do not skip step 3 for sprites. A sprite can look right and still be clipped, have an empty facing, or fail the quality bar.
 
@@ -68,10 +68,10 @@ The `diorama-volume` skill lists the readability checks (silhouette, value contr
 
 - **Props and armor pieces.** Every row of the contact sheet, then `--gray`. The silhouette identifies the object in every facing, and the pivot spread between rows is small.
 - **Scenery pieces.** `npm run scenery-test -- <project> <piece>` renders the piece through every join it has (floor patches and saddles, wall loops, L, T and cross, a lone post) next to a scale figure, into `review/scenery-tests/`; add `--field` for a floor alone to judge repetition at 1×, and `--on <floor>` for what it stands on. Look at 1× first, then zoom with `contact --zoom 3`. Tiles are exact pixels and seamless.
-- **Scenes and navigation.** Open the Cenário tab, load or paint the scene, and check the joins, the sorting of walls and props against each other, the scale against the figure, and the navigation overlay (the route button: red cells block, amber is slow, thick lines are blocked edges, green is a door that lets through).
+- **Scenes and navigation.** Open the Scenery tab, load or paint the scene, and check the joins, the sorting of walls and props against each other, the scale against the figure, and the navigation overlay (the route button: red cells block, amber is slow, thick lines are blocked edges, green is a door that lets through).
 - **Living scenery.** A transition clip starts on the `from` state's still and ends on the `to` state's (guide 05); compare the clip's first and last frames with the state sheets. Try it in the Playground: pick the scene, walk to the piece and press E.
 - **Characters.** The `motion` and `character` blocks, every row and frame of each clip, then the Playground. For attacks check the beat in the strip (anticipation, hold, strike over 2 to 3 frames, one smear, extreme hold, settle); for deaths, that the last frame lies flat in every row; for skills, that the effect starts at `release` from its socket.
-- **Gear and outfits.** The Customizar tab dresses a character with the kit and previews it live; swap each slot, and check that a piece does not show through the body when it turns. The kit's parts are the generated sheets in `sheets/gear/`, exported to `assets/gear/`.
+- **Gear and outfits.** The Customize tab dresses a character with the kit and previews it live; swap each slot, and check that a piece does not show through the body when it turns. The kit's parts are the generated sheets in `sheets/gear/`, exported to `assets/gear/`.
 - **Effects.** The effect's preview in the Assets tab (its size ring, and the flight of a projectile), then the character that cues it in the Playground.
 - **Item icons and HUD.** The preview of an icon is an inventory: every icon fills its square the same way and reads at 1×. A nine-slice stretches cleanly (try three sizes), a bar reads at every value with its cap, and the font sets "1234" and "-56" evenly.
 
@@ -83,8 +83,8 @@ Each project page has four tabs:
 
 - **Assets.** Every exported sheet, filterable by kind (characters, items, scenery, props, effects, icons, interface) with a preview that plays animations, and a banner when a source is newer than its export.
 - **Playground.** Characters and props play from their exported atlases. WASD moves, Shift runs, 1 to 9 trigger the character's actions in order, H is a hit, K a death and R resets. Effects start at their sockets on the clip's events, and a chosen scene becomes the world: the character slides along walls, stops at shut doors, and E uses the nearest door, lever or chest. The toolbar has a time scale (1×, ¼×, ⅒×, Pause) to read frames and events; a badge shows when it is not 1×.
-- **Customizar.** The gear kit's customizer: dress a character by slot, swap and remove pieces, undo, and save the outfit as a new character (`new-outfit-character`).
-- **Cenário.** The scene painter for the project's scenery kit: floors, walls, fences, doors, props and scale figures, with the navigation overlay, saved as scenes (`new-scene`).
+- **Customize.** The gear kit's customizer: dress a character by slot, swap and remove pieces, undo, and save the outfit as a new character (`new-outfit-character`).
+- **Scenery.** The scene painter for the project's scenery kit: floors, walls, fences, doors, props and scale figures, with the navigation overlay, saved as scenes (`new-scene`).
 
 Leave the server running while you work. Stop it with Ctrl+C when you are done.
 

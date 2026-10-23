@@ -7,8 +7,10 @@ import { Popover, PopoverContent, PopoverHeader, PopoverTitle, PopoverTrigger } 
 import { Toggle } from '@/components/ui/toggle';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Rich, useT } from '@/i18n';
+import type { Key } from '@/i18n';
 import type { Layer } from '@/lib/scenery/edit';
-import { LAYER_LABELS, TOOL_KEYS, TOOL_LABELS, type Tool } from '@/lib/scenery/labels';
+import { TOOLS, TOOL_KEYS } from '@/lib/scenery/labels';
 
 const LAYERS: Layer[] = ['floor', 'walls', 'props'];
 const ZOOMS = [1, 2, 3, 4];
@@ -34,39 +36,41 @@ interface Props {
   onPanel: (open: boolean) => void;
 }
 
-const SHORTCUTS: { keys: string[]; what: string }[] = [
-  { keys: ['⌘Z'], what: 'Desfazer' },
-  { keys: ['⇧⌘Z'], what: 'Refazer' },
-  { keys: ['R'], what: 'Girar o prop (⇧R, no outro sentido) ou virar o lado da porta' },
-  { keys: ['⌫'], what: 'Excluir o que está selecionado (prop, parede, figura ou chão)' },
-  { keys: ['⌘D'], what: 'Duplicar o prop selecionado' },
-  { keys: ['←', '↑', '→', '↓'], what: 'Empurrar o prop, a parede ou a figura selecionados' },
-  { keys: ['Esc'], what: 'Tirar a seleção' },
-  { keys: ['G'], what: 'Mostrar ou esconder a grade' },
-  { keys: ['Tab'], what: 'Mostrar ou esconder o painel de peças' },
-  { keys: ['−', '+'], what: 'Zoom' },
-  { keys: ['Espaço'], what: 'Segure e arraste para mover a vista' },
-  { keys: ['⇧'], what: 'Com o pincel: linha reta desde o último ponto' },
-  { keys: ['⌥'], what: 'Com qualquer ferramenta: conta-gotas' },
+/** The keys are the same in every language, apart from the ones that are words (`space`). */
+const SHORTCUTS: { keys: string[]; what: Key }[] = [
+  { keys: ['⌘Z'], what: 'scenery.toolbar.keys.undo' },
+  { keys: ['⇧⌘Z'], what: 'scenery.toolbar.keys.redo' },
+  { keys: ['R'], what: 'scenery.toolbar.keys.rotate' },
+  { keys: ['⌫'], what: 'scenery.toolbar.keys.delete' },
+  { keys: ['⌘D'], what: 'scenery.toolbar.keys.duplicate' },
+  { keys: ['←', '↑', '→', '↓'], what: 'scenery.toolbar.keys.nudge' },
+  { keys: ['Esc'], what: 'scenery.toolbar.keys.escape' },
+  { keys: ['G'], what: 'scenery.toolbar.keys.grid' },
+  { keys: ['Tab'], what: 'scenery.toolbar.keys.tab' },
+  { keys: ['−', '+'], what: 'scenery.toolbar.keys.zoom' },
+  { keys: ['space'], what: 'scenery.toolbar.keys.pan' },
+  { keys: ['⇧'], what: 'scenery.toolbar.keys.shift' },
+  { keys: ['⌥'], what: 'scenery.toolbar.keys.alt' },
 ];
 
 /** The scene, undo, which layers are shown, zoom, grid, the piece panel, the shortcut list and save. The tools themselves are in the rail. A single line of a fixed height: the canvas below never moves. When the bar is narrow the layers and save lose their words, and what still does not fit scrolls. */
 export function SceneToolbar(p: Props) {
+  const { t } = useT();
   return (
     <div className="@container flex h-12 shrink-0 items-center gap-3 overflow-x-auto border-b px-3 [scrollbar-width:none]">
       <div className="shrink-0">{p.leading}</div>
-      <ButtonGroup aria-label="Histórico" className="shrink-0">
+      <ButtonGroup aria-label={t('scenery.toolbar.history')} className="shrink-0">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="icon-sm" aria-label="Desfazer" disabled={!p.canUndo} onClick={p.onUndo}><Undo2Icon /></Button>
+            <Button variant="outline" size="icon-sm" aria-label={t('common.undo')} disabled={!p.canUndo} onClick={p.onUndo}><Undo2Icon /></Button>
           </TooltipTrigger>
-          <TooltipContent>Desfazer <Kbd>⌘Z</Kbd></TooltipContent>
+          <TooltipContent>{t('common.undo')} <Kbd>⌘Z</Kbd></TooltipContent>
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="icon-sm" aria-label="Refazer" disabled={!p.canRedo} onClick={p.onRedo}><Redo2Icon /></Button>
+            <Button variant="outline" size="icon-sm" aria-label={t('scenery.toolbar.keys.redo')} disabled={!p.canRedo} onClick={p.onRedo}><Redo2Icon /></Button>
           </TooltipTrigger>
-          <TooltipContent>Refazer <Kbd>⇧⌘Z</Kbd></TooltipContent>
+          <TooltipContent>{t('scenery.toolbar.keys.redo')} <Kbd>⇧⌘Z</Kbd></TooltipContent>
         </Tooltip>
       </ButtonGroup>
 
@@ -76,90 +80,90 @@ export function SceneToolbar(p: Props) {
         size="sm"
         spacing={0}
         className="shrink-0"
-        aria-label="Camadas visíveis"
+        aria-label={t('scenery.toolbar.layersLabel')}
         value={LAYERS.filter((layer) => p.visible[layer])}
         onValueChange={(next) => LAYERS.forEach((layer) => next.includes(layer) !== p.visible[layer] && p.onVisible(layer, next.includes(layer)))}
       >
         {LAYERS.map((layer) => (
-          <ToggleGroupItem key={layer} value={layer} aria-label={`${p.visible[layer] ? 'Esconder' : 'Mostrar'} ${LAYER_LABELS[layer].toLowerCase()}`} title={LAYER_LABELS[layer]}>
+          <ToggleGroupItem key={layer} value={layer} aria-label={t(p.visible[layer] ? 'scenery.toolbar.hideLayer' : 'scenery.toolbar.showLayer', { layer: t(`scenery.layers.${layer}`).toLowerCase() })} title={t(`scenery.layers.${layer}`)}>
             {p.visible[layer] ? <EyeIcon data-icon="inline-start" /> : <EyeOffIcon data-icon="inline-start" />}
-            <span className="hidden @3xl:inline">{LAYER_LABELS[layer]}</span>
+            <span className="hidden @3xl:inline">{t(`scenery.layers.${layer}`)}</span>
           </ToggleGroupItem>
         ))}
       </ToggleGroup>
 
       <div className="ml-auto flex shrink-0 items-center gap-2">
-        <ButtonGroup aria-label="Zoom">
-          <Button variant="outline" size="icon-sm" aria-label="Diminuir o zoom" disabled={p.zoom <= ZOOMS[0]} onClick={() => p.onZoom(p.zoom - 1)}><MinusIcon /></Button>
+        <ButtonGroup aria-label={t('scenery.toolbar.zoom')}>
+          <Button variant="outline" size="icon-sm" aria-label={t('scenery.toolbar.zoomOut')} disabled={p.zoom <= ZOOMS[0]} onClick={() => p.onZoom(p.zoom - 1)}><MinusIcon /></Button>
           <Tooltip>
             <TooltipTrigger asChild>
-              <ButtonGroupText className="min-w-9 justify-center tabular-nums">{p.zoom}×</ButtonGroupText>
+              <ButtonGroupText className="min-w-9 justify-center tabular-nums">{t('units.times', { value: p.zoom })}</ButtonGroupText>
             </TooltipTrigger>
-            <TooltipContent>Zoom · <Kbd>Ctrl</Kbd> + roda</TooltipContent>
+            <TooltipContent><Rich id="scenery.toolbar.zoomHint" /></TooltipContent>
           </Tooltip>
-          <Button variant="outline" size="icon-sm" aria-label="Aumentar o zoom" disabled={p.zoom >= ZOOMS.at(-1)!} onClick={() => p.onZoom(p.zoom + 1)}><PlusIcon /></Button>
+          <Button variant="outline" size="icon-sm" aria-label={t('scenery.toolbar.zoomIn')} disabled={p.zoom >= ZOOMS.at(-1)!} onClick={() => p.onZoom(p.zoom + 1)}><PlusIcon /></Button>
         </ButtonGroup>
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Toggle variant="outline" pressed={p.grid} onPressedChange={p.onGrid} aria-label="Grade"><GridIcon /></Toggle>
+            <Toggle variant="outline" pressed={p.grid} onPressedChange={p.onGrid} aria-label={t('scenery.toolbar.grid')}><GridIcon /></Toggle>
           </TooltipTrigger>
-          <TooltipContent>Grade <Kbd>G</Kbd></TooltipContent>
+          <TooltipContent>{t('scenery.toolbar.grid')} <Kbd>G</Kbd></TooltipContent>
         </Tooltip>
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Toggle variant="outline" pressed={p.navigation} onPressedChange={p.onNavigation} aria-label="Navegação"><RouteIcon /></Toggle>
+            <Toggle variant="outline" pressed={p.navigation} onPressedChange={p.onNavigation} aria-label={t('scenery.toolbar.navigation')}><RouteIcon /></Toggle>
           </TooltipTrigger>
-          <TooltipContent>Navegação: onde os personagens andam (vermelho bloqueia, âmbar é lento)</TooltipContent>
+          <TooltipContent>{t('scenery.toolbar.navigationHint')}</TooltipContent>
         </Tooltip>
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Toggle variant="outline" pressed={p.panelOpen} onPressedChange={p.onPanel} aria-label="Painel de peças">
+            <Toggle variant="outline" pressed={p.panelOpen} onPressedChange={p.onPanel} aria-label={t('scenery.toolbar.piecePanel')}>
               {p.panelOpen ? <PanelRightCloseIcon /> : <PanelRightOpenIcon />}
             </Toggle>
           </TooltipTrigger>
-          <TooltipContent>Painel de peças <Kbd>Tab</Kbd></TooltipContent>
+          <TooltipContent>{t('scenery.toolbar.piecePanel')} <Kbd>Tab</Kbd></TooltipContent>
         </Tooltip>
 
         <Popover>
           <Tooltip>
             <TooltipTrigger asChild>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="icon-sm" aria-label="Atalhos"><KeyboardIcon /></Button>
+                <Button variant="outline" size="icon-sm" aria-label={t('scenery.toolbar.shortcuts')}><KeyboardIcon /></Button>
               </PopoverTrigger>
             </TooltipTrigger>
-            <TooltipContent>Atalhos</TooltipContent>
+            <TooltipContent>{t('scenery.toolbar.shortcuts')}</TooltipContent>
           </Tooltip>
           <PopoverContent align="end" className="max-h-(--radix-popover-content-available-height) w-80 overflow-y-auto">
             <PopoverHeader>
-              <PopoverTitle>Atalhos do construtor</PopoverTitle>
+              <PopoverTitle>{t('scenery.toolbar.shortcutsTitle')}</PopoverTitle>
             </PopoverHeader>
             <dl className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-1.5">
-              {(Object.keys(TOOL_LABELS) as Tool[]).map((tool) => (
+              {TOOLS.map((tool) => (
                 <div key={tool} className="col-span-2 grid grid-cols-subgrid items-center">
                   <dt><Kbd>{TOOL_KEYS[tool]}</Kbd></dt>
-                  <dd className="text-muted-foreground">{TOOL_LABELS[tool]}</dd>
+                  <dd className="text-muted-foreground">{t(`scenery.tools.${tool}`)}</dd>
                 </div>
               ))}
               {SHORTCUTS.map(({ keys, what }) => (
                 <div key={what} className="col-span-2 grid grid-cols-subgrid items-center">
-                  <dt><KbdGroup>{keys.map((key) => <Kbd key={key}>{key}</Kbd>)}</KbdGroup></dt>
-                  <dd className="text-muted-foreground">{what}</dd>
+                  <dt><KbdGroup>{keys.map((key) => <Kbd key={key}>{key === 'space' ? t('keys.space') : key}</Kbd>)}</KbdGroup></dt>
+                  <dd className="text-muted-foreground">{t(what)}</dd>
                 </div>
               ))}
               <div className="col-span-2 grid grid-cols-subgrid items-center">
-                <dt><Kbd>Botão direito</Kbd></dt>
-                <dd className="text-muted-foreground">Apaga na camada do pincel</dd>
+                <dt><Kbd>{t('scenery.toolbar.rightButton')}</Kbd></dt>
+                <dd className="text-muted-foreground">{t('scenery.toolbar.rightButtonDoes')}</dd>
               </div>
             </dl>
           </PopoverContent>
         </Popover>
 
-        <Button size="sm" aria-label="Salvar cena" title="Salvar cena" onClick={p.onSave}>
+        <Button size="sm" aria-label={t('scenery.toolbar.save')} title={t('scenery.toolbar.save')} onClick={p.onSave}>
           <SaveIcon data-icon="inline-start" />
-          <span className="hidden @2xl:inline">Salvar cena</span>
+          <span className="hidden @2xl:inline">{t('scenery.toolbar.save')}</span>
         </Button>
       </div>
     </div>

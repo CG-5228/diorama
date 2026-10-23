@@ -9,7 +9,9 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Card } from '@/components/ui/card';
 import { canMove, hostCandidates, isPaired, optionValue, partOf, setHost, setOption, setPieceMaterial, setSide, setSlot, splitRoles, type Piece, type Side } from '@/lib/outfit/edit';
-import { SIDE_LABELS, SLOT_LABELS } from '@/lib/outfit/labels';
+import { useT } from '@/i18n';
+import { sideLabel, slotLabel } from '@/lib/outfit/labels';
+import type { TFn } from '@/i18n';
 import { cn } from '@/lib/utils';
 import type { Edit } from '@/lib/outfit/use-draft';
 import { OptionField } from './option-field';
@@ -27,10 +29,11 @@ interface Props {
   onRemove: () => void;
 }
 
-const sideOf = (piece: Piece) => (isPaired(piece.slot) ? ` · ${SIDE_LABELS[piece.side ?? 1].toLowerCase()}` : '');
+const sideOf = (piece: Piece, t: TFn) => (isPaired(piece.slot) ? ` · ${sideLabel(t, piece.side ?? 1).toLowerCase()}` : '');
 
 /** One piece of the outfit: its place, options and materials, folded away until opened. */
 export function PieceCard({ catalog, outfit, index, onEdit, onMove, onRemove }: Props) {
+  const { t } = useT();
   const piece = outfit.pieces[index];
   const info = partOf(catalog, piece.part);
   const [open, setOpen] = useState(false);
@@ -41,20 +44,20 @@ export function PieceCard({ catalog, outfit, index, onEdit, onMove, onRemove }: 
       <Card size="sm" className={cn('gap-0 py-0', !info && 'ring-destructive/50')}>
         <div className="flex items-center gap-1 p-1.5">
           <CollapsibleTrigger asChild>
-            <Button variant="ghost" size="sm" className="min-w-0 flex-1 justify-start" aria-label={`${open ? 'Fechar' : 'Abrir'} ${info?.label ?? piece.part}`}>
+            <Button variant="ghost" size="sm" className="min-w-0 flex-1 justify-start" aria-label={t(open ? 'customize.piece.close' : 'customize.piece.open', { name: info?.label ?? piece.part })}>
               <ChevronRightIcon data-icon="inline-start" className={cn('transition-transform', open && 'rotate-90')} />
               <span className="truncate font-medium">{info?.label ?? piece.part}</span>
-              <span className="truncate font-normal text-muted-foreground">{SLOT_LABELS[piece.slot]}{sideOf(piece)}</span>
-              {!info && <Badge variant="destructive"><TriangleAlertIcon data-icon="inline-start" />desconhecida</Badge>}
+              <span className="truncate font-normal text-muted-foreground">{slotLabel(t, piece.slot)}{sideOf(piece, t)}</span>
+              {!info && <Badge variant="destructive"><TriangleAlertIcon data-icon="inline-start" />{t('customize.piece.unknown')}</Badge>}
             </Button>
           </CollapsibleTrigger>
-          <Button variant="ghost" size="icon-xs" aria-label="Subir" disabled={!canMove(outfit, index, -1)} onClick={() => onMove(-1)}>
+          <Button variant="ghost" size="icon-xs" aria-label={t('customize.piece.moveUp')} disabled={!canMove(outfit, index, -1)} onClick={() => onMove(-1)}>
             <ArrowUpIcon />
           </Button>
-          <Button variant="ghost" size="icon-xs" aria-label="Descer" disabled={!canMove(outfit, index, 1)} onClick={() => onMove(1)}>
+          <Button variant="ghost" size="icon-xs" aria-label={t('customize.piece.moveDown')} disabled={!canMove(outfit, index, 1)} onClick={() => onMove(1)}>
             <ArrowDownIcon />
           </Button>
-          <Button variant="ghost" size="icon-xs" aria-label="Remover peça" onClick={onRemove}>
+          <Button variant="ghost" size="icon-xs" aria-label={t('customize.piece.remove')} onClick={onRemove}>
             <XIcon />
           </Button>
         </div>
@@ -68,6 +71,7 @@ export function PieceCard({ catalog, outfit, index, onEdit, onMove, onRemove }: 
 
 /** The fields of one piece. `compact` leaves out what the slot board decides for itself: the piece it rests on, when only one could carry it. */
 export function PieceFields({ uid, catalog, outfit, index, info, onEdit, compact = false }: Pick<Props, 'catalog' | 'outfit' | 'index' | 'onEdit'> & { uid: string; info: PartInfo; compact?: boolean }) {
+  const { t } = useT();
   const piece = outfit.pieces[index];
   const materials = Object.keys(catalog.materials);
   const hosts = hostCandidates(outfit, index, info);
@@ -78,12 +82,12 @@ export function PieceFields({ uid, catalog, outfit, index, info, onEdit, compact
     <FieldGroup className="gap-3 border-t p-2.5">
       {info.slots.length > 1 && (
         <Field>
-          <FieldLabel htmlFor={`${uid}-slot`}>Posição</FieldLabel>
+          <FieldLabel htmlFor={`${uid}-slot`}>{t('customize.piece.position')}</FieldLabel>
           <Select value={piece.slot} onValueChange={(slot) => onEdit((o) => setSlot(o, index, slot as Slot))}>
             <SelectTrigger id={`${uid}-slot`} size="sm" className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                {info.slots.map((slot) => <SelectItem key={slot} value={slot}>{SLOT_LABELS[slot]}</SelectItem>)}
+                {info.slots.map((slot) => <SelectItem key={slot} value={slot}>{slotLabel(t, slot)}</SelectItem>)}
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -91,16 +95,16 @@ export function PieceFields({ uid, catalog, outfit, index, info, onEdit, compact
       )}
       {isPaired(piece.slot) && (
         <Field>
-          <FieldLabel id={`${uid}-side`}>Lado</FieldLabel>
+          <FieldLabel id={`${uid}-side`}>{t('customize.piece.side')}</FieldLabel>
           <ToggleGroup type="single" variant="outline" size="sm" aria-labelledby={`${uid}-side`} value={String(piece.side ?? 1)} onValueChange={(side) => side && onEdit((o) => setSide(o, index, Number(side) as Side))}>
-            <ToggleGroupItem value="-1">{SIDE_LABELS[-1]}</ToggleGroupItem>
-            <ToggleGroupItem value="1">{SIDE_LABELS[1]}</ToggleGroupItem>
+            <ToggleGroupItem value="-1">{sideLabel(t, -1)}</ToggleGroupItem>
+            <ToggleGroupItem value="1">{sideLabel(t, 1)}</ToggleGroupItem>
           </ToggleGroup>
         </Field>
       )}
       {showHost && (
         <Field>
-          <FieldLabel htmlFor={`${uid}-host`}>Apoia em</FieldLabel>
+          <FieldLabel htmlFor={`${uid}-host`}>{t('customize.piece.restsOn')}</FieldLabel>
           <Select
             value={hostIndex >= 0 ? String(hostIndex) : NO_HOST}
             onValueChange={(next) => onEdit((o) => setHost(o, index, next === NO_HOST ? null : Number(next)))}
@@ -108,10 +112,10 @@ export function PieceFields({ uid, catalog, outfit, index, info, onEdit, compact
             <SelectTrigger id={`${uid}-host`} size="sm" className="w-full" aria-invalid={info.requires !== undefined && hostIndex < 0}><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                {!info.requires && <SelectItem value={NO_HOST}>Nada</SelectItem>}
+                {!info.requires && <SelectItem value={NO_HOST}>{t('customize.piece.nothing')}</SelectItem>}
                 {hosts.map((i) => (
                   <SelectItem key={i} value={String(i)}>
-                    {partOf(catalog, outfit.pieces[i].part)?.label ?? outfit.pieces[i].part}{sideOf(outfit.pieces[i])}
+                    {partOf(catalog, outfit.pieces[i].part)?.label ?? outfit.pieces[i].part}{sideOf(outfit.pieces[i], t)}
                   </SelectItem>
                 ))}
               </SelectGroup>
@@ -130,14 +134,14 @@ export function PieceFields({ uid, catalog, outfit, index, info, onEdit, compact
       ))}
       {info.roles.length > 0 && (
         <div className="flex flex-col gap-2">
-          <span className="text-muted-foreground">Materiais desta peça</span>
+          <span className="text-muted-foreground">{t('customize.piece.materials')}</span>
           <RoleFields
             idPrefix={`${uid}-mat`}
             {...splitRoles(info.roles)}
             materials={materials}
             value={piece.materials}
-            noneLabel={(role) => (outfit.materials[role] ? `Do outfit (${outfit.materials[role]})` : 'Do outfit')}
-            advancedTitle="Mais papéis"
+            noneLabel={(role) => (outfit.materials[role] ? t('customize.piece.fromOutfitWith', { material: outfit.materials[role] }) : t('customize.piece.fromOutfit'))}
+            advancedTitle={t('customize.piece.moreRoles')}
             onChange={(role, name) => onEdit((o) => setPieceMaterial(o, index, role, name))}
           />
         </div>

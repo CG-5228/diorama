@@ -1,11 +1,12 @@
 import NiceModal from '@ebay/nice-modal-react';
-import { createRootRouteWithContext, ErrorComponent, Link, Outlet, useRouter } from '@tanstack/react-router';
+import { createRootRouteWithContext, ErrorComponent, Link, Outlet, useRouter, type ErrorComponentProps } from '@tanstack/react-router';
 import type { QueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { assetsQuery, projectsQuery } from '@/lib/queries';
 import { isTyping, useWindowKeydown } from '@/lib/hotkeys';
+import { Rich, useT } from '@/i18n';
 import { AppHeader } from '@/components/app-header';
 import { NovoModal } from '@/modals/novo-modal';
 import { ShortcutsModal } from '@/modals/shortcuts-modal';
@@ -14,26 +15,34 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   loader: ({ context: { queryClient } }) =>
     Promise.all([queryClient.ensureQueryData(projectsQuery), queryClient.ensureQueryData(assetsQuery)]),
   component: Shell,
-  errorComponent: ({ error }) => {
-    const router = useRouter();
-    return (
-      <div className="mx-auto flex max-w-lg flex-col items-start gap-3 px-5 py-[15vh]">
-        <h1 className="text-base font-semibold">Não foi possível carregar o catálogo</h1>
-        <ErrorComponent error={error} />
-        <p className="text-muted-foreground">O servidor do viewer precisa estar rodando (<code>npm run view</code>).</p>
-        <Button onClick={() => void router.invalidate()}>Tentar de novo</Button>
-      </div>
-    );
-  },
-  notFoundComponent: () => (
+  errorComponent: LoadError,
+  notFoundComponent: NotFound,
+});
+
+function LoadError({ error }: ErrorComponentProps) {
+  const router = useRouter();
+  const { t } = useT();
+  return (
     <div className="mx-auto flex max-w-lg flex-col items-start gap-3 px-5 py-[15vh]">
-      <h1 className="text-base font-semibold">Página não encontrada</h1>
+      <h1 className="text-base font-semibold">{t('app.loadError.title')}</h1>
+      <ErrorComponent error={error} />
+      <p className="text-muted-foreground"><Rich id="app.loadError.hint" /></p>
+      <Button onClick={() => void router.invalidate()}>{t('app.loadError.retry')}</Button>
+    </div>
+  );
+}
+
+function NotFound() {
+  const { t } = useT();
+  return (
+    <div className="mx-auto flex max-w-lg flex-col items-start gap-3 px-5 py-[15vh]">
+      <h1 className="text-base font-semibold">{t('app.notFound')}</h1>
       <Button variant="outline" asChild>
-        <Link to="/">Voltar ao início</Link>
+        <Link to="/">{t('app.backHome')}</Link>
       </Button>
     </div>
-  ),
-});
+  );
+}
 
 function Shell() {
   useWindowKeydown((e) => {

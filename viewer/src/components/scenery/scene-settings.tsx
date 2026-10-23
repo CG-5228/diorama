@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldLegend, FieldSet } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useT } from '@/i18n';
 import { splitRoles } from '@/lib/outfit/edit';
 import type { SavedScene } from '@/lib/scenery/catalog';
 import { MAX_SIZE, MIN_SIZE, clampSize, countCells, emptyScene, resize, rolesInScene, setSceneMaterial } from '@/lib/scenery/edit';
-import { plural } from '@/lib/format';
 
 interface Props {
   catalog: SceneryCatalog;
@@ -49,6 +49,7 @@ function SizeField({ id, label, value, onCommit }: { id: string; label: string; 
 
 /** Which scene is open, its size and the materials its pieces are made of. */
 export function SceneSettings({ catalog, scene, saved, loaded, onEdit, onLoad }: Props) {
+  const { t, plural } = useT();
   const roles = splitRoles(rolesInScene(scene, catalog));
   const materials = Object.keys(catalog.materials);
 
@@ -56,36 +57,36 @@ export function SceneSettings({ catalog, scene, saved, loaded, onEdit, onLoad }:
     <div className="flex flex-col gap-5">
       <FieldGroup className="gap-3">
         <Field>
-          <FieldLabel htmlFor="scene-open">Cena</FieldLabel>
+          <FieldLabel htmlFor="scene-open">{t('scenery.settings.scene')}</FieldLabel>
           <Select value={loaded ?? ''} onValueChange={(name) => { const found = saved.find((s) => s.name === name); if (found) onLoad(found.scene, found.name); }} disabled={saved.length === 0}>
-            <SelectTrigger id="scene-open" className="w-full"><SelectValue placeholder={saved.length === 0 ? 'Nenhuma cena salva' : 'Abrir uma cena salva'} /></SelectTrigger>
+            <SelectTrigger id="scene-open" className="w-full"><SelectValue placeholder={saved.length === 0 ? t('scenery.settings.none') : t('scenery.settings.open')} /></SelectTrigger>
             <SelectContent>
               <SelectGroup>{saved.map((s) => <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>)}</SelectGroup>
             </SelectContent>
           </Select>
-          <FieldDescription>Abrir ou criar substitui o que está na tela; Desfazer traz de volta.</FieldDescription>
+          <FieldDescription>{t('scenery.settings.replaces')}</FieldDescription>
         </Field>
         <Button variant="outline" size="sm" onClick={() => onLoad(emptyScene(catalog, scene.cols, scene.rows), null)}>
           <FilePlusIcon data-icon="inline-start" />
-          Nova cena em branco
+          {t('scenery.settings.blank')}
         </Button>
       </FieldGroup>
 
       <FieldSet className="min-w-0">
-        <FieldLegend variant="label">Tamanho</FieldLegend>
+        <FieldLegend variant="label">{t('scenery.settings.size')}</FieldLegend>
         <div className="grid grid-cols-2 gap-3">
-          <SizeField id="scene-cols" label="Colunas" value={scene.cols} onCommit={(cols) => onEdit((s) => resize(s, catalog, cols, s.rows))} />
-          <SizeField id="scene-rows" label="Linhas" value={scene.rows} onCommit={(rows) => onEdit((s) => resize(s, catalog, s.cols, rows))} />
+          <SizeField id="scene-cols" label={t('scenery.settings.columns')} value={scene.cols} onCommit={(cols) => onEdit((s) => resize(s, catalog, cols, s.rows))} />
+          <SizeField id="scene-rows" label={t('scenery.settings.rows')} value={scene.rows} onCommit={(rows) => onEdit((s) => resize(s, catalog, s.cols, rows))} />
         </div>
         <p className="text-muted-foreground tabular-nums">
-          {plural(countCells(scene.floor), 'célula de chão', 'células de chão')} · {plural(countCells(scene.walls), 'parede ou cerca', 'paredes e cercas')} · {plural(scene.props.length, 'prop ou decal', 'props e decais')}
+          {plural('scenery.settings.floorCells', countCells(scene.floor))} · {plural('scenery.settings.walls', countCells(scene.walls))} · {plural('scenery.settings.props', scene.props.length)}
         </p>
       </FieldSet>
 
       <FieldSet className="min-w-0">
-        <FieldLegend variant="label">Materiais</FieldLegend>
+        <FieldLegend variant="label">{t('scenery.settings.materials')}</FieldLegend>
         {roles.main.length + roles.advanced.length === 0 ? (
-          <p className="text-muted-foreground">Pinte peças para escolher os materiais.</p>
+          <p className="text-muted-foreground">{t('scenery.settings.paintFirst')}</p>
         ) : (
           <RoleFields
             idPrefix="scene-mat"
@@ -93,8 +94,8 @@ export function SceneSettings({ catalog, scene, saved, loaded, onEdit, onLoad }:
             advanced={roles.advanced}
             materials={materials}
             value={scene.materials}
-            noneLabel={(role) => (catalog.defaultMaterials[role] ? `Padrão (${catalog.defaultMaterials[role]})` : 'Padrão')}
-            advancedTitle="Avançado"
+            noneLabel={(role) => (catalog.defaultMaterials[role] ? t('scenery.settings.defaultWith', { material: catalog.defaultMaterials[role] }) : t('scenery.settings.default'))}
+            advancedTitle={t('scenery.settings.advanced')}
             onChange={(role, name) => onEdit((s) => setSceneMaterial(s, role, name))}
           />
         )}

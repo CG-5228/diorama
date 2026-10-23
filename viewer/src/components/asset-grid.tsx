@@ -2,8 +2,10 @@ import { useEffect, useState, type RefObject } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import type { TFn } from '@/i18n';
 import { cn } from '@/lib/utils';
-import { dirname, formatBytes, plural } from '@/lib/format';
+import { useT } from '@/i18n';
+import { dirname } from '@/lib/format';
 import { assetTitle, roleDetail, roleOf } from '@/lib/asset-role';
 import { isStale } from '@/lib/export-state';
 import { GRID_GAP, GRID_PADDING } from '@/lib/use-grid-columns';
@@ -17,6 +19,7 @@ import { StaleBadge } from './stale-badge';
 
 /** An item icon's rarity tier, in the color the project gave it, and how many fit in a slot. */
 function ItemBadges({ asset }: { asset: AssetFileMeta }) {
+  const { t } = useT();
   const info = asset.atlasInfo;
   if (!info) return null;
   return (
@@ -28,15 +31,18 @@ function ItemBadges({ asset }: { asset: AssetFileMeta }) {
         </Badge>
       )}
       {info.kind && <Badge variant="secondary">{info.kind}</Badge>}
-      {info.stack !== null && info.stack > 1 && <span title="Itens por espaço">×{info.stack}</span>}
+      {info.stack !== null && info.stack > 1 && <span title={t('assets.card.itemsPerSlot')}>×{info.stack}</span>}
     </>
   );
 }
 
 /** "8f · 8d" for an animation with 8 frames facing 8 directions; empty for stills and sheets. */
-function frameSummary({ atlasInfo: info }: AssetFileMeta): string {
+function frameSummary({ atlasInfo: info }: AssetFileMeta, t: TFn): string {
   if (!info || info.mode === 'sheet') return '';
-  return [info.frameCount > 1 && `${info.frameCount}f`, info.directions.length > 1 && `${info.directions.length}d`].filter(Boolean).join(' · ');
+  return [
+    info.frameCount > 1 && t('assets.card.frameCount', { count: info.frameCount }),
+    info.directions.length > 1 && t('assets.card.directionCount', { count: info.directions.length }),
+  ].filter(Boolean).join(' · ');
 }
 
 interface CardProps {
@@ -48,6 +54,7 @@ interface CardProps {
 
 function AssetCard({ asset, active, position, onOpen }: CardProps & { asset: AssetFileMeta }) {
   const [hovered, setHovered] = useState(false);
+  const { t, bytes } = useT();
   return (
     <AssetContextMenu asset={asset} onPreview={onOpen}>
       <EntryCard
@@ -62,13 +69,13 @@ function AssetCard({ asset, active, position, onOpen }: CardProps & { asset: Ass
         description={dirname(asset.subpath) || '—'}
         menu={<AssetMenuButton asset={asset} onPreview={onOpen} />}
       >
-        {roleOf(asset) === 'gear' && <Badge variant="secondary">{roleDetail(asset) ?? 'Item'}</Badge>}
+        {roleOf(asset) === 'gear' && <Badge variant="secondary">{roleDetail(asset, t) ?? t('assets.card.item')}</Badge>}
         {(roleOf(asset) === 'vfx' || roleOf(asset) === 'ui') && asset.atlasInfo?.kind && <Badge variant="secondary">{asset.atlasInfo.kind}</Badge>}
         {roleOf(asset) === 'icon' && <ItemBadges asset={asset} />}
         {asset.engine && <EngineBadge engine={asset.engine} />}
         {asset.width && <span>{asset.width}×{asset.height}</span>}
-        <span>{frameSummary(asset)}</span>
-        <span className="ml-auto">{formatBytes(asset.size)}</span>
+        <span>{frameSummary(asset, t)}</span>
+        <span className="ml-auto">{bytes(asset.size)}</span>
       </EntryCard>
     </AssetContextMenu>
   );
@@ -76,6 +83,7 @@ function AssetCard({ asset, active, position, onOpen }: CardProps & { asset: Ass
 
 function GroupCard({ group, active, position, onOpen }: CardProps & { group: AssetGroup }) {
   const [hovered, setHovered] = useState(false);
+  const { plural, bytes } = useT();
   const [first] = group.assets;
   const staleClips = group.assets.filter(isStale).length;
   return (
@@ -93,8 +101,8 @@ function GroupCard({ group, active, position, onOpen }: CardProps & { group: Ass
         menu={<GroupMenuButton group={group} onOpen={onOpen} />}
       >
         {first.engine && <EngineBadge engine={first.engine} />}
-        <Badge variant="secondary">{plural(group.assets.length, 'animação', 'animações')}</Badge>
-        <span className="ml-auto">{formatBytes(group.assets.reduce((sum, a) => sum + a.size, 0))}</span>
+        <Badge variant="secondary">{plural('assets.card.animations', group.assets.length)}</Badge>
+        <span className="ml-auto">{bytes(group.assets.reduce((sum, a) => sum + a.size, 0))}</span>
       </EntryCard>
     </GroupContextMenu>
   );
@@ -160,6 +168,7 @@ interface Props {
 }
 
 export function AssetGrid({ entries, activeKey, cardWidth, columns, scrollRef, onOpen }: Props) {
+  const { t } = useT();
   const virtualizer = useVirtualizer({
     count: Math.ceil(entries.length / columns),
     getScrollElement: () => scrollRef.current,
@@ -183,7 +192,7 @@ export function AssetGrid({ entries, activeKey, cardWidth, columns, scrollRef, o
 
   const rows = virtualizer.getVirtualItems();
   return (
-    <div role="listbox" aria-label="Assets" className="relative" style={{ height: virtualizer.getTotalSize() }}>
+    <div role="listbox" aria-label={t('assets.listLabel')} className="relative" style={{ height: virtualizer.getTotalSize() }}>
       {/* The mounted rows move together as one block, so measuring a row never shifts the others. */}
       <div className="absolute inset-x-0 top-0 flex flex-col gap-3 px-4" style={{ transform: `translateY(${rows[0]?.start ?? 0}px)` }}>
         {rows.map((row) => (

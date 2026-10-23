@@ -2,6 +2,7 @@ import { AssetThumb } from '@/components/asset-thumb';
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from '@/components/ui/combobox';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Kbd } from '@/components/ui/kbd';
+import { useT } from '@/i18n';
 import type { Character } from '@/lib/playground/library';
 
 interface Props {
@@ -14,10 +15,11 @@ const coverOf = (c: Character) => (c.idle ?? c.locomotion[0] ?? c.actions[0]).as
 
 /** Searchable by name and folder; [ and ] step through the list without opening it. */
 export function PlayerPicker({ characters, player, onPlayer }: Props) {
+  const { t, plural } = useT();
   return (
     <Field>
       <FieldLabel htmlFor="playground-player">
-        Controlar
+        {t('playground.player.control')}
         <span className="ml-auto flex gap-1"><Kbd>[</Kbd><Kbd>]</Kbd></span>
       </FieldLabel>
       <Combobox
@@ -33,9 +35,9 @@ export function PlayerPicker({ characters, player, onPlayer }: Props) {
         itemToStringValue={(character) => `${character.folder} ${character.name}`}
         itemToStringLabel={(character) => character.name}
       >
-        <ComboboxInput id="playground-player" placeholder="Buscar personagem" />
+        <ComboboxInput id="playground-player" placeholder={t('playground.player.search')} />
         <ComboboxContent>
-          <ComboboxEmpty>Nenhum personagem encontrado.</ComboboxEmpty>
+          <ComboboxEmpty>{t('playground.player.empty')}</ComboboxEmpty>
           <ComboboxList>
             {(character: Character) => (
               <ComboboxItem key={character.id} value={character}>
@@ -45,7 +47,7 @@ export function PlayerPicker({ characters, player, onPlayer }: Props) {
                 <div className="flex min-w-0 flex-col">
                   <span className="truncate font-medium">{character.name}</span>
                   <span className="truncate text-muted-foreground">
-                    {character.folder} · {character.clips.length} {character.clips.length === 1 ? 'animação' : 'animações'}
+                    {character.folder} · {plural('assets.card.animations', character.clips.length)}
                   </span>
                 </div>
               </ComboboxItem>

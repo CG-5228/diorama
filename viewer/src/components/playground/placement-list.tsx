@@ -8,8 +8,9 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group';
 import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from '@/components/ui/item';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/utils';
-import { buildRows, type Entry, type KindFilter } from '@/lib/playground/catalog';
+import { buildRows, entrySubtitle, ROOT, type Entry, type KindFilter } from '@/lib/playground/catalog';
 import type { Armed } from '@/lib/playground/library';
 
 const HEADER_HEIGHT = 28;
@@ -30,6 +31,8 @@ interface Props {
  * search box), filterable, grouped in folders that collapse, remembers recents and only renders visible rows.
  */
 export function PlacementList({ entries, recent, armedKey, playerId, onArm, onControl }: Props) {
+  const i18n = useT();
+  const { t } = i18n;
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<KindFilter>('all');
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
@@ -72,8 +75,8 @@ export function PlacementList({ entries, recent, armedKey, playerId, onArm, onCo
         <InputGroupInput
           id="playground-search"
           autoComplete="off"
-          placeholder={`Buscar entre ${entries.length}`}
-          aria-label="Buscar assets para colocar"
+          placeholder={t('playground.list.searchAmong', { count: i18n.number(entries.length) })}
+          aria-label={t('playground.list.searchLabel')}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -92,26 +95,26 @@ export function PlacementList({ entries, recent, armedKey, playerId, onArm, onCo
         />
         {query && (
           <InputGroupAddon align="inline-end">
-            <InputGroupButton size="icon-xs" aria-label="Limpar busca" onClick={() => setQuery('')}>
+            <InputGroupButton size="icon-xs" aria-label={t('playground.list.clearSearch')} onClick={() => setQuery('')}>
               <XIcon />
             </InputGroupButton>
           </InputGroupAddon>
         )}
       </InputGroup>
 
-      <ToggleGroup type="single" variant="outline" size="sm" spacing={0} value={filter} onValueChange={(value) => value && setFilter(value as KindFilter)} aria-label="Tipo" className="w-full">
-        <ToggleGroupItem value="all" className="flex-1">Tudo {counts.all}</ToggleGroupItem>
-        <ToggleGroupItem value="character" className="flex-1">Personagens {counts.character}</ToggleGroupItem>
-        <ToggleGroupItem value="object" className="flex-1">Objetos {counts.object}</ToggleGroupItem>
+      <ToggleGroup type="single" variant="outline" size="sm" spacing={0} value={filter} onValueChange={(value) => value && setFilter(value as KindFilter)} aria-label={t('playground.list.type')} className="w-full">
+        <ToggleGroupItem value="all" className="flex-1">{t('playground.list.all', { count: counts.all })}</ToggleGroupItem>
+        <ToggleGroupItem value="character" className="flex-1">{t('playground.list.characters', { count: counts.character })}</ToggleGroupItem>
+        <ToggleGroupItem value="object" className="flex-1">{t('playground.list.objects', { count: counts.object })}</ToggleGroupItem>
       </ToggleGroup>
 
-      <div ref={scrollRef} role="listbox" aria-label="Assets para colocar" className="min-h-0 flex-1 overflow-y-auto rounded-md border">
+      <div ref={scrollRef} role="listbox" aria-label={t('playground.list.listLabel')} className="min-h-0 flex-1 overflow-y-auto rounded-md border">
         {rows.length === 0 ? (
           <Empty className="p-4">
             <EmptyHeader>
               <EmptyMedia variant="icon"><SearchXIcon /></EmptyMedia>
-              <EmptyTitle>Nada encontrado</EmptyTitle>
-              <EmptyDescription>Nenhum asset combina com a busca.</EmptyDescription>
+              <EmptyTitle>{t('playground.list.nothing')}</EmptyTitle>
+              <EmptyDescription>{t('playground.list.nothingHint')}</EmptyDescription>
             </EmptyHeader>
           </Empty>
         ) : (
@@ -138,7 +141,7 @@ export function PlacementList({ entries, recent, armedKey, playerId, onArm, onCo
                     }}
                   >
                     {toggleable && (row.collapsed ? <ChevronRightIcon className="size-3.5" /> : <ChevronDownIcon className="size-3.5" />)}
-                    <span className="truncate">{row.label}</span>
+                    <span className="truncate">{row.kind === 'recent' ? t('playground.entry.recent') : row.label === ROOT ? t('playground.entry.root') : row.label}</span>
                     <span className="ml-auto tabular-nums">{row.count}</span>
                   </button>
                 );
@@ -163,18 +166,18 @@ export function PlacementList({ entries, recent, armedKey, playerId, onArm, onCo
                   </ItemMedia>
                   <ItemContent className="min-w-0">
                     <ItemTitle className="truncate">{entry.name}</ItemTitle>
-                    <ItemDescription className="truncate">{entry.subtitle}</ItemDescription>
+                    <ItemDescription className="truncate">{entrySubtitle(entry.detail, i18n)}</ItemDescription>
                   </ItemContent>
                   {entry.armed.type === 'character' && (
                     <ItemActions>
                       {isPlayer ? (
-                        <Badge variant="secondary">controlando</Badge>
+                        <Badge variant="secondary">{t('playground.list.controlling')}</Badge>
                       ) : (
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          aria-label={`Controlar ${entry.name}`}
-                          title="Controlar este personagem"
+                          aria-label={t('playground.list.controlLabel', { name: entry.name })}
+                          title={t('playground.list.controlHint')}
                           onClick={(e) => {
                             e.stopPropagation();
                             if (entry.armed.type === 'character') onControl(entry.armed.character.id);

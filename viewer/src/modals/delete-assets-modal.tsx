@@ -12,10 +12,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
 import { Item, ItemActions, ItemContent, ItemGroup, ItemMedia, ItemTitle } from '@/components/ui/item';
 import { Spinner } from '@/components/ui/spinner';
+import { Rich, useT } from '@/i18n';
 import { deletePlanQuery } from '@/lib/queries';
 import { useDeleteAssets } from '@/lib/mutations';
 import { useModalDialog } from '@/lib/use-modal-dialog';
-import { plural } from '@/lib/format';
 import type { AssetFileMeta, FileKind } from '@/lib/types';
 
 const kindIcon: Record<FileKind, typeof FileImageIcon> = { image: FileImageIcon, atlas: FileJsonIcon, sheet: FileCodeIcon };
@@ -28,6 +28,7 @@ interface Props {
 export const DeleteAssetsModal = NiceModal.create(({ assets }: Props) => {
   const { modal, rootProps, contentProps } = useModalDialog();
   const remove = useDeleteAssets();
+  const { t, plural } = useT();
   const [deleteSheet, setDeleteSheet] = useState(false);
 
   const plans = useQueries({ queries: assets.map((a) => deletePlanQuery(a.project, a.subpath)) });
@@ -36,7 +37,7 @@ export const DeleteAssetsModal = NiceModal.create(({ assets }: Props) => {
   const files = plans.flatMap((p) => p.data?.files ?? []);
   const hasSheet = files.some((f) => f.kind === 'sheet');
   const moving = files.filter((f) => !f.optional || deleteSheet);
-  const title = assets.length === 1 ? `Excluir ${assets[0].subpath.split('/').pop()}` : `Excluir ${assets.length} animações`;
+  const title = assets.length === 1 ? t('modals.deleteAssets.title', { name: assets[0].subpath.split('/').pop() ?? '' }) : plural('modals.deleteAssets.titleMany', assets.length);
 
   return (
     <AlertDialog {...rootProps}>
@@ -44,7 +45,7 @@ export const DeleteAssetsModal = NiceModal.create(({ assets }: Props) => {
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>
-            Estes arquivos vão para <code>.diorama-trash/assets/{assets[0].project}/</code>. Dá para desfazer logo depois pelo aviso.
+            <Rich id="modals.deleteAssets.description" vars={{ project: assets[0].project }} />
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -67,7 +68,7 @@ export const DeleteAssetsModal = NiceModal.create(({ assets }: Props) => {
                   <ItemTitle className="font-mono break-all">{file.path}</ItemTitle>
                 </ItemContent>
                 <ItemActions>
-                  <Badge variant={kept ? 'outline' : 'destructive'}>{kept ? 'permanece' : 'lixeira'}</Badge>
+                  <Badge variant={kept ? 'outline' : 'destructive'}>{kept ? t('modals.deleteAssets.stays') : t('modals.deleteAssets.trash')}</Badge>
                 </ItemActions>
               </Item>
             );
@@ -77,25 +78,25 @@ export const DeleteAssetsModal = NiceModal.create(({ assets }: Props) => {
         <Field orientation="horizontal" data-disabled={!hasSheet || undefined}>
           <Checkbox id="delete-sheet" checked={deleteSheet} disabled={!hasSheet} onCheckedChange={(checked) => setDeleteSheet(checked === true)} />
           <div className="flex flex-col gap-0.5">
-            <FieldLabel htmlFor="delete-sheet">Excluir também o sheet (.ts)</FieldLabel>
-            {!hasSheet && !loading && <FieldDescription>Nenhum arquivo em sheets/ para {assets.length === 1 ? 'este asset' : 'estes assets'}.</FieldDescription>}
+            <FieldLabel htmlFor="delete-sheet">{t('modals.deleteAssets.alsoSheet')}</FieldLabel>
+            {!hasSheet && !loading && <FieldDescription>{assets.length === 1 ? t('modals.deleteAssets.noSheetOne') : t('modals.deleteAssets.noSheetMany')}</FieldDescription>}
           </div>
         </Field>
         {deleteSheet && hasSheet && (
           <Alert>
-            <AlertDescription>Sem o sheet não dá mais para exportar de novo (só desfazendo). O código em src/ fica.</AlertDescription>
+            <AlertDescription>{t('modals.deleteAssets.sheetWarning')}</AlertDescription>
           </Alert>
         )}
 
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
           <Button
             variant="destructive"
             disabled={loading || failed !== undefined || remove.isPending}
             onClick={() => remove.mutate({ assets, deleteSheet }, { onSuccess: () => modal.hide() })}
           >
             {remove.isPending ? <Spinner data-icon="inline-start" /> : <Trash2Icon data-icon="inline-start" />}
-            Mover {plural(moving.length, 'arquivo', 'arquivos')} para a lixeira
+            {plural('modals.deleteAssets.move', moving.length)}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

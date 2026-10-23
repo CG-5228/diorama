@@ -9,6 +9,7 @@ import { playgroundRoute } from '@/lib/routes';
 import { listEntries, pushRecent } from '@/lib/playground/catalog';
 import { buildLibrary, type Armed } from '@/lib/playground/library';
 import type { HudInfo } from '@/lib/playground/actor';
+import { useT } from '@/i18n';
 import { isTyping, useWindowKeydown } from '@/lib/hotkeys';
 import { useSheetImages } from '@/lib/playground/use-sheet-images';
 import { usePref } from '@/lib/use-pref';
@@ -22,6 +23,7 @@ import { Scene, type SceneHandle, type SceneOptions, type Selection } from './sc
 
 export function PlaygroundView() {
   const { project } = playgroundRoute.useParams();
+  const { t } = useT();
   const { fixture = false } = playgroundRoute.useSearch();
   const { data: allAssets } = useSuspenseQuery(assetsQuery);
   const assets = useMemo(() => allAssets.filter((a) => a.project === project), [allAssets, project]);
@@ -93,8 +95,8 @@ export function PlaygroundView() {
       <Empty>
         <EmptyHeader>
           <EmptyMedia variant="icon"><GamepadIcon /></EmptyMedia>
-          <EmptyTitle>Nada para jogar ainda</EmptyTitle>
-          <EmptyDescription>O playground usa os assets exportados deste projeto. Exporte alguns e volte.</EmptyDescription>
+          <EmptyTitle>{t('playground.empty.title')}</EmptyTitle>
+          <EmptyDescription>{t('playground.empty.description')}</EmptyDescription>
         </EmptyHeader>
       </Empty>
     );

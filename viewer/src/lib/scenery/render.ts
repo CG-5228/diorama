@@ -1,4 +1,5 @@
 import { drawScene, type SceneData, type SceneRenderer, type SceneryCatalog } from '@core/volume';
+import { currentTranslator } from '../../i18n/store';
 import type { Cell, Edge } from './edit';
 
 /** Pixels the canvas may have along a side and in all: past them a browser draws nothing. */
@@ -104,7 +105,7 @@ export function sizeCanvas(canvas: HTMLCanvasElement, geo: Geometry, scale: numb
 function drawInto(canvas: HTMLCanvasElement, geo: Geometry, scale: number, draw: (ctx: CanvasRenderingContext2D) => void): string | null {
   sizeCanvas(canvas, geo, scale);
   const ctx = canvas.getContext('2d');
-  if (!ctx) return 'Canvas indisponível.';
+  if (!ctx) return currentTranslator().t('errors.noCanvas');
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.setTransform(scale, 0, 0, scale, 0, 0);

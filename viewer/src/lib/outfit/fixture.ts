@@ -48,26 +48,26 @@ const cape: Part<Record<string, never>> = ({ object, at, materials }) => {
 const CATALOG: GearCatalog = {
   materials: MATERIALS,
   bases: [
-    { id: 'bone', label: 'Osso', skin: mannequinSkin(MATERIALS.bone), roles: ['bone'] },
-    { id: 'flesh', label: 'Carne', skin: mannequinSkin(MATERIALS.flesh), roles: ['flesh'] },
+    { id: 'bone', label: 'Bone', skin: mannequinSkin(MATERIALS.bone), roles: ['bone'] },
+    { id: 'flesh', label: 'Flesh', skin: mannequinSkin(MATERIALS.flesh), roles: ['flesh'] },
   ],
   parts: [
     {
-      id: 'helm', label: 'Elmo', group: 'head', part: helm, slots: ['head'], roles: ['metal', 'metalAccent'],
+      id: 'helm', label: 'Helm', group: 'head', part: helm, slots: ['head'], roles: ['metal', 'metalAccent'],
       options: [
-        { key: 'size', label: 'Tamanho', type: 'number', default: 1, min: 0.7, max: 1.4, step: 0.05 },
-        { key: 'visor', label: 'Viseira', type: 'boolean', default: true },
+        { key: 'size', label: 'Size', type: 'number', default: 1, min: 0.7, max: 1.4, step: 0.05 },
+        { key: 'visor', label: 'Visor', type: 'boolean', default: true },
       ],
     },
     {
-      id: 'crest', label: 'Crista', group: 'head', part: crest, slots: ['head'], roles: ['cloth'], requires: 'helm',
-      options: [{ key: 'shape', label: 'Forma', type: 'select', default: 'ridge', choices: [{ value: 'ridge', label: 'Crista' }, { value: 'knob', label: 'Botão' }] }],
+      id: 'crest', label: 'Crest', group: 'head', part: crest, slots: ['head'], roles: ['cloth'], requires: 'helm',
+      options: [{ key: 'shape', label: 'Shape', type: 'select', default: 'ridge', choices: [{ value: 'ridge', label: 'Ridge' }, { value: 'knob', label: 'Knob' }] }],
     },
     {
-      id: 'pauldron', label: 'Ombreira', group: 'shoulders', part: pauldron, slots: ['shoulder'], roles: ['metal'],
-      options: [{ key: 'size', label: 'Tamanho', type: 'number', default: 1, min: 0.6, max: 1.6, step: 0.05 }],
+      id: 'pauldron', label: 'Pauldron', group: 'shoulders', part: pauldron, slots: ['shoulder'], roles: ['metal'],
+      options: [{ key: 'size', label: 'Size', type: 'number', default: 1, min: 0.6, max: 1.6, step: 0.05 }],
     },
-    { id: 'cape', label: 'Capa', group: 'garments', part: cape, slots: ['back'], roles: ['cloth'] },
+    { id: 'cape', label: 'Cape', group: 'garments', part: cape, slots: ['back'], roles: ['cloth'] },
   ],
 };
 
@@ -75,7 +75,7 @@ const skeleton = humanoid();
 
 const GUARD: OutfitCharacterInfo = {
   id: 'fixture-guard',
-  label: 'Guarda (fixture)',
+  label: 'Guard (fixture)',
   skeleton,
   clips: {
     idle: { clip: idle(skeleton, { seconds: 1.6 }), frames: 16 },

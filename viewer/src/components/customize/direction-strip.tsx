@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { OutfitCharacterInfo, Skin } from '@core/rig';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { DIRECTION_COUNT, directionLabel, paintFrame } from '@/lib/outfit/render';
 
@@ -21,6 +22,7 @@ interface Props {
 
 /** The eight facings of the sheet, each one a click away from the big preview. */
 export function DirectionStrip({ character, skin, clipKey, frame, playing, direction, onDirection }: Props) {
+  const { t } = useT();
   const canvases = useRef<Array<HTMLCanvasElement | null>>([]);
   const frameRef = useRef(frame);
   frameRef.current = frame;
@@ -45,7 +47,7 @@ export function DirectionStrip({ character, skin, clipKey, frame, playing, direc
   }, [character, skin, clipKey, playing, repaint]);
 
   return (
-    <div role="radiogroup" aria-label="Direção" className="flex gap-1 overflow-x-auto pb-1">
+    <div role="radiogroup" aria-label={t('preview.inspector.direction')} className="flex gap-1 overflow-x-auto pb-1">
       {Array.from({ length: DIRECTION_COUNT }, (_, index) => (
         <button
           key={index}

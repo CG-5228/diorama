@@ -6,6 +6,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useT } from '@/i18n';
 import { copyText } from '@/lib/clipboard';
 import { projectDir } from '@/lib/project-paths';
 import { projectsQuery } from '@/lib/queries';
@@ -20,31 +21,32 @@ export function ProjectMenu({ project }: { project: string }) {
   const { data: projects } = useSuspenseQuery(projectsQuery);
   const meta = projects.find((p) => p.name === project);
   const root = meta?.root ?? 'projects';
+  const { t } = useT();
   return (
     <DropdownMenu>
       <Tooltip>
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon-sm" aria-label={`Ações do projeto ${project}`}>
+            <Button variant="ghost" size="icon-sm" aria-label={t('projects.menu.label', { project })}>
               <MoreHorizontalIcon />
             </Button>
           </DropdownMenuTrigger>
         </TooltipTrigger>
-        <TooltipContent>Ações do projeto</TooltipContent>
+        <TooltipContent>{t('projects.menu.tooltip')}</TooltipContent>
       </Tooltip>
       <DropdownMenuContent align="start" className="w-56">
         <DropdownMenuGroup>
           <DropdownMenuItem onSelect={() => void NiceModal.show(NovoModal, { tab: 'new-asset', project })}>
             <PlusIcon />
-            Novo asset
+            {t('projects.menu.newAsset')}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => void NiceModal.show(NovoModal, { tab: 'export', project })}>
             <UploadIcon />
-            Exportar projeto
+            {t('projects.menu.export')}
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => void copyText(projectDir(root, project), 'Caminho do projeto')}>
+          <DropdownMenuItem onSelect={() => void copyText(projectDir(root, project), t('projects.menu.pathLabel'))}>
             <CopyIcon />
-            Copiar caminho
+            {t('projects.menu.copyPath')}
           </DropdownMenuItem>
         </DropdownMenuGroup>
         {root === 'projects' && (
@@ -53,7 +55,7 @@ export function ProjectMenu({ project }: { project: string }) {
             <DropdownMenuGroup>
               <DropdownMenuItem variant="destructive" onSelect={() => void NiceModal.show(DeleteProjectModal, { project })}>
                 <Trash2Icon />
-                Apagar projeto…
+                {t('projects.menu.delete')}
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </>

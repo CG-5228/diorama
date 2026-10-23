@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
 import { Switch } from '@/components/ui/switch';
+import { useT } from '@/i18n';
 import type { EffectMeta } from '@/lib/atlas';
 import { roleOf } from '@/lib/asset-role';
 import { basename, stripExtension } from '@/lib/format';
@@ -41,25 +42,27 @@ export function useVfx(player: Player, directionIndex: number) {
 
 export type Vfx = ReturnType<typeof useVfx>;
 
-const KIND_LABELS: Record<string, string> = { projectile: 'Projétil', impact: 'Impacto', cast: 'Conjuração', aura: 'Aura', area: 'Área', burst: 'Explosão', trail: 'Rastro' };
+const KINDS = ['projectile', 'impact', 'cast', 'aura', 'area', 'burst', 'trail'] as const;
+const isKind = (kind: string): kind is (typeof KINDS)[number] => (KINDS as readonly string[]).includes(kind);
 
 /** What an effect sheet says about the effect: kind, layer, reach, speed, what follows it; and the toggles of the preview. */
 export function VfxSection({ vfx, projectAssets, onSelect }: { vfx: Vfx; projectAssets: AssetFileMeta[]; onSelect: (asset: AssetFileMeta) => void }) {
   const { effect } = vfx;
+  const { t, number } = useT();
   if (!effect) return null;
   const followed = effect.follows ? projectAssets.find((a) => roleOf(a) === 'vfx' && basename(stripExtension(a.subpath)) === effect.follows) : undefined;
   const rows: Array<[string, string | undefined]> = [
-    ['Camada', effect.layer === 'ground' ? 'chão (sob tudo)' : 'ar (ordenado)'],
-    ['Chão abaixo da origem', `${effect.height} u`],
-    ['Alcance (raio)', `${effect.size} u`],
-    ['Loop', effect.loop ? 'sim' : 'não'],
-    ['Velocidade', effect.travel ? `${effect.travel.speed} u/s` : undefined],
-    ['Distância máxima', effect.travel ? (effect.travel.range !== undefined ? `${effect.travel.range} u` : undefined) : undefined],
+    [t('preview.vfx.layer'), effect.layer === 'ground' ? t('preview.vfx.layerGround') : t('preview.vfx.layerAir')],
+    [t('preview.vfx.floor'), t('units.world', { value: number(effect.height) })],
+    [t('preview.vfx.reach'), t('units.world', { value: number(effect.size) })],
+    [t('preview.data.loop'), effect.loop ? t('common.yes') : t('common.no')],
+    [t('preview.vfx.speed'), effect.travel ? t('units.worldPerSecond', { value: number(effect.travel.speed) }) : undefined],
+    [t('preview.vfx.maxDistance'), effect.travel ? (effect.travel.range !== undefined ? t('units.world', { value: number(effect.travel.range) }) : undefined) : undefined],
   ];
   return (
-    <Section title="Efeito">
+    <Section title={t('preview.vfx.title')}>
       <div className="flex flex-wrap items-center gap-2">
-        <Badge>{KIND_LABELS[effect.kind] ?? effect.kind}</Badge>
+        <Badge>{isKind(effect.kind) ? t(`preview.vfx.kinds.${effect.kind}`) : effect.kind}</Badge>
         {effect.label && <span className="truncate font-medium">{effect.label}</span>}
       </div>
       <dl className="flex flex-col gap-1.5">
@@ -72,21 +75,21 @@ export function VfxSection({ vfx, projectAssets, onSelect }: { vfx: Vfx; project
       </dl>
       {effect.follows && (
         <Button variant="outline" size="sm" className="justify-between" disabled={!followed} onClick={() => followed && onSelect(followed)}>
-          <span className="truncate">Depois: {effect.follows}</span>
+          <span className="truncate">{t('preview.vfx.then', { name: effect.follows })}</span>
           <ArrowUpRightIcon data-icon="inline-end" />
         </Button>
       )}
       <Field orientation="horizontal">
         <Switch id="preview-vfx-ring" checked={vfx.ring} onCheckedChange={vfx.setRing} />
-        <FieldLabel htmlFor="preview-vfx-ring">Anel do alcance</FieldLabel>
+        <FieldLabel htmlFor="preview-vfx-ring">{t('preview.vfx.ring')}</FieldLabel>
       </Field>
       {effect.travel && (
         <Field orientation="horizontal">
           <Switch id="preview-vfx-flight" checked={vfx.flying} onCheckedChange={vfx.setFlying} />
-          <FieldLabel htmlFor="preview-vfx-flight">Simular o voo</FieldLabel>
+          <FieldLabel htmlFor="preview-vfx-flight">{t('preview.vfx.simulate')}</FieldLabel>
         </Field>
       )}
-      {vfx.flying && effect.travel && <FieldDescription>Voa a {effect.travel.speed} u/s na direção escolhida; a profundidade encolhe pelo seno da inclinação.</FieldDescription>}
+      {vfx.flying && effect.travel && <FieldDescription>{t('preview.vfx.flightNote', { speed: t('units.worldPerSecond', { value: number(effect.travel.speed) }) })}</FieldDescription>}
     </Section>
   );
 }

@@ -2,13 +2,14 @@ import type { RefObject } from 'react';
 import { heightsOf, type SceneData, type SceneryCatalog, type SpaceHeight } from '@core/volume';
 import { BrushIcon, CopyIcon, PersonStandingIcon, Trash2Icon, XIcon } from 'lucide-react';
 import { OptionField } from '@/components/customize/option-field';
+import { useT } from '@/i18n';
+import type { TFn } from '@/i18n';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Kbd } from '@/components/ui/kbd';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import { canFlip, flipDoor, isDoor, isFlipped, pieceOf, rotateProp, setPropOption, setState, setVariant, setWallHeight, setWallOption, setWallVariant, validSelection, wallAt, wallsOnBorders, type Cell, type Selection } from '@/lib/scenery/edit';
-import { GROUP_LABELS } from '@/lib/scenery/labels';
 import { FacingControl, HeightSelect, SideControl, StateSelect, VariantSelect } from './prop-fields';
 import { PieceThumb } from './piece-thumb';
 
@@ -32,7 +33,7 @@ interface Props {
   onClose: () => void;
 }
 
-const where = (at: Cell, vertex: boolean) => (vertex ? `vértice ${at.col}, ${at.row}` : `coluna ${at.col}, linha ${at.row}`);
+const where = (t: TFn, at: Cell, vertex: boolean) => (vertex ? t('scenery.popover.vertex', { col: at.col, row: at.row }) : t('scenery.popover.column', { col: at.col, row: at.row }));
 
 /**
  * What can be done with what is selected on the scene, in a small popover over it: a prop is turned, given a look and
@@ -82,6 +83,7 @@ type Run = (command: () => void) => void;
 
 /** The top of every popover: what it is, where, and the way to close it. */
 function Header({ thumb, title, detail, run, onClose }: { thumb: React.ReactNode; title: string; detail: string; run: Run; onClose: () => void }) {
+  const { t } = useT();
   return (
     <div className="flex items-center gap-2">
       {thumb}
@@ -89,23 +91,25 @@ function Header({ thumb, title, detail, run, onClose }: { thumb: React.ReactNode
         <span className="truncate font-medium">{title}</span>
         <span className="truncate text-muted-foreground tabular-nums">{detail}</span>
       </div>
-      <Button variant="ghost" size="icon-xs" aria-label="Fechar" onClick={() => run(onClose)}>
+      <Button variant="ghost" size="icon-xs" aria-label={t('scenery.popover.close')} onClick={() => run(onClose)}>
         <XIcon />
       </Button>
     </div>
   );
 }
 
-function DeleteButton({ run, onRemove, label = 'Excluir' }: { run: Run; onRemove: () => void; label?: string }) {
+function DeleteButton({ run, onRemove, label }: { run: Run; onRemove: () => void; label?: string }) {
+  const { t } = useT();
   return (
     <Button variant="outline" size="sm" className="flex-1 text-destructive hover:text-destructive" onClick={() => run(onRemove)}>
       <Trash2Icon data-icon="inline-start" />
-      {label} <Kbd>⌫</Kbd>
+      {label ?? t('scenery.popover.delete')} <Kbd>⌫</Kbd>
     </Button>
   );
 }
 
 function PropBody({ catalog, scene, index, run, onEdit, onClose, onDuplicate, onRemove }: { catalog: SceneryCatalog; scene: SceneData; index: number; run: Run; onEdit: Props['onEdit']; onClose: () => void; onDuplicate: () => void; onRemove: () => void }) {
+  const { t } = useT();
   const prop = scene.props[index];
   const info = pieceOf(catalog, prop.piece);
   if (!info) return null;
@@ -114,16 +118,16 @@ function PropBody({ catalog, scene, index, run, onEdit, onClose, onDuplicate, on
   const facings = door ? 1 : (info.directions ?? 1);
   const variants = info.variants ?? 1;
   const states = info.states && info.states.length > 1 ? info.states : [];
-  const place = door ? `borda ${prop.edge === 'N' ? 'norte' : 'oeste'} · ${where(prop, false)}` : where(prop, false);
+  const place = door ? `${prop.edge === 'N' ? t('scenery.popover.northEdge') : t('scenery.popover.westEdge')} · ${where(t, prop, false)}` : where(t, prop, false);
   return (
     <>
-      <Header thumb={<PieceThumb catalog={catalog} info={info} size="sm" />} title={info.label} detail={`${GROUP_LABELS[info.group]} · ${place}`} run={run} onClose={onClose} />
+      <Header thumb={<PieceThumb catalog={catalog} info={info} size="sm" />} title={info.label} detail={`${t(`scenery.groups.${info.group}`)} · ${place}`} run={run} onClose={onClose} />
       <FieldGroup className="gap-3">
         {(states.length > 0 || (door && canFlip(info))) && (
           <div className="flex items-end gap-2">
             {states.length > 0 && (
               <Field className="min-w-0 flex-1">
-                <FieldLabel htmlFor="prop-state">Estado</FieldLabel>
+                <FieldLabel htmlFor="prop-state">{t('scenery.popover.state')}</FieldLabel>
                 <StateSelect id="prop-state" states={states} value={prop.state} className="w-full" onChange={(state) => run(() => onEdit((s) => setState(s, catalog, index, state)))} />
               </Field>
             )}
@@ -134,13 +138,13 @@ function PropBody({ catalog, scene, index, run, onEdit, onClose, onDuplicate, on
           <div className="flex items-end gap-2">
             {facings > 1 && (
               <Field className="w-auto">
-                <FieldLabel>Direção</FieldLabel>
+                <FieldLabel>{t('scenery.popover.direction')}</FieldLabel>
                 <FacingControl count={facings} value={prop.dir ?? 0} onTurn={(by) => run(() => onEdit((s) => rotateProp(s, catalog, index, by)))} />
               </Field>
             )}
             {variants > 1 && (
               <Field className="min-w-0 flex-1">
-                <FieldLabel htmlFor="prop-variant">Variação</FieldLabel>
+                <FieldLabel htmlFor="prop-variant">{t('scenery.popover.variation')}</FieldLabel>
                 <VariantSelect id="prop-variant" count={variants} labels={info.variantLabels} value={prop.variant} className="w-full" onChange={(variant) => run(() => onEdit((s) => setVariant(s, index, variant)))} />
               </Field>
             )}
@@ -160,7 +164,7 @@ function PropBody({ catalog, scene, index, run, onEdit, onClose, onDuplicate, on
         {!door && (
           <Button variant="outline" size="sm" className="flex-1" onClick={() => run(onDuplicate)}>
             <CopyIcon data-icon="inline-start" />
-            Duplicar <Kbd>⌘D</Kbd>
+            {t('scenery.popover.duplicate')} <Kbd>⌘D</Kbd>
           </Button>
         )}
         <DeleteButton run={run} onRemove={onRemove} />
@@ -170,6 +174,7 @@ function PropBody({ catalog, scene, index, run, onEdit, onClose, onDuplicate, on
 }
 
 function WallBody({ catalog, scene, at, run, onEdit, onClose, onRemove, onUseBrush }: { catalog: SceneryCatalog; scene: SceneData; at: Cell; run: Run; onEdit: Props['onEdit']; onClose: () => void; onRemove: () => void; onUseBrush: Props['onUseBrush'] }) {
+  const { t } = useT();
   const look = wallAt(scene, at);
   const info = look && pieceOf(catalog, look.piece);
   if (!look || !info) return null;
@@ -177,19 +182,19 @@ function WallBody({ catalog, scene, at, run, onEdit, onClose, onRemove, onUseBru
   const variants = info.variants ?? 1;
   return (
     <>
-      <Header thumb={<PieceThumb catalog={catalog} info={info} size="sm" />} title={info.label} detail={`${GROUP_LABELS[info.group]} · ${where(at, wallsOnBorders(scene))}`} run={run} onClose={onClose} />
+      <Header thumb={<PieceThumb catalog={catalog} info={info} size="sm" />} title={info.label} detail={`${t(`scenery.groups.${info.group}`)} · ${where(t, at, wallsOnBorders(scene))}`} run={run} onClose={onClose} />
       <FieldGroup className="gap-3">
         {(heights.length > 0 || variants > 1) && (
           <div className="flex items-end gap-2">
             {heights.length > 0 && (
               <Field className="min-w-0 flex-1">
-                <FieldLabel>Altura</FieldLabel>
+                <FieldLabel>{t('scenery.popover.height')}</FieldLabel>
                 <HeightSelect heights={heights} units={heightsOf(info, catalog)} value={look.height} className="w-full" onChange={(height) => run(() => onEdit((s) => setWallHeight(s, at, height)))} />
               </Field>
             )}
             {variants > 1 && (
               <Field className="min-w-0 flex-1">
-                <FieldLabel htmlFor="wall-variant">Variação</FieldLabel>
+                <FieldLabel htmlFor="wall-variant">{t('scenery.popover.variation')}</FieldLabel>
                 <VariantSelect id="wall-variant" count={variants} labels={info.variantLabels} value={look.variant} className="w-full" onChange={(variant) => run(() => onEdit((s) => setWallVariant(s, at, variant)))} />
               </Field>
             )}
@@ -208,7 +213,7 @@ function WallBody({ catalog, scene, at, run, onEdit, onClose, onRemove, onUseBru
       <ButtonGroup className="w-full">
         <Button variant="outline" size="sm" className="flex-1" onClick={() => run(() => onUseBrush({ piece: look.piece, height: look.height }))}>
           <BrushIcon data-icon="inline-start" />
-          Pintar com esta
+          {t('scenery.popover.paintWithWall')}
         </Button>
         <DeleteButton run={run} onRemove={onRemove} />
       </ButtonGroup>
@@ -217,36 +222,38 @@ function WallBody({ catalog, scene, at, run, onEdit, onClose, onRemove, onUseBru
 }
 
 function FloorBody({ catalog, scene, at, run, onClose, onRemove, onUseBrush }: { catalog: SceneryCatalog; scene: SceneData; at: Cell; run: Run; onClose: () => void; onRemove: () => void; onUseBrush: Props['onUseBrush'] }) {
+  const { t } = useT();
   const id = scene.floor[at.row]?.[at.col];
   const info = id ? pieceOf(catalog, id) : undefined;
   if (!id || !info) return null;
   return (
     <>
-      <Header thumb={<PieceThumb catalog={catalog} info={info} size="sm" />} title={info.label} detail={`${GROUP_LABELS.floor} · ${where(at, false)}`} run={run} onClose={onClose} />
+      <Header thumb={<PieceThumb catalog={catalog} info={info} size="sm" />} title={info.label} detail={`${t('scenery.groups.floor')} · ${where(t, at, false)}`} run={run} onClose={onClose} />
       <ButtonGroup className="w-full">
         <Button variant="outline" size="sm" className="flex-1" onClick={() => run(() => onUseBrush({ piece: id }))}>
           <BrushIcon data-icon="inline-start" />
-          Pintar com este
+          {t('scenery.popover.paintWithFloor')}
         </Button>
-        <DeleteButton run={run} onRemove={onRemove} label="Limpar" />
+        <DeleteButton run={run} onRemove={onRemove} label={t('scenery.popover.clear')} />
       </ButtonGroup>
     </>
   );
 }
 
 function FigureBody({ scene, index, run, onClose, onRemove }: { scene: SceneData; index: number; run: Run; onClose: () => void; onRemove: () => void }) {
+  const { t } = useT();
   const figure = scene.figures?.[index];
   if (!figure) return null;
   return (
     <>
       <Header
         thumb={<span className="grid size-8 shrink-0 place-items-center rounded-sm bg-muted ring-1 ring-foreground/10"><PersonStandingIcon /></span>}
-        title="Figura de escala"
-        detail={where(figure, false)}
+        title={t('scenery.popover.figure')}
+        detail={where(t, figure, false)}
         run={run}
         onClose={onClose}
       />
-      <p className="text-muted-foreground">Um manequim do tamanho do personagem do kit, para julgar proporções. As setas o empurram.</p>
+      <p className="text-muted-foreground">{t('scenery.popover.figureHint')}</p>
       <ButtonGroup className="w-full">
         <DeleteButton run={run} onRemove={onRemove} />
       </ButtonGroup>

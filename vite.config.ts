@@ -10,7 +10,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { buildAssetCatalog, buildProjectCatalog } from './viewer/server/catalog';
 import { PathError, deleteAsset, deleteProject, planDelete, restoreAsset, restoreProject } from './viewer/server/assets-fs';
 
-// Maps a request from the viewer's "Novo" dialog to a tools/ script and its arguments (the layout of docs/ARCHITECTURE.md:
+// Maps a request from the viewer's "New" dialog to a tools/ script and its arguments (the layout of docs/ARCHITECTURE.md:
 // new-asset writes src/ + sheets/, new-scene src/scenes/ + sheets/scenes/, gear-items sheets/gear/, new-outfit-character
 // src/characters/<name>/ + sheets/characters/<name>/; export takes paths relative to sheets/). The scripts find the
 // project by name in projects/ and then examples/, and do all the validation; this only rejects values that would be

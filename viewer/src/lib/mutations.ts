@@ -3,7 +3,8 @@ import { useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { api } from './api';
 import { exportTarget, pendingExports } from './export-state';
-import { plural, stripExtension } from './format';
+import { useT } from '../i18n';
+import { stripExtension } from './format';
 import { assetsQuery, projectsQuery } from './queries';
 import type { AssetFileMeta } from './types';
 
@@ -18,13 +19,14 @@ function useRefreshCatalog() {
 
 export function useRestoreAssets() {
   const refresh = useRefreshCatalog();
+  const { t } = useT();
   return useMutation({
     mutationFn: (entries: Array<{ project: string; trashId: string }>) => Promise.all(entries.map(api.restoreAsset)),
     onSuccess: async () => {
       await refresh();
-      toast.success('Restaurado');
+      toast.success(t('toasts.restored'));
     },
-    onError: (error) => toast.error('Não foi possível desfazer', { description: error.message }),
+    onError: (error) => toast.error(t('toasts.undoFailed'), { description: error.message }),
   });
 }
 
@@ -32,6 +34,7 @@ export function useRestoreAssets() {
 export function useDeleteAssets() {
   const refresh = useRefreshCatalog();
   const restore = useRestoreAssets();
+  const { t, plural } = useT();
   return useMutation({
     mutationFn: async (input: { assets: AssetFileMeta[]; deleteSheet: boolean }) => {
       const results = [];
@@ -43,30 +46,34 @@ export function useDeleteAssets() {
     onSuccess: async (results) => {
       await refresh();
       const files = results.reduce((sum, r) => sum + r.moved.length, 0);
-      toast('Movido para a lixeira', {
-        description: `${results.length === 1 ? results[0].subpath : `${results.length} assets`} · ${files} ${files === 1 ? 'arquivo' : 'arquivos'}`,
+      toast(t('toasts.movedToTrash'), {
+        description: t('toasts.movedDescription', {
+          what: results.length === 1 ? results[0].subpath : plural('counts.assets', results.length),
+          files: plural('counts.files', files),
+        }),
         duration: 9000,
         action: {
-          label: 'Desfazer',
+          label: t('common.undo'),
           onClick: () => restore.mutate(results.map(({ project, trashId }) => ({ project, trashId }))),
         },
       });
     },
-    onError: (error) => toast.error('Não foi possível excluir', { description: error.message }),
+    onError: (error) => toast.error(t('toasts.deleteFailed'), { description: error.message }),
   });
 }
 
 export function useDeleteProject() {
   const refresh = useRefreshCatalog();
+  const { t } = useT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const restore = useMutation({
     mutationFn: api.restoreProject,
     onSuccess: async ({ restored }) => {
       await refresh();
-      toast.success('Projeto restaurado', { description: restored });
+      toast.success(t('toasts.projectRestored'), { description: restored });
     },
-    onError: (error) => toast.error('Não foi possível restaurar o projeto', { description: error.message }),
+    onError: (error) => toast.error(t('toasts.projectRestoreFailed'), { description: error.message }),
   });
   return useMutation({
     mutationFn: api.deleteProject,
@@ -74,13 +81,13 @@ export function useDeleteProject() {
       await refresh();
       queryClient.removeQueries({ queryKey: ['atlas', project] });
       void navigate({ to: '/', replace: true });
-      toast('Projeto movido para a lixeira', {
+      toast(t('toasts.projectMovedToTrash'), {
         description: project,
         duration: 12000,
-        action: { label: 'Desfazer', onClick: () => restore.mutate({ project, trashId }) },
+        action: { label: t('common.undo'), onClick: () => restore.mutate({ project, trashId }) },
       });
     },
-    onError: (error) => toast.error('Não foi possível apagar o projeto', { description: error.message }),
+    onError: (error) => toast.error(t('toasts.projectDeleteFailed'), { description: error.message }),
   });
 }
 
@@ -102,19 +109,20 @@ export function useCli() {
  */
 export function useReexport() {
   const refresh = useRefreshCatalog();
+  const { t } = useT();
   return useMutation({
     mutationFn: ({ project, subpath }: { project: string; subpath: string }) =>
       api.cli({ command: 'export', project, subpath: stripExtension(subpath) }),
-    onMutate: ({ subpath }) => toast.loading('Exportando…', { description: subpath }),
+    onMutate: ({ subpath }) => toast.loading(t('toasts.exporting'), { description: subpath }),
     onSuccess: async (result, { subpath }, toastId) => {
       if (!result.ok) {
-        toast.error('Falha ao exportar', { id: toastId, description: result.output.split('\n').slice(-4).join('\n') });
+        toast.error(t('toasts.exportFailed'), { id: toastId, description: result.output.split('\n').slice(-4).join('\n') });
         return;
       }
       await refresh();
-      toast.success('Exportado de novo', { id: toastId, description: subpath });
+      toast.success(t('toasts.exportedAgain'), { id: toastId, description: subpath });
     },
-    onError: (error, _input, toastId) => toast.error('Falha ao exportar', { id: toastId, description: error.message }),
+    onError: (error, _input, toastId) => toast.error(t('toasts.exportFailed'), { id: toastId, description: error.message }),
   });
 }
 
@@ -124,20 +132,21 @@ export function useReexport() {
  */
 export function useExportSheets() {
   const refresh = useRefreshCatalog();
+  const { t, plural } = useT();
   return useMutation({
     mutationFn: async ({ project, sheets }: { project: string; sheets: string[] }) => {
-      const toastId = toast.loading('Exportando…');
+      const toastId = toast.loading(t('toasts.exporting'));
       let done = 0;
       try {
         for (const sheet of sheets) {
-          toast.loading(`Exportando ${done + 1} de ${sheets.length}`, { id: toastId, description: sheet });
+          toast.loading(t('toasts.exportingProgress', { current: done + 1, total: sheets.length }), { id: toastId, description: sheet });
           const result = await api.cli({ command: 'export', project, subpath: exportTarget(sheet) });
           if (!result.ok) throw new Error(`${sheet}\n${result.output.split('\n').slice(-4).join('\n')}`);
           done++;
         }
-        toast.success(plural(done, 'asset exportado', 'assets exportados'), { id: toastId });
+        toast.success(plural('toasts.assetsExported', done), { id: toastId });
       } catch (error) {
-        toast.error(done > 0 ? `Parou depois de ${done} de ${sheets.length}` : 'Falha ao exportar', {
+        toast.error(done > 0 ? t('toasts.exportStopped', { done, total: sheets.length }) : t('toasts.exportFailed'), {
           id: toastId,
           description: error instanceof Error ? error.message : String(error),
         });
@@ -157,9 +166,10 @@ const GEAR_ITEMS = 'gear/';
 export function useRefreshGearItems() {
   const queryClient = useQueryClient();
   const refresh = useRefreshCatalog();
+  const { t, plural } = useT();
   return useMutation({
     mutationFn: async ({ project }: { project: string }) => {
-      const toastId = toast.loading('Atualizando itens…');
+      const toastId = toast.loading(t('toasts.itemsUpdating'));
       try {
         const created = await api.cli({ command: 'gear-items', project });
         if (!created.ok) throw new Error(created.output);
@@ -169,15 +179,15 @@ export function useRefreshGearItems() {
         const pending = pendingExports(assets, meta && { ...meta, pendingSheets: meta.pendingSheets.filter((s) => s.startsWith(GEAR_ITEMS)) });
         const count = pending.stale.length + pending.missing.length;
         if (count === 0) {
-          toast.success('Itens em dia', { id: toastId, description: plural(assets.length, 'item exportado', 'itens exportados') });
+          toast.success(t('toasts.itemsUpToDate'), { id: toastId, description: plural('toasts.itemsExported', assets.length) });
           return;
         }
-        toast.loading('Exportando itens…', { id: toastId, description: plural(count, 'peça nova ou alterada', 'peças novas ou alteradas') });
+        toast.loading(t('toasts.itemsExporting'), { id: toastId, description: plural('toasts.itemsChanged', count) });
         const exported = await api.cli({ command: 'export', project, subpath: GEAR_ITEMS });
         if (!exported.ok) throw new Error(exported.output.split('\n').slice(-4).join('\n'));
-        toast.success('Itens atualizados', { id: toastId, description: plural(count, 'item exportado', 'itens exportados') });
+        toast.success(t('toasts.itemsUpdated'), { id: toastId, description: plural('toasts.itemsExported', count) });
       } catch (error) {
-        toast.error('Não foi possível atualizar os itens', { id: toastId, description: error instanceof Error ? error.message : String(error) });
+        toast.error(t('toasts.itemsUpdateFailed'), { id: toastId, description: error instanceof Error ? error.message : String(error) });
       }
     },
     onSettled: refresh,

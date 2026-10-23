@@ -6,9 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Kbd } from '@/components/ui/kbd';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useT } from '@/i18n';
 import { sectionOf } from '@/lib/sections';
 import { NovoModal } from '@/modals/novo-modal';
 import { ShortcutsModal } from '@/modals/shortcuts-modal';
+import { LanguageSwitch } from './language-switch';
 import { ProjectMenu } from './project-menu';
 import { ProjectSwitcher } from './project-switcher';
 
@@ -18,10 +20,11 @@ export function AppHeader() {
   const section = useLocation({ select: (location) => sectionOf(location.pathname) });
   const queryClient = useQueryClient();
   const fetching = useIsFetching() > 0;
+  const { t } = useT();
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-1 border-b px-3">
-      <Link to="/" className="flex items-center gap-2 rounded-md px-1 py-1 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50" aria-label="Diorama, início">
+      <Link to="/" className="flex items-center gap-2 rounded-md px-1 py-1 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50" aria-label={t('header.home')}>
         <span className="grid size-7 place-items-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground">D</span>
         <span className="font-medium">Diorama</span>
       </Link>
@@ -32,25 +35,26 @@ export function AppHeader() {
       <div className="ml-auto flex items-center gap-1">
         <Button variant="outline" size="sm" onClick={() => void NiceModal.show(NovoModal, {})}>
           <PlusIcon data-icon="inline-start" />
-          Novo
+          {t('header.new')}
           <Kbd>N</Kbd>
         </Button>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon-sm" aria-label="Atualizar catálogo" onClick={() => void queryClient.invalidateQueries()}>
+            <Button variant="ghost" size="icon-sm" aria-label={t('header.refresh')} onClick={() => void queryClient.invalidateQueries()}>
               <RefreshCwIcon className={fetching ? 'animate-spin' : undefined} />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Atualizar catálogo</TooltipContent>
+          <TooltipContent>{t('header.refresh')}</TooltipContent>
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon-sm" aria-label="Atalhos" onClick={() => void NiceModal.show(ShortcutsModal)}>
+            <Button variant="ghost" size="icon-sm" aria-label={t('header.shortcuts')} onClick={() => void NiceModal.show(ShortcutsModal)}>
               <KeyboardIcon />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Atalhos <Kbd>?</Kbd></TooltipContent>
+          <TooltipContent>{t('header.shortcuts')} <Kbd>?</Kbd></TooltipContent>
         </Tooltip>
+        <LanguageSwitch />
       </div>
     </header>
   );

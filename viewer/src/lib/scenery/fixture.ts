@@ -145,13 +145,13 @@ export const FIXTURE_SCENERY: SceneryCatalog = {
   camera,
   space: SPACE,
   pieces: [
-    { id: 'dirt', label: 'Terra', group: 'floor', piece: floor('soil', 'wood'), connect: 'corners', priority: 0, variants: 2, roles: ['soil'] },
-    { id: 'flagstone', label: 'Lajes', group: 'floor', piece: floor('stone', 'mortar'), connect: 'corners', priority: 1, variants: 2, roles: ['stone', 'mortar'] },
-    { id: 'grass', label: 'Grama', group: 'floor', piece: floor('moss', 'moss'), connect: 'corners', priority: 2, variants: 2, roles: ['moss'] },
-    { id: 'crypt-wall', label: 'Muro da cripta', group: 'wall', piece: run('stone', 8, SPACE.scale.wall), connect: 'edges', heights: ['wall', 'fence'], roles: ['stone', 'mortar'] },
-    { id: 'iron-fence', label: 'Grade de ferro', group: 'fence', piece: run('metal', 2.5, SPACE.scale.fence, 6), connect: 'edges', heights: ['fence', 'wall'], roles: ['metal'] },
+    { id: 'dirt', label: 'Dirt', group: 'floor', piece: floor('soil', 'wood'), connect: 'corners', priority: 0, variants: 2, roles: ['soil'] },
+    { id: 'flagstone', label: 'Flagstones', group: 'floor', piece: floor('stone', 'mortar'), connect: 'corners', priority: 1, variants: 2, roles: ['stone', 'mortar'] },
+    { id: 'grass', label: 'Grass', group: 'floor', piece: floor('moss', 'moss'), connect: 'corners', priority: 2, variants: 2, roles: ['moss'] },
+    { id: 'crypt-wall', label: 'Crypt wall', group: 'wall', piece: run('stone', 8, SPACE.scale.wall), connect: 'edges', heights: ['wall', 'fence'], roles: ['stone', 'mortar'] },
+    { id: 'iron-fence', label: 'Iron fence', group: 'fence', piece: run('metal', 2.5, SPACE.scale.fence, 6), connect: 'edges', heights: ['fence', 'wall'], roles: ['metal'] },
     {
-      id: 'crypt-door', label: 'Porta da cripta', group: 'door', piece: doorway, connect: 'none', directions: 4, joins: ['crypt-wall'], height: 'door', roles: ['stone', 'wood', 'metal'],
+      id: 'crypt-door', label: 'Crypt door', group: 'door', piece: doorway, connect: 'none', directions: 4, joins: ['crypt-wall'], height: 'door', roles: ['stone', 'wood', 'metal'],
       states: ['closed', 'open'],
       clips: {
         opening: { frames: 6, fps: 12, from: 'closed', to: 'open', events: [{ frame: 3, name: 'open' }] },
@@ -160,28 +160,28 @@ export const FIXTURE_SCENERY: SceneryCatalog = {
       nav: { passableIn: ['open'], interact: 'door' },
     },
     {
-      id: 'crate', label: 'Caixote', group: 'prop', piece: crate, connect: 'none', directions: 4, variants: 3, roles: ['wood', 'metal'],
-      options: [{ key: 'lid', label: 'Tampa', type: 'boolean', default: true }],
+      id: 'crate', label: 'Crate', group: 'prop', piece: crate, connect: 'none', directions: 4, variants: 3, roles: ['wood', 'metal'],
+      options: [{ key: 'lid', label: 'Lid', type: 'boolean', default: true }],
     },
     {
-      id: 'urn', label: 'Urna', group: 'prop', piece: urn, connect: 'none', roles: ['soil'],
+      id: 'urn', label: 'Urn', group: 'prop', piece: urn, connect: 'none', roles: ['soil'],
       states: ['whole', 'broken'],
       clips: { breaking: { frames: 6, fps: 12, from: 'whole', to: 'broken', events: [{ frame: 2, name: 'break' }] } },
       nav: { passableIn: ['broken'], interact: 'break', interactIn: ['whole'] },
     },
     {
-      id: 'chest', label: 'Baú', group: 'prop', piece: chest, connect: 'none', directions: 4, roles: ['wood', 'metal'],
+      id: 'chest', label: 'Chest', group: 'prop', piece: chest, connect: 'none', directions: 4, roles: ['wood', 'metal'],
       states: ['closed', 'open'],
       clips: { opening: { frames: 6, fps: 10, from: 'closed', to: 'open', events: [{ frame: 3, name: 'open' }] } },
       nav: { interact: 'chest', interactIn: ['closed'] },
     },
-    { id: 'brazier', label: 'Braseiro', group: 'prop', piece: brazier, connect: 'none', roles: ['metal', 'flame'], clips: { flame: { frames: 8, fps: 10, loop: true } } },
-    { id: 'tombstone', label: 'Lápide', group: 'prop', piece: tombstone, connect: 'none', roles: ['stone'] },
+    { id: 'brazier', label: 'Brazier', group: 'prop', piece: brazier, connect: 'none', roles: ['metal', 'flame'], clips: { flame: { frames: 8, fps: 10, loop: true } } },
+    { id: 'tombstone', label: 'Tombstone', group: 'prop', piece: tombstone, connect: 'none', roles: ['stone'] },
     {
-      id: 'dead-tree', label: 'Árvore seca', group: 'prop', piece: tree, connect: 'none', footprint: [2, 2], roles: ['wood', 'moss'],
-      options: [{ key: 'size', label: 'Tamanho', type: 'number', default: 1, min: 0.7, max: 1.4, step: 0.05 }],
+      id: 'dead-tree', label: 'Dead tree', group: 'prop', piece: tree, connect: 'none', footprint: [2, 2], roles: ['wood', 'moss'],
+      options: [{ key: 'size', label: 'Size', type: 'number', default: 1, min: 0.7, max: 1.4, step: 0.05 }],
     },
-    { id: 'crack', label: 'Rachadura', group: 'decal', piece: crack, connect: 'none', variants: 2, roles: ['stone'] },
+    { id: 'crack', label: 'Crack', group: 'decal', piece: crack, connect: 'none', variants: 2, roles: ['stone'] },
   ],
 };
 

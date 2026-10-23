@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { assetsQuery, projectsQuery } from '@/lib/queries';
 import { assetsRoute } from '@/lib/routes';
-import { dirname, plural } from '@/lib/format';
+import { useT } from '@/i18n';
+import { dirname } from '@/lib/format';
 import { pendingExports } from '@/lib/export-state';
 import { entryCover, entryKey, groupAnimations, type AssetEntry } from '@/lib/groups';
 import { usePref } from '@/lib/use-pref';
@@ -38,6 +39,7 @@ function folderCounts(assets: AssetFileMeta[]): Array<[string, number]> {
 
 export function AssetsView() {
   const { project } = assetsRoute.useParams();
+  const { t, plural } = useT();
   const search = assetsRoute.useSearch();
   const navigate = assetsRoute.useNavigate();
   const { data: allAssets } = useSuspenseQuery(assetsQuery);
@@ -99,11 +101,11 @@ export function AssetsView() {
       <AssetToolbar folders={folders} gridSize={gridSize} onGridSize={setGridSize} />
 
       <div className="flex items-center gap-3 px-4 pt-2 text-xs text-muted-foreground tabular-nums">
-        {filtered ? `${visible.length} de ${plural(assets.length, 'asset', 'assets')}` : plural(assets.length, 'asset', 'assets')}
-        {asGrid && search.group && entries.length < visible.length && <span>{plural(entries.length, 'item', 'itens')} agrupados</span>}
+        {filtered ? t('assets.filtered', { shown: visible.length, total: plural('counts.assets', assets.length) }) : plural('counts.assets', assets.length)}
+        {asGrid && search.group && entries.length < visible.length && <span>{plural('assets.grouped', entries.length)}</span>}
         {filtered && (
           <Button variant="link" size="xs" onClick={clearFilters}>
-            limpar filtros
+            {t('assets.clearFiltersLink')}
           </Button>
         )}
       </div>
@@ -119,30 +121,28 @@ export function AssetsView() {
           <Empty>
             <EmptyHeader>
               <EmptyMedia variant="icon"><PackageOpenIcon /></EmptyMedia>
-              <EmptyTitle>Nenhum asset exportado neste projeto</EmptyTitle>
+              <EmptyTitle>{t('assets.empty.title')}</EmptyTitle>
               <EmptyDescription>
-                {sheetCount > 0
-                  ? `Há ${plural(sheetCount, 'sheet', 'sheets')} em sheets/. Exporte para gerar os PNGs e atlas.`
-                  : 'Crie um asset e exporte para ele aparecer aqui.'}
+                {sheetCount > 0 ? plural('assets.empty.withSheets', sheetCount) : t('assets.empty.withoutSheets')}
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent className="flex-row justify-center">
               <Button variant="outline" onClick={() => void NiceModal.show(NovoModal, { tab: 'new-asset', project })}>
                 <PlusIcon data-icon="inline-start" />
-                Novo asset
+                {t('assets.empty.newAsset')}
               </Button>
-              {sheetCount > 0 && <Button onClick={() => void NiceModal.show(NovoModal, { tab: 'export', project })}>Exportar projeto</Button>}
+              {sheetCount > 0 && <Button onClick={() => void NiceModal.show(NovoModal, { tab: 'export', project })}>{t('assets.empty.exportProject')}</Button>}
             </EmptyContent>
           </Empty>
         ) : shown === 0 ? (
           <Empty>
             <EmptyHeader>
               <EmptyMedia variant="icon"><SearchXIcon /></EmptyMedia>
-              <EmptyTitle>Nada encontrado</EmptyTitle>
-              <EmptyDescription>Nenhum asset combina com esses filtros.</EmptyDescription>
+              <EmptyTitle>{t('assets.noMatch.title')}</EmptyTitle>
+              <EmptyDescription>{t('assets.noMatch.description')}</EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
-              <Button variant="outline" onClick={clearFilters}>Limpar filtros</Button>
+              <Button variant="outline" onClick={clearFilters}>{t('assets.clearFilters')}</Button>
             </EmptyContent>
           </Empty>
         ) : asGrid ? (

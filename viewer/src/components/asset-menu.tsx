@@ -8,6 +8,7 @@ import {
   ContextMenu, ContextMenuContent, ContextMenuGroup, ContextMenuItem, ContextMenuSeparator, ContextMenuShortcut, ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import { Button } from '@/components/ui/button';
+import { useT } from '@/i18n';
 import { copyText } from '@/lib/clipboard';
 import { useReexport } from '@/lib/mutations';
 import { stripExtension } from '@/lib/format';
@@ -47,6 +48,7 @@ interface AssetProps {
 
 function AssetItems({ asset, onPreview, parts: { Group, Item, Separator, Shortcut } }: AssetProps & { parts: MenuParts }) {
   const reexport = useReexport();
+  const { t } = useT();
   const sheetPath = asset.sheet ? projectFile(asset.root, asset.project, `sheets/${asset.sheet}`) : null;
   return (
     <>
@@ -54,39 +56,39 @@ function AssetItems({ asset, onPreview, parts: { Group, Item, Separator, Shortcu
         {onPreview && (
           <Item onSelect={() => onPreview(asset)}>
             <EyeIcon />
-            Preview
+            {t('assets.menu.preview')}
             <Shortcut>↵</Shortcut>
           </Item>
         )}
         <Item disabled={!asset.sheet} onSelect={() => reexport.mutate(asset)}>
           <RefreshCwIcon />
-          Exportar de novo
+          {t('assets.menu.exportAgain')}
         </Item>
       </Group>
       <Separator />
       <Group>
-        <Item disabled={!sheetPath} onSelect={() => sheetPath && void copyText(sheetPath, 'Caminho do .ts')}>
+        <Item disabled={!sheetPath} onSelect={() => sheetPath && void copyText(sheetPath, t('assets.menu.sheetPathLabel'))}>
           <CopyIcon />
-          Copiar caminho do .ts
+          {t('assets.menu.copySheetPath')}
         </Item>
-        <Item onSelect={() => void copyText(projectFile(asset.root, asset.project, `assets/${asset.subpath}`), 'Caminho do arquivo')}>
+        <Item onSelect={() => void copyText(projectFile(asset.root, asset.project, `assets/${asset.subpath}`), t('assets.menu.filePathLabel'))}>
           <CopyIcon />
-          Copiar caminho do arquivo exportado
+          {t('assets.menu.copyFilePath')}
         </Item>
         <Item disabled={!asset.atlas} onSelect={() => window.open(projectUrl(asset.root, asset.project, `assets/${asset.atlas}`), '_blank', 'noopener')}>
           <FileJsonIcon />
-          Abrir atlas JSON
+          {t('assets.menu.openAtlas')}
         </Item>
         <Item onSelect={() => window.open(`${asset.url}?t=${asset.mtime}`, '_blank', 'noopener')}>
           <ExternalLinkIcon />
-          Abrir imagem em nova aba
+          {t('assets.menu.openImage')}
         </Item>
       </Group>
       <Separator />
       <Group>
         <Item variant="destructive" onSelect={() => askDelete([asset])}>
           <Trash2Icon />
-          Excluir…
+          {t('assets.menu.delete')}
           <Shortcut>⌫</Shortcut>
         </Item>
       </Group>
@@ -95,13 +97,14 @@ function AssetItems({ asset, onPreview, parts: { Group, Item, Separator, Shortcu
 }
 
 export function AssetMenuButton({ asset, onPreview }: AssetProps) {
+  const { t } = useT();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label={`Ações de ${stripExtension(asset.subpath)}`}
+          aria-label={t('assets.menu.actionsFor', { name: stripExtension(asset.subpath) })}
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
@@ -135,32 +138,33 @@ interface GroupProps {
 
 function GroupItems({ group, onOpen, parts: { Group, Item, Separator, Shortcut } }: GroupProps & { parts: MenuParts }) {
   const reexport = useReexport();
+  const { t, plural } = useT();
   const [first] = group.assets;
   return (
     <>
       <Group>
         <Item onSelect={() => onOpen(first)}>
           <EyeIcon />
-          Abrir
+          {t('assets.menu.group.open')}
           <Shortcut>↵</Shortcut>
         </Item>
         <Item onSelect={() => group.assets.filter((a) => a.sheet).forEach((a) => reexport.mutate(a))}>
           <RefreshCwIcon />
-          Exportar todas as animações
+          {t('assets.menu.group.exportAll')}
         </Item>
       </Group>
       <Separator />
       <Group>
-        <Item onSelect={() => void copyText(projectFile(first.root, first.project, `assets/${group.folder}/`), 'Caminho da pasta')}>
+        <Item onSelect={() => void copyText(projectFile(first.root, first.project, `assets/${group.folder}/`), t('assets.menu.group.folderPathLabel'))}>
           <CopyIcon />
-          Copiar caminho da pasta
+          {t('assets.menu.group.copyFolderPath')}
         </Item>
       </Group>
       <Separator />
       <Group>
         <Item variant="destructive" onSelect={() => askDelete(group.assets)}>
           <Trash2Icon />
-          Excluir {group.assets.length} animações…
+          {plural('assets.menu.group.deleteAll', group.assets.length)}
         </Item>
       </Group>
     </>
@@ -168,10 +172,11 @@ function GroupItems({ group, onOpen, parts: { Group, Item, Separator, Shortcut }
 }
 
 export function GroupMenuButton({ group, onOpen }: GroupProps) {
+  const { t } = useT();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon-sm" aria-label={`Ações de ${group.name}`} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+        <Button variant="ghost" size="icon-sm" aria-label={t('assets.menu.actionsFor', { name: group.name })} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
           <MoreHorizontalIcon />
         </Button>
       </DropdownMenuTrigger>

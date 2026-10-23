@@ -7,9 +7,10 @@ import { AssetMenuButton } from '@/components/asset-menu';
 import { EngineBadge } from '@/components/engine-badge';
 import { StaleBadge } from '@/components/stale-badge';
 import { Badge } from '@/components/ui/badge';
-import { assetTitle, roleDetail, roleOf, roleSingular, type RoleId } from './asset-role';
+import { useT } from '@/i18n';
+import { assetTitle, roleDetail, roleOf, type RoleId } from './asset-role';
 import { isStale } from './export-state';
-import { dirname, formatBytes, formatRelative } from './format';
+import { dirname } from './format';
 import type { AssetFileMeta, Engine } from './types';
 
 /** Stable, module-level inputs: Table v9 recomputes row models whenever these change identity. */
@@ -27,6 +28,29 @@ const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'bas
 const byNumber = (pick: (a: AssetFileMeta) => number) => (a: Sortable, b: Sortable) => pick(a.original) - pick(b.original);
 const byText = (pick: (a: AssetFileMeta) => string) => (a: Sortable, b: Sortable) => collator.compare(pick(a.original), pick(b.original));
 
+/** A column's title. The columns are made once, at module level, so each text asks for its language when it is drawn. */
+function Heading({ id }: { id: 'name' | 'folder' | 'role' | 'engine' | 'dimensions' | 'frames' | 'fileSize' | 'modified' }) {
+  const { t } = useT();
+  return t(`assets.columns.${id}`);
+}
+
+function RoleBadge({ asset }: { asset: AssetFileMeta }) {
+  const { t } = useT();
+  const role = roleOf(asset);
+  if (role === 'other') return <span className="text-muted-foreground">—</span>;
+  const detail = roleDetail(asset, t);
+  const name = t(`roles.badge.${role}`);
+  return <Badge variant="secondary">{detail ? `${name} · ${detail}` : name}</Badge>;
+}
+
+function FileSize({ size }: { size: number }) {
+  return useT().bytes(size);
+}
+
+function Modified({ ms }: { ms: number }) {
+  return useT().relative(ms);
+}
+
 const dimensionsOf = (a: AssetFileMeta) => (a.width ?? 0) * (a.height ?? 0);
 const frameCountOf = (a: AssetFileMeta) => a.atlasInfo?.frameCount ?? 1;
 
@@ -43,11 +67,11 @@ export const assetColumns = helper.columns([
   }),
   helper.accessor((a) => a.subpath, {
     id: 'name',
-    header: 'Nome',
+    header: () => <Heading id="name" />,
     sortFn: byText((a) => a.subpath),
     // Every word of the query must appear somewhere in "project/path".
     filterFn: (row, _columnId, query: string) => {
-      // A gear item is also found by its label and group ("Elmo", "Cabeça").
+      // A gear item is also found by its label and group (its id, as the kit writes it).
       const { label, group } = row.original.atlasInfo ?? {};
       const haystack = `${row.original.project}/${row.original.subpath} ${label ?? ''} ${group ?? ''}`.toLowerCase();
       return query.toLowerCase().split(/\s+/).filter(Boolean).every((word) => haystack.includes(word));
@@ -61,39 +85,34 @@ export const assetColumns = helper.columns([
   }),
   helper.accessor((a) => dirname(a.subpath), {
     id: 'folder',
-    header: 'Pasta',
+    header: () => <Heading id="folder" />,
     sortFn: byText((a) => dirname(a.subpath)),
     filterFn: (row, _columnId, folder: string) => row.original.subpath.startsWith(`${folder}/`),
     cell: ({ getValue }) => <span className="text-muted-foreground">{getValue() || '—'}</span>,
   }),
   helper.accessor(roleOf, {
     id: 'role',
-    header: 'Tipo',
+    header: () => <Heading id="role" />,
     sortFn: byText(roleOf),
     filterFn: (row, _columnId, role: RoleId) => roleOf(row.original) === role,
-    cell: ({ row }) => {
-      const role = roleOf(row.original);
-      if (role === 'other') return <span className="text-muted-foreground">—</span>;
-      const detail = roleDetail(row.original);
-      return <Badge variant="secondary">{detail ? `${roleSingular[role]} · ${detail}` : roleSingular[role]}</Badge>;
-    },
+    cell: ({ row }) => <RoleBadge asset={row.original} />,
   }),
   helper.accessor((a) => a.engine ?? '', {
     id: 'engine',
-    header: 'Engine',
+    header: () => <Heading id="engine" />,
     sortFn: byText((a) => a.engine ?? ''),
     filterFn: (row, _columnId, engine: Engine | 'none') => (engine === 'none' ? row.original.engine === null : row.original.engine === engine),
     cell: ({ row }) => (row.original.engine ? <EngineBadge engine={row.original.engine} /> : <span className="text-muted-foreground">—</span>),
   }),
   helper.accessor(dimensionsOf, {
     id: 'dimensions',
-    header: 'Dimensões',
+    header: () => <Heading id="dimensions" />,
     sortFn: byNumber(dimensionsOf),
     cell: ({ row }) => (row.original.width ? `${row.original.width}×${row.original.height}` : '—'),
   }),
   helper.accessor(frameCountOf, {
     id: 'frames',
-    header: 'Frames',
+    header: () => <Heading id="frames" />,
     sortFn: byNumber(frameCountOf),
     cell: ({ row }) => {
       const info = row.original.atlasInfo;
@@ -103,15 +122,15 @@ export const assetColumns = helper.columns([
   }),
   helper.accessor((a) => a.size, {
     id: 'fileSize',
-    header: 'Tamanho',
+    header: () => <Heading id="fileSize" />,
     sortFn: byNumber((a) => a.size),
-    cell: ({ row }) => formatBytes(row.original.size),
+    cell: ({ row }) => <FileSize size={row.original.size} />,
   }),
   helper.accessor((a) => a.mtime, {
     id: 'modified',
-    header: 'Modificado',
+    header: () => <Heading id="modified" />,
     sortFn: byNumber((a) => a.mtime),
-    cell: ({ row }) => formatRelative(row.original.mtime),
+    cell: ({ row }) => <Modified ms={row.original.mtime} />,
   }),
   helper.display({
     id: 'actions',

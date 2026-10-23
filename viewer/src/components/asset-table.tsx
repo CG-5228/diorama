@@ -3,6 +3,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { ArrowDownIcon, ArrowUpIcon } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { assetDomId } from '@/lib/use-asset-selection';
 import type { AssetTableInstance } from '@/lib/use-asset-table';
@@ -34,6 +35,7 @@ interface Props {
 }
 
 export function AssetTable({ table, activeKey, scrollRef, onOpen }: Props) {
+  const { t } = useT();
   const rows = table.getRowModel().rows;
   const columnCount = table.getAllLeafColumns().length;
 
@@ -66,7 +68,7 @@ export function AssetTable({ table, activeKey, scrollRef, onOpen }: Props) {
   return (
     // The shadcn Table wraps <table> in its own overflow box, which would stop the header from sticking to the scroller.
     <div className="px-4 pb-4 [&_[data-slot=table-container]]:overflow-visible">
-      <Table className="min-w-6xl table-fixed" aria-label="Assets" aria-rowcount={rows.length + 1}>
+      <Table className="min-w-6xl table-fixed" aria-label={t('assets.listLabel')} aria-rowcount={rows.length + 1}>
         <TableHeader ref={headRef} className="sticky top-0 z-10 bg-background shadow-[0_1px_0_var(--border)] [&_tr]:border-0">
           {table.getHeaderGroups().map((group) => (
             <TableRow key={group.id}>

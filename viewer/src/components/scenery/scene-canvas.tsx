@@ -3,7 +3,7 @@ import { useSelector } from '@tanstack/react-store';
 import { createSceneRenderer, type SceneData, type SceneryCatalog, type SpaceHeight } from '@core/volume';
 import { MapPinIcon } from 'lucide-react';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
-import { Kbd } from '@/components/ui/kbd';
+import { Rich, useT } from '@/i18n';
 import { isTyping } from '@/lib/hotkeys';
 import {
   anchorFor, doorAt, edgeInside, edgeOf, fill, inside, isDoor, pickAt, pieceOf, placeDoor, placeProp, sameEdge, toggleFigure, wallsOnBorders, withLayers,
@@ -103,6 +103,7 @@ type Pan = { x: number; y: number; left: number; top: number };
  */
 export const SceneCanvas = memo(function SceneCanvas(props: Props) {
   const { catalog, scene, visible, zoom, grid, tool, eraseLayer, brush, propDir, propVariant, placeState, doorFlip, navigation, wallHeight, selection, blocked, empty, status, onCommit, onEdit, onSelect, onPick, onZoom, onDuplicate, onRemove, onUseBrush } = props;
+  const { t } = useT();
   const geo = useMemo(() => geometryOf({ cols: scene.cols, rows: scene.rows }, catalog), [scene.cols, scene.rows, catalog]);
   // The scene is drawn at the export scale at most and shown larger with hard edges: the same pixels a game gets, for a fraction of the work and memory.
   const scale = fitScale(geo, renderScale(zoom * (window.devicePixelRatio || 1)));
@@ -628,7 +629,7 @@ export const SceneCanvas = memo(function SceneCanvas(props: Props) {
       <div ref={box} className="group absolute inset-0 overflow-auto bg-muted/30">
         <div className="relative m-auto" style={{ width: geo.width * zoom, height: geo.height * zoom }}>
           <div aria-hidden className="checker absolute rounded-xs shadow-lg ring-1 ring-foreground/15" style={stage} />
-          <canvas ref={main} className="pixelated absolute inset-0" style={{ width: geo.width * zoom, height: geo.height * zoom }} aria-label="Cena" />
+          <canvas ref={main} className="pixelated absolute inset-0" style={{ width: geo.width * zoom, height: geo.height * zoom }} aria-label={t('scenery.sceneLabel')} />
           <canvas
             ref={overlay}
             tabIndex={-1}
@@ -665,9 +666,9 @@ export const SceneCanvas = memo(function SceneCanvas(props: Props) {
           <Empty className="w-fit flex-none rounded-lg border bg-background/80 backdrop-blur-sm">
             <EmptyHeader>
               <EmptyMedia variant="icon"><MapPinIcon /></EmptyMedia>
-              <EmptyTitle>Cena vazia</EmptyTitle>
+              <EmptyTitle>{t('scenery.empty.title')}</EmptyTitle>
               <EmptyDescription>
-                Escolha uma peça no painel e pinte na grade: <Kbd>F</Kbd> chão, <Kbd>W</Kbd> parede, <Kbd>P</Kbd> prop.
+                <Rich id="scenery.empty.description" />
               </EmptyDescription>
             </EmptyHeader>
           </Empty>

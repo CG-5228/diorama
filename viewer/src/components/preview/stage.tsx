@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/utils';
 import type { AssetFileMeta } from '@/lib/types';
 import type { Player } from './use-player';
@@ -11,6 +12,7 @@ const backdrops = { checker: 'checker', dark: 'bg-background', light: 'bg-foregr
 /** Draws the current frame, scaled without smoothing, with the optional pivot and bounds overlays. */
 export function Stage({ player, asset, highlight, ring = null, flight = null }: { player: Player; asset: AssetFileMeta; highlight: string | null; ring?: number | null; flight?: Flight | null }) {
   const { image, current, scale, stageRef, atlas, kind, showPivot, showBounds, backdrop, events, index, stepZoom } = player;
+  const { t } = useT();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const flyingRef = useRef<HTMLDivElement>(null);
 
@@ -65,7 +67,7 @@ export function Stage({ player, asset, highlight, ring = null, flight = null }: 
       <div ref={stageRef} className={cn('absolute inset-0 flex', flight ? 'overflow-hidden' : 'overflow-auto', backdrops[backdrop])}>
         {player.failed && (
           <Alert variant="destructive" className="m-4 h-fit">
-            <AlertDescription>Não foi possível carregar {asset.url}.</AlertDescription>
+            <AlertDescription>{t('errors.loadFile', { url: asset.url })}</AlertDescription>
           </Alert>
         )}
         {current && (

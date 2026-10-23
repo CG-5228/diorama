@@ -20,7 +20,7 @@ Your job is what it cannot decide: the body plan, the timing, and an art skin th
 | Gaits, idles, attacks, events, `extra` channels, the motion check | [guide 02](../../../docs/guides/rig/02-gaits-and-clips.md) |
 | defineCharacter, writing a skin, sockets, sorting rules, smears, cells, pivot | [guide 03](../../../docs/guides/rig/03-skins-and-character-assets.md) |
 | What the exported files promise to games and the playground (kinds, events, sockets, root motion, playing rules) | [guide 04](../../../docs/guides/rig/04-atlas-contract.md) |
-| Armor, weapons, garments as reusable parts; outfits and variants; materials by role. The viewer's Customizar tab dresses characters with the kit, and `npm run new-outfit-character` saves an outfit as a character | [guide 05](../../../docs/guides/rig/05-gear-and-outfits.md) |
+| Armor, weapons, garments as reusable parts; outfits and variants; materials by role. The viewer's Customize tab dresses characters with the kit, and `npm run new-outfit-character` saves an outfit as a character | [guide 05](../../../docs/guides/rig/05-gear-and-outfits.md) |
 | Exact signatures | [rig API](../../../docs/api/rig.md), [volume API](../../../docs/api/volume.md) |
 | Timing: anticipation, holds, overshoot, smears, loops | [diorama-volume motion reference](../diorama-volume/references/motion.md) |
 | The finish every skin must reach | [diorama-volume quality bar](../diorama-volume/references/quality-bar.md) |

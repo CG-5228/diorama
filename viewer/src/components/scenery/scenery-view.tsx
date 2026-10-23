@@ -7,6 +7,7 @@ import { MapIcon, TriangleAlertIcon } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import { Rich, useT } from '@/i18n';
 import { isTyping, useWindowKeydown } from '@/lib/hotkeys';
 import { projectsQuery } from '@/lib/queries';
 import { sceneryRoute } from '@/lib/routes';
@@ -47,15 +48,16 @@ export function SceneryView() {
   const { data: projects } = useSuspenseQuery(projectsQuery);
   const meta = projects.find((p) => p.name === project);
   const { data: catalog } = useSuspenseQuery(sceneryQuery(project, meta?.root ?? 'projects', fixture, meta?.hasSceneryKit ?? false));
+  const { t } = useT();
 
   if (!catalog) {
     return (
       <Empty className="h-full">
         <EmptyHeader>
           <EmptyMedia variant="icon"><MapIcon /></EmptyMedia>
-          <EmptyTitle>Este projeto não tem um kit de cenário</EmptyTitle>
+          <EmptyTitle>{t('scenery.noKit.title')}</EmptyTitle>
           <EmptyDescription>
-            Para pintar cenas, o projeto precisa de <code>src/scenery/catalog.ts</code> exportando <code>SCENERY</code> (peças, materiais, grade e câmera).
+            <Rich id="scenery.noKit.description" />
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -67,6 +69,7 @@ export function SceneryView() {
 const firstOf = (catalog: SceneryCatalog, groups: PieceGroup[]) => catalog.pieces.find((p) => groups.includes(p.group))?.id ?? null;
 
 function Painter({ project, root, catalog, fixture, sceneNames }: { project: string; root: ProjectRoot; catalog: SceneryCatalog; fixture: boolean; sceneNames: string[] }) {
+  const { t, plural } = useT();
   // The list follows the catalog; keeping the previous one while it reloads leaves the painter where it is.
   const { data: saved = [] } = useQuery({ ...savedScenesQuery(project, root, fixture, sceneNames), placeholderData: keepPreviousData });
   const history = useHistory<SceneData>(() => drafts.get(project) ?? emptyScene(catalog, DEFAULT_SIZE.cols, DEFAULT_SIZE.rows));
@@ -253,7 +256,7 @@ function Painter({ project, root, catalog, fixture, sceneNames }: { project: str
 
   return (
     <div className="flex min-h-0 flex-1">
-      <section className="flex min-w-0 flex-1 flex-col" aria-label="Cena">
+      <section className="flex min-w-0 flex-1 flex-col" aria-label={t('scenery.sceneLabel')}>
         <SceneToolbar
           leading={<SceneMenu catalog={catalog} scene={scene} saved={saved} loaded={loaded} unsaved={unsaved} onEdit={history.set} onLoad={open} />}
           panelOpen={panelOpen}
@@ -323,7 +326,7 @@ function Painter({ project, root, catalog, fixture, sceneNames }: { project: str
           {(problems.length > 0 || drawError) && (
             <Alert variant="destructive" className="absolute top-3 right-3 left-15 max-h-[calc(100%-1.5rem)] w-auto overflow-y-auto bg-background">
               <TriangleAlertIcon />
-              <AlertTitle>{problems.length > 0 ? (problems.length === 1 ? 'A cena tem um problema' : `A cena tem ${problems.length} problemas`) : 'Uma peça falhou ao desenhar'}</AlertTitle>
+              <AlertTitle>{problems.length > 0 ? plural('scenery.problems', problems.length) : t('scenery.drawFailed')}</AlertTitle>
               <AlertDescription>
                 {problems.length > 0 ? (
                   <ul className="list-disc pl-4">{problems.slice(0, 6).map((problem) => <li key={problem}>{problem}</li>)}</ul>
@@ -331,9 +334,9 @@ function Painter({ project, root, catalog, fixture, sceneNames }: { project: str
                   <span className="font-mono">{drawError}</span>
                 )}
                 {problems.some((problem) => problem.startsWith('walls must be')) && (
-                  <p className="mt-1">Esta cena foi salva com as paredes no centro das células, e o kit agora as põe nas bordas (uma grade de vértices, uma linha e uma coluna a mais): converta as paredes no código da cena ou comece uma cena nova.</p>
+                  <p className="mt-1">{t('scenery.legacyWalls')}</p>
                 )}
-                {problems.length > 0 && <p className="mt-1">A tela mostra a última versão que dava para desenhar.</p>}
+                {problems.length > 0 && <p className="mt-1">{t('scenery.lastDrawable')}</p>}
               </AlertDescription>
             </Alert>
           )}
@@ -342,14 +345,14 @@ function Painter({ project, root, catalog, fixture, sceneNames }: { project: str
           <HoverReadout status={status} cols={scene.cols} rows={scene.rows} />
           <span>{scene.cols} × {scene.rows}</span>
           <span className="flex items-center gap-1.5">
-            {loaded ?? 'Sem nome'}
-            {unsaved && <Badge variant="secondary">não salva</Badge>}
+            {loaded ?? t('scenery.unnamed')}
+            {unsaved && <Badge variant="secondary">{t('scenery.unsaved')}</Badge>}
           </span>
           <DrawReadout status={status} />
         </div>
       </section>
 
-      <aside className={cn('flex w-80 shrink-0 flex-col border-l', !panelOpen && 'hidden')} aria-label="Peças">
+      <aside className={cn('flex w-80 shrink-0 flex-col border-l', !panelOpen && 'hidden')} aria-label={t('scenery.piecesLabel')}>
         <div className="min-h-0 flex-1 overflow-y-auto p-3">
           <SceneryPalette catalog={catalog} brush={brush} tool={tool} onChoose={choose} onTool={setTool} />
         </div>

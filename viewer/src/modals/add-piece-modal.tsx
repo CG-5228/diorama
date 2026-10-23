@@ -12,7 +12,8 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/in
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { hostCandidates, isPaired, partOf, partsBySlot, type Side } from '@/lib/outfit/edit';
-import { SIDE_LABELS, SLOT_LABELS, groupLabel } from '@/lib/outfit/labels';
+import { useT } from '@/i18n';
+import { groupLabel, sideLabel, slotLabel } from '@/lib/outfit/labels';
 import { useModalDialog } from '@/lib/use-modal-dialog';
 import { useGearThumbs } from '@/components/customize/use-gear-thumbs';
 
@@ -34,6 +35,7 @@ interface Props {
 /** Pick a part of the kit, say where it goes (and on which sides), and it is added to the outfit. */
 export const AddPieceModal = NiceModal.create(({ project, catalog, outfit, onAdd }: Props) => {
   const { modal, rootProps, contentProps } = useModalDialog();
+  const { t, list } = useT();
   // A part without an exported sheet simply has no thumbnail.
   const sheets = useGearThumbs(project);
   const [query, setQuery] = useState('');
@@ -45,9 +47,9 @@ export const AddPieceModal = NiceModal.create(({ project, catalog, outfit, onAdd
   const groups = useMemo(() => {
     const words = query.toLowerCase().split(/\s+/).filter(Boolean);
     return partsBySlot(catalog)
-      .map(({ group, parts }) => ({ group, parts: parts.filter((p) => words.every((w) => `${p.label} ${p.id} ${groupLabel(p.group)}`.toLowerCase().includes(w))) }))
+      .map(({ group, parts }) => ({ group, parts: parts.filter((p) => words.every((w) => `${p.label} ${p.id} ${groupLabel(t, p.group)}`.toLowerCase().includes(w))) }))
       .filter((g) => g.parts.length > 0);
-  }, [catalog, query]);
+  }, [catalog, query, t]);
 
   const info = partId ? partOf(catalog, partId) : undefined;
   const chosenSlot = info ? (slot && info.slots.includes(slot) ? slot : info.slots[0]) : null;
@@ -67,28 +69,28 @@ export const AddPieceModal = NiceModal.create(({ project, catalog, outfit, onAdd
     <Dialog {...rootProps}>
       <DialogContent {...contentProps} className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Adicionar peça</DialogTitle>
-          <DialogDescription>Escolha uma peça do kit. Ela entra no fim da lista e é desenhada por cima das anteriores.</DialogDescription>
+          <DialogTitle>{t('modals.addPiece.title')}</DialogTitle>
+          <DialogDescription>{t('modals.addPiece.description')}</DialogDescription>
         </DialogHeader>
 
         <FieldGroup className="gap-4">
           <InputGroup>
             <InputGroupAddon><SearchIcon /></InputGroupAddon>
-            <InputGroupInput aria-label="Buscar peça" placeholder="Buscar peça" value={query} onChange={(e) => setQuery(e.target.value)} />
+            <InputGroupInput aria-label={t('modals.addPiece.search')} placeholder={t('modals.addPiece.search')} value={query} onChange={(e) => setQuery(e.target.value)} />
           </InputGroup>
 
           {groups.length === 0 ? (
             <Empty>
               <EmptyHeader>
-                <EmptyTitle>Nenhuma peça encontrada</EmptyTitle>
-                <EmptyDescription>Tente outra palavra.</EmptyDescription>
+                <EmptyTitle>{t('modals.addPiece.noResults')}</EmptyTitle>
+                <EmptyDescription>{t('modals.addPiece.tryAnother')}</EmptyDescription>
               </EmptyHeader>
             </Empty>
           ) : (
             <div className="flex max-h-64 flex-col gap-3 overflow-auto">
               {groups.map(({ group, parts }) => (
                 <Field key={group}>
-                  <FieldTitle>{groupLabel(group)}</FieldTitle>
+                  <FieldTitle>{groupLabel(t, group)}</FieldTitle>
                   <ToggleGroup type="single" variant="outline" size="sm" orientation="vertical" spacing={1} className="w-full" value={partId ?? ''} onValueChange={(next) => { setPartId(next || null); setSlot(null); }}>
                     {parts.map((part) => (
                       <ToggleGroupItem key={part.id} value={part.id} className="h-auto w-full justify-between py-1 data-[state=on]:border-primary data-[state=on]:bg-primary/10">
@@ -99,8 +101,8 @@ export const AddPieceModal = NiceModal.create(({ project, catalog, outfit, onAdd
                           <span className="truncate">{part.label}</span>
                         </span>
                         <span className="flex gap-1">
-                          {part.requires && <Badge variant="outline">add-on</Badge>}
-                          {part.slots.slice(0, 2).map((s) => <Badge key={s} variant="secondary">{SLOT_LABELS[s]}</Badge>)}
+                          {part.requires && <Badge variant="outline">{t('modals.addPiece.addOn')}</Badge>}
+                          {part.slots.slice(0, 2).map((s) => <Badge key={s} variant="secondary">{slotLabel(t, s)}</Badge>)}
                         </span>
                       </ToggleGroupItem>
                     ))}
@@ -114,37 +116,37 @@ export const AddPieceModal = NiceModal.create(({ project, catalog, outfit, onAdd
             <FieldGroup className="gap-3 border-t pt-3">
               {info.slots.length > 1 && (
                 <Field>
-                  <FieldLabel htmlFor="add-piece-slot">Posição</FieldLabel>
+                  <FieldLabel htmlFor="add-piece-slot">{t('modals.addPiece.position')}</FieldLabel>
                   <Select value={chosenSlot} onValueChange={(next) => setSlot(next as Slot)}>
                     <SelectTrigger id="add-piece-slot" className="w-full"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectGroup>{info.slots.map((s) => <SelectItem key={s} value={s}>{SLOT_LABELS[s]}</SelectItem>)}</SelectGroup>
+                      <SelectGroup>{info.slots.map((s) => <SelectItem key={s} value={s}>{slotLabel(t, s)}</SelectItem>)}</SelectGroup>
                     </SelectContent>
                   </Select>
                 </Field>
               )}
               {paired && (
                 <Field>
-                  <FieldLabel id="add-piece-sides">Lados</FieldLabel>
+                  <FieldLabel id="add-piece-sides">{t('modals.addPiece.sides')}</FieldLabel>
                   <ToggleGroup type="multiple" variant="outline" size="sm" aria-labelledby="add-piece-sides" value={sides} onValueChange={(next) => next.length > 0 && setSides(next)}>
-                    <ToggleGroupItem value="-1">{SIDE_LABELS[-1]}</ToggleGroupItem>
-                    <ToggleGroupItem value="1">{SIDE_LABELS[1]}</ToggleGroupItem>
+                    <ToggleGroupItem value="-1">{sideLabel(t, -1)}</ToggleGroupItem>
+                    <ToggleGroupItem value="1">{sideLabel(t, 1)}</ToggleGroupItem>
                   </ToggleGroup>
-                  <FieldDescription>Os dois lados adicionam uma peça espelhada para cada.</FieldDescription>
+                  <FieldDescription>{t('modals.addPiece.bothSides')}</FieldDescription>
                 </Field>
               )}
               {info.requires && (
                 <Field data-invalid={missingHost || undefined}>
-                  <FieldLabel htmlFor="add-piece-host">Apoia em</FieldLabel>
+                  <FieldLabel htmlFor="add-piece-host">{t('modals.addPiece.restsOn')}</FieldLabel>
                   <Select value={chosenHost === null ? '' : String(chosenHost)} onValueChange={setHost} disabled={hosts.length === 0}>
-                    <SelectTrigger id="add-piece-host" className="w-full" aria-invalid={missingHost}><SelectValue placeholder="Nenhuma peça serve" /></SelectTrigger>
+                    <SelectTrigger id="add-piece-host" className="w-full" aria-invalid={missingHost}><SelectValue placeholder={t('modals.addPiece.noPiece')} /></SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
                         {hosts.map((i) => <SelectItem key={i} value={String(i)}>{partOf(catalog, outfit.pieces[i].part)?.label ?? outfit.pieces[i].part}</SelectItem>)}
                       </SelectGroup>
                     </SelectContent>
                   </Select>
-                  {missingHost && <FieldDescription>Esta peça precisa de uma {partRequires(info).join(' ou ')} no outfit. Adicione-a primeiro.</FieldDescription>}
+                  {missingHost && <FieldDescription>{t('modals.addPiece.missingHost', { needs: list(partRequires(info), 'or') })}</FieldDescription>}
                 </Field>
               )}
             </FieldGroup>
@@ -152,10 +154,10 @@ export const AddPieceModal = NiceModal.create(({ project, catalog, outfit, onAdd
         </FieldGroup>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => modal.hide()}>Cancelar</Button>
+          <Button variant="outline" onClick={() => modal.hide()}>{t('common.cancel')}</Button>
           <Button disabled={!info || missingHost} onClick={add}>
             <PlusIcon data-icon="inline-start" />
-            Adicionar
+            {t('modals.addPiece.add')}
           </Button>
         </DialogFooter>
       </DialogContent>

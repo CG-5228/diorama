@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import { Rich, useT } from '@/i18n';
 import { api } from '@/lib/api';
 import { isValidCharacterName } from '@/lib/outfit/save';
 import { useModalDialog } from '@/lib/use-modal-dialog';
@@ -34,6 +35,7 @@ interface Saved {
 /** Saves the scene as `src/scenes/<name>.ts` (with its sheet in `sheets/scenes/`) and exports its reference image. */
 export const SaveSceneModal = NiceModal.create(({ project, scene, defaultName, onSaved }: Props) => {
   const { modal, rootProps, contentProps } = useModalDialog();
+  const { t } = useT();
   const queryClient = useQueryClient();
   const [name, setName] = useState(defaultName);
   // Saving over a scene that was opened is what the user asked for: no need to tick the box.
@@ -57,43 +59,43 @@ export const SaveSceneModal = NiceModal.create(({ project, scene, defaultName, o
     <Dialog {...rootProps}>
       <DialogContent {...contentProps} className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Salvar cena</DialogTitle>
+          <DialogTitle>{t('modals.saveScene.title')}</DialogTitle>
           <DialogDescription>
-            Grava <code>src/scenes/{name || '<nome>'}.ts</code> em <code>{project}</code> (os dados, que dá para abrir e editar aqui) e o sheet <code>sheets/scenes/{name || '<nome>'}.ts</code>, e exporta a imagem de referência.
+            <Rich id="modals.saveScene.description" vars={{ name: name || t('modals.saveScene.namePlaceholder'), project }} />
           </DialogDescription>
         </DialogHeader>
 
         <FieldGroup className="gap-3">
           <Field data-invalid={(name !== '' && !valid) || undefined}>
-            <FieldLabel htmlFor="scene-name">Nome</FieldLabel>
+            <FieldLabel htmlFor="scene-name">{t('modals.save.name')}</FieldLabel>
             <Input
               id="scene-name"
               className="font-mono"
               autoComplete="off"
-              placeholder="cantinho-do-cemiterio"
+              placeholder={t('modals.saveScene.example')}
               aria-invalid={name !== '' && !valid}
               value={name}
               disabled={save.isPending}
               onChange={(e) => { setName(e.target.value); save.reset(); }}
             />
-            {name !== '' && !valid ? <FieldError>Use letras minúsculas, números e hífen (ex.: cantinho-do-cemiterio).</FieldError> : <FieldDescription>Letras minúsculas, números e hífen.</FieldDescription>}
+            {name !== '' && !valid ? <FieldError>{t('modals.saveScene.invalid', { example: t('modals.saveScene.example') })}</FieldError> : <FieldDescription>{t('modals.save.hint')}</FieldDescription>}
           </Field>
           <Field orientation="horizontal">
             <Checkbox id="scene-force" checked={force} disabled={save.isPending} onCheckedChange={(checked) => setForce(checked === true)} />
-            <FieldLabel htmlFor="scene-force" className="font-normal">Substituir se já existir</FieldLabel>
+            <FieldLabel htmlFor="scene-force" className="font-normal">{t('modals.save.replace')}</FieldLabel>
           </Field>
         </FieldGroup>
 
         {save.isError && (
           <Alert variant="destructive">
-            <AlertTitle>Não foi possível salvar</AlertTitle>
+            <AlertTitle>{t('modals.save.failed')}</AlertTitle>
             <AlertDescription><pre className="max-h-40 overflow-auto font-mono whitespace-pre-wrap">{save.error.message}</pre></AlertDescription>
           </Alert>
         )}
         {saved && (
           <Alert variant={saved.exported ? 'default' : 'destructive'}>
             <CheckIcon />
-            <AlertTitle>{saved.exported ? `Cena ${saved.name} salva e exportada` : `Cena ${saved.name} salva, mas o export falhou`}</AlertTitle>
+            <AlertTitle>{t(saved.exported ? 'modals.saveScene.saved' : 'modals.saveScene.savedExportFailed', { name: saved.name })}</AlertTitle>
             <AlertDescription>
               <pre className="max-h-40 overflow-auto font-mono whitespace-pre-wrap">{saved.output}</pre>
             </AlertDescription>
@@ -103,17 +105,17 @@ export const SaveSceneModal = NiceModal.create(({ project, scene, defaultName, o
         <DialogFooter>
           {saved ? (
             <>
-              <Button variant="outline" onClick={() => modal.hide()}>Fechar</Button>
+              <Button variant="outline" onClick={() => modal.hide()}>{t('common.close')}</Button>
               <Button asChild onClick={() => modal.hide()}>
-                <Link to="/p/$project" params={{ project }} search={{ folder: 'scenes' }}>Ver nos assets</Link>
+                <Link to="/p/$project" params={{ project }} search={{ folder: 'scenes' }}>{t('modals.saveScene.seeAssets')}</Link>
               </Button>
             </>
           ) : (
             <>
-              <Button variant="outline" onClick={() => modal.hide()}>Cancelar</Button>
+              <Button variant="outline" onClick={() => modal.hide()}>{t('common.cancel')}</Button>
               <Button disabled={!valid || save.isPending} onClick={() => save.mutate()}>
                 {save.isPending ? <Spinner data-icon="inline-start" /> : <SaveIcon data-icon="inline-start" />}
-                {save.isPending ? 'Salvando e exportando…' : 'Salvar e exportar'}
+                {save.isPending ? t('modals.save.saving') : t('modals.save.saveAndExport')}
               </Button>
             </>
           )}

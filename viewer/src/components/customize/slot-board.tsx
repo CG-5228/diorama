@@ -3,8 +3,8 @@ import type { GearCatalog, OutfitData, PartInfo, SkeletonSpec } from '@core/rig'
 import { ArrowLeftRightIcon, PlusIcon, Settings2Icon, XIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { plural } from '@/lib/format';
-import { groupLabel, SIDE_LABELS, SLOT_LABELS } from '@/lib/outfit/labels';
+import { useT } from '@/i18n';
+import { groupLabel, sideLabel, slotLabel } from '@/lib/outfit/labels';
 import { isPaired, partOf, removePiece } from '@/lib/outfit/edit';
 import { equipOrSwap, isBodyPart, placeOf, placesOf, SLOT_ORDER, stacksIn, swapBoth, type Place, type Stack, type Swapped } from '@/lib/outfit/slots';
 import type { Edit } from '@/lib/outfit/use-draft';
@@ -31,6 +31,7 @@ interface Props {
  * (bone limbs, a rib cage) stay in the list view.
  */
 export function SlotBoard({ project, catalog, outfit, skeleton, onEdit, onUndo }: Props) {
+  const { t, plural, list } = useT();
   const thumbs = useGearThumbs(project);
   // Pieces whose options are open, by id: an index would point at another piece after a removal.
   const [opened, setOpened] = useState<ReadonlySet<string>>(new Set());
@@ -54,8 +55,8 @@ export function SlotBoard({ project, catalog, outfit, skeleton, onEdit, onUndo }
   const aftermath = (result: Swapped) => {
     const label = (part: string) => partOf(catalog, part)?.label ?? part;
     return [
-      result.dropped.length > 0 ? `Saiu ${plural(result.dropped.length, 'complemento que só servia', 'complementos que só serviam')} na peça trocada.` : '',
-      result.pushed.length > 0 ? `Saiu ${result.pushed.map(label).join(' e ')}: as mãos não seguram as duas peças.` : '',
+      result.dropped.length > 0 ? plural('customize.board.droppedAddOns', result.dropped.length) : '',
+      result.pushed.length > 0 ? t('customize.board.pushedOut', { names: list(result.pushed.map(label)) }) : '',
     ]
       .filter(Boolean)
       .join(' ');
@@ -66,19 +67,19 @@ export function SlotBoard({ project, catalog, outfit, skeleton, onEdit, onUndo }
     if (!result) return;
     onEdit((o) => swapBoth(o, catalog, index, info, both)?.outfit ?? o);
     const description = aftermath(result);
-    if (description) toast(`${label} → ${info.label}`, { description, action: { label: 'Desfazer', onClick: onUndo } });
+    if (description) toast(`${label} → ${info.label}`, { description, action: { label: t('common.undo'), onClick: onUndo } });
   };
   const equip = (place: Place, info: PartInfo, both: boolean) => {
     const result = equipOrSwap(outfit, catalog, info, place, both);
     if (!result) return;
     onEdit((o) => equipOrSwap(o, catalog, info, place, both)?.outfit ?? o);
     const description = aftermath(result);
-    if (description) toast(info.label, { description, action: { label: 'Desfazer', onClick: onUndo } });
+    if (description) toast(info.label, { description, action: { label: t('common.undo'), onClick: onUndo } });
   };
   const remove = (index: number) => {
     const { removed } = removePiece(outfit, catalog, index);
     onEdit((o) => removePiece(o, catalog, index).outfit);
-    if (removed > 1) toast(`Tirou também ${plural(removed - 1, 'complemento que dependia', 'complementos que dependiam')} dela`, { action: { label: 'Desfazer', onClick: onUndo } });
+    if (removed > 1) toast(plural('customize.board.alsoTookOff', removed - 1), { action: { label: t('common.undo'), onClick: onUndo } });
   };
 
   const line = (stack: Stack, depth: number) => {
@@ -91,19 +92,19 @@ export function SlotBoard({ project, catalog, outfit, skeleton, onEdit, onUndo }
       <div key={keyOf(index)} className={cn('flex flex-col gap-1', depth > 0 && 'ml-4 border-l pl-2')}>
         <div className="flex items-center gap-1">
           <PartPicker catalog={catalog} outfit={outfit} place={place} replacing={index} thumbs={thumbs} onChoose={(next, both) => swap(index, next, both)} onRemove={() => remove(index)}>
-            <Button variant="outline" className="h-auto min-w-0 flex-1 justify-start gap-2 p-1.5 text-left font-normal" aria-label={`Trocar ${info?.label ?? piece.part}`} title="Trocar por outra peça">
+            <Button variant="outline" className="h-auto min-w-0 flex-1 justify-start gap-2 p-1.5 text-left font-normal" aria-label={t('customize.board.swap', { name: info?.label ?? piece.part })} title={t('customize.board.swapHint')}>
               <PartThumb asset={thumbs.get(piece.part)} className={depth > 0 ? 'size-7' : undefined} />
               <span className="flex min-w-0 flex-col">
                 <span className="truncate font-medium">{info?.label ?? piece.part}</span>
-                <span className="truncate text-xs text-muted-foreground">{info ? groupLabel(info.group) : 'peça desconhecida'}</span>
+                <span className="truncate text-xs text-muted-foreground">{info ? groupLabel(t, info.group) : t('customize.board.unknownPart')}</span>
               </span>
               <ArrowLeftRightIcon data-icon="inline-end" className="ml-auto text-muted-foreground" />
             </Button>
           </PartPicker>
-          <Button variant={open ? 'secondary' : 'ghost'} size="icon-xs" aria-label={`${open ? 'Fechar' : 'Abrir'} ajustes de ${info?.label ?? piece.part}`} aria-pressed={open} title="Ajustes: opções e materiais" onClick={() => toggle(index)}>
+          <Button variant={open ? 'secondary' : 'ghost'} size="icon-xs" aria-label={t(open ? 'customize.board.settingsClose' : 'customize.board.settingsOpen', { name: info?.label ?? piece.part })} aria-pressed={open} title={t('customize.board.settingsHint')} onClick={() => toggle(index)}>
             <Settings2Icon />
           </Button>
-          <Button variant="ghost" size="icon-xs" aria-label={`Tirar ${info?.label ?? piece.part}`} title="Tirar peça" onClick={() => remove(index)}>
+          <Button variant="ghost" size="icon-xs" aria-label={t('customize.board.takeOff', { name: info?.label ?? piece.part })} title={t('customize.board.takeOffHint')} onClick={() => remove(index)}>
             <XIcon />
           </Button>
         </div>
@@ -122,18 +123,18 @@ export function SlotBoard({ project, catalog, outfit, skeleton, onEdit, onUndo }
     const paired = isPaired(place.slot);
     return (
       <div key={`${place.slot}:${place.side}`} className="flex flex-col gap-1">
-        {paired && <span className="text-xs text-muted-foreground">{SIDE_LABELS[place.side === 0 ? 1 : place.side]}</span>}
+        {paired && <span className="text-xs text-muted-foreground">{sideLabel(t, place.side === 0 ? 1 : place.side)}</span>}
         {stacks.map((stack) => line(stack, 0))}
         <PartPicker catalog={catalog} outfit={outfit} place={place} thumbs={thumbs} onChoose={(info, both) => equip(place, info, both)}>
           {stacks.length === 0 ? (
-            <Button variant="outline" className="h-auto justify-start gap-2 border-dashed p-1.5 font-normal text-muted-foreground" aria-label={`Vestir ${SLOT_LABELS[place.slot].toLowerCase()}`}>
+            <Button variant="outline" className="h-auto justify-start gap-2 border-dashed p-1.5 font-normal text-muted-foreground" aria-label={t('customize.board.equipLabel', { slot: slotLabel(t, place.slot).toLowerCase() })}>
               <span className="grid size-9 place-items-center rounded-sm bg-muted/50"><PlusIcon /></span>
-              Vestir
+              {t('customize.board.equip')}
             </Button>
           ) : (
-            <Button variant="ghost" size="xs" className="justify-start text-muted-foreground" aria-label={`Adicionar peça em ${SLOT_LABELS[place.slot].toLowerCase()}`}>
+            <Button variant="ghost" size="xs" className="justify-start text-muted-foreground" aria-label={t('customize.board.addTo', { slot: slotLabel(t, place.slot).toLowerCase() })}>
               <PlusIcon data-icon="inline-start" />
-              Adicionar
+              {t('customize.board.add')}
             </Button>
           )}
         </PartPicker>
@@ -144,12 +145,12 @@ export function SlotBoard({ project, catalog, outfit, skeleton, onEdit, onUndo }
   return (
     <div className="flex flex-col gap-5">
       {slots.map(({ slot, places: there }) => (
-        <section key={slot} className="flex flex-col gap-2" aria-label={SLOT_LABELS[slot]}>
-          <h3 className="text-xs font-medium text-muted-foreground uppercase">{SLOT_LABELS[slot]}</h3>
+        <section key={slot} className="flex flex-col gap-2" aria-label={slotLabel(t, slot)}>
+          <h3 className="text-xs font-medium text-muted-foreground uppercase">{slotLabel(t, slot)}</h3>
           {there.map(placeView)}
         </section>
       ))}
-      <p className="text-xs text-muted-foreground">As peças do corpo (ossos, costelas) ficam na aba Lista.</p>
+      <p className="text-xs text-muted-foreground">{t('customize.board.bodyNote')}</p>
     </div>
   );
 }

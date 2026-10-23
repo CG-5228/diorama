@@ -8,6 +8,7 @@ import { Kbd } from '@/components/ui/kbd';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Rich, useT } from '@/i18n';
 import { clipFrames, type Atlas, type Rect } from '@/lib/atlas';
 import { isTyping, useWindowKeydown } from '@/lib/hotkeys';
 import type { AssetFileMeta } from '@/lib/types';
@@ -40,20 +41,21 @@ interface ControlsProps {
 
 /** Zoom and backdrop, which every demo shares. */
 function ViewControls({ zoom, onZoom, backdrop, onBackdrop }: ControlsProps) {
+  const { t } = useT();
   return (
-    <Section title="Vista">
+    <Section title={t('preview.inspector.view')}>
       <Field orientation="horizontal">
-        <FieldTitle id="preview-ui-zoom">Zoom</FieldTitle>
+        <FieldTitle id="preview-ui-zoom">{t('preview.inspector.zoom')}</FieldTitle>
         <ToggleGroup type="single" variant="outline" size="sm" spacing={0} aria-labelledby="preview-ui-zoom" value={String(zoom)} onValueChange={(value) => value && onZoom(Number(value))}>
-          {ZOOMS.map((z) => <ToggleGroupItem key={z} value={String(z)}>{z}×</ToggleGroupItem>)}
+          {ZOOMS.map((z) => <ToggleGroupItem key={z} value={String(z)}>{t('units.times', { value: z })}</ToggleGroupItem>)}
         </ToggleGroup>
       </Field>
       <Field orientation="horizontal">
-        <FieldTitle id="preview-ui-backdrop">Fundo</FieldTitle>
+        <FieldTitle id="preview-ui-backdrop">{t('preview.inspector.background')}</FieldTitle>
         <ToggleGroup type="single" variant="outline" size="sm" spacing={0} aria-labelledby="preview-ui-backdrop" value={backdrop} onValueChange={(value) => value && onBackdrop(value as Backdrop)}>
-          <ToggleGroupItem value="checker">Xadrez</ToggleGroupItem>
-          <ToggleGroupItem value="dark">Escuro</ToggleGroupItem>
-          <ToggleGroupItem value="light">Claro</ToggleGroupItem>
+          <ToggleGroupItem value="checker">{t('preview.inspector.checker')}</ToggleGroupItem>
+          <ToggleGroupItem value="dark">{t('preview.inspector.dark')}</ToggleGroupItem>
+          <ToggleGroupItem value="light">{t('preview.inspector.light')}</ToggleGroupItem>
         </ToggleGroup>
       </Field>
     </Section>
@@ -102,6 +104,7 @@ const Value = ({ children }: { children: ReactNode }) => <span className="font-m
 
 /** A panel, a button, a slot: stretched to any size larger than its borders, in any of its states, with the border lines to see where it stretches. */
 function NineSliceDemo({ atlas, image, scale, zoom, controls, backdrop }: Demo & { controls: ReactNode; backdrop: Backdrop }) {
+  const { t } = useT();
   const insets = atlas.meta.data!.nineSlice!;
   const states = atlas.meta.data?.states ?? ['normal'];
   const [state, setState] = useState(states[0]);
@@ -136,7 +139,7 @@ function NineSliceDemo({ atlas, image, scale, zoom, controls, backdrop }: Demo &
           )}
           <div
             role="presentation"
-            aria-label="Redimensionar"
+            aria-label={t('preview.ui.resize')}
             className="absolute -right-2 -bottom-2 size-4 cursor-nwse-resize touch-none rounded-xs border border-primary-foreground bg-primary"
             onPointerDown={(e) => {
               e.currentTarget.setPointerCapture(e.pointerId);
@@ -154,49 +157,49 @@ function NineSliceDemo({ atlas, image, scale, zoom, controls, backdrop }: Demo &
       }
       controls={
         <>
-          <Section title="Esticar">
+          <Section title={t('preview.ui.stretch.title')}>
             <Field>
               <div className="flex items-center justify-between">
-                <FieldLabel htmlFor="ui-width">Largura</FieldLabel>
-                <Value>{size.w} px</Value>
+                <FieldLabel htmlFor="ui-width">{t('preview.ui.stretch.width')}</FieldLabel>
+                <Value>{t('units.px', { value: size.w })}</Value>
               </div>
-              <Slider id="ui-width" min={minimum.width} max={max.w} step={1} value={[size.w]} aria-label="Largura" onValueChange={([w]) => clamp(w, size.h)} />
+              <Slider id="ui-width" min={minimum.width} max={max.w} step={1} value={[size.w]} aria-label={t('preview.ui.stretch.width')} onValueChange={([w]) => clamp(w, size.h)} />
             </Field>
             <Field>
               <div className="flex items-center justify-between">
-                <FieldLabel htmlFor="ui-height">Altura</FieldLabel>
-                <Value>{size.h} px</Value>
+                <FieldLabel htmlFor="ui-height">{t('preview.ui.stretch.height')}</FieldLabel>
+                <Value>{t('units.px', { value: size.h })}</Value>
               </div>
-              <Slider id="ui-height" min={minimum.height} max={max.h} step={1} value={[size.h]} aria-label="Altura" onValueChange={([h]) => clamp(size.w, h)} />
+              <Slider id="ui-height" min={minimum.height} max={max.h} step={1} value={[size.h]} aria-label={t('preview.ui.stretch.height')} onValueChange={([h]) => clamp(size.w, h)} />
             </Field>
             <Field orientation="horizontal">
-              <Button variant="outline" size="sm" onClick={() => clamp(source.w, source.h)}>Tamanho original</Button>
-              <Button variant="outline" size="sm" onClick={() => clamp(minimum.width, minimum.height)}>Mínimo</Button>
+              <Button variant="outline" size="sm" onClick={() => clamp(source.w, source.h)}>{t('preview.ui.stretch.original')}</Button>
+              <Button variant="outline" size="sm" onClick={() => clamp(minimum.width, minimum.height)}>{t('preview.ui.stretch.minimum')}</Button>
             </Field>
-            <FieldDescription>Os cantos não esticam; as bordas esticam ao longo e o meio nos dois sentidos. Arraste o canto para redimensionar.</FieldDescription>
+            <FieldDescription>{t('preview.ui.stretch.hint')}</FieldDescription>
           </Section>
           {states.length > 1 && (
-            <Section title="Estado">
-              <ToggleGroup type="single" variant="outline" size="sm" aria-label="Estado" value={state} onValueChange={(value) => value && setState(value)} className="flex-wrap">
+            <Section title={t('preview.ui.state')}>
+              <ToggleGroup type="single" variant="outline" size="sm" aria-label={t('preview.ui.state')} value={state} onValueChange={(value) => value && setState(value)} className="flex-wrap">
                 {states.map((name) => <ToggleGroupItem key={name} value={name}>{name}</ToggleGroupItem>)}
               </ToggleGroup>
             </Section>
           )}
-          <Section title="Bordas">
+          <Section title={t('preview.ui.borders.title')}>
             <Field orientation="horizontal">
               <Switch id="ui-insets" checked={guides} onCheckedChange={setGuides} />
-              <FieldLabel htmlFor="ui-insets">Linhas dos insets</FieldLabel>
+              <FieldLabel htmlFor="ui-insets">{t('preview.ui.borders.insetLines')}</FieldLabel>
             </Field>
             <dl className="flex flex-col gap-1.5">
               {(['left', 'top', 'right', 'bottom'] as const).map((side) => (
                 <div key={side} className="flex justify-between gap-3">
-                  <dt className="text-muted-foreground">{{ left: 'Esquerda', top: 'Topo', right: 'Direita', bottom: 'Base' }[side]}</dt>
-                  <dd className="font-mono tabular-nums">{insets[side]} px</dd>
+                  <dt className="text-muted-foreground">{t(`preview.ui.borders.${side}`)}</dt>
+                  <dd className="font-mono tabular-nums">{t('units.px', { value: insets[side] })}</dd>
                 </div>
               ))}
               <div className="flex justify-between gap-3">
-                <dt className="text-muted-foreground">Original</dt>
-                <dd className="font-mono tabular-nums">{Math.round(source.w)}×{Math.round(source.h)} px</dd>
+                <dt className="text-muted-foreground">{t('preview.ui.borders.original')}</dt>
+                <dd className="font-mono tabular-nums">{t('units.px', { value: `${Math.round(source.w)}×${Math.round(source.h)}` })}</dd>
               </div>
             </dl>
           </Section>
@@ -213,6 +216,7 @@ function NineSliceDemo({ atlas, image, scale, zoom, controls, backdrop }: Demo &
  * frames are found by the names in `layers`: the cap, when there is one, comes last in the sheet.
  */
 function BarDemo({ atlas, image, scale, zoom, controls, backdrop }: Demo & { controls: ReactNode; backdrop: Backdrop }) {
+  const { t } = useT();
   const data = atlas.meta.data!;
   const insets = data.nineSlice ?? { left: 0, top: 0, right: 0, bottom: 0 };
   const fillBox = data.fillBox ?? { x: 0, y: 0, w: (atlas.meta.frameWidth ?? 0) / scale, h: (atlas.meta.frameHeight ?? 0) / scale };
@@ -270,35 +274,41 @@ function BarDemo({ atlas, image, scale, zoom, controls, backdrop }: Demo & { con
       }
       controls={
         <>
-          <Section title="Valor">
+          <Section title={t('preview.ui.bar.value')}>
             <Field>
               <div className="flex items-center justify-between">
-                <FieldLabel htmlFor="ui-bar-value">{data.measure ?? 'Valor'}</FieldLabel>
+                <FieldLabel htmlFor="ui-bar-value">{data.measure ?? t('preview.ui.bar.value')}</FieldLabel>
                 <Value>{value}%</Value>
               </div>
-              <Slider id="ui-bar-value" min={0} max={100} step={1} value={[value]} aria-label="Valor da barra" onValueChange={([next]) => setValue(next)} />
+              <Slider id="ui-bar-value" min={0} max={100} step={1} value={[value]} aria-label={t('preview.ui.bar.barValue')} onValueChange={([next]) => setValue(next)} />
             </Field>
-            <div role="group" aria-label="Valores" className="flex gap-1">
+            <div role="group" aria-label={t('preview.ui.bar.values')} className="flex gap-1">
               {[0, 1, 25, 50, 75, 100].map((v) => <Button key={v} variant={value === v ? 'secondary' : 'outline'} size="sm" className="flex-1 px-0" onClick={() => setValue(v)}>{v}%</Button>)}
             </div>
-            <FieldDescription>O preenchimento cresce para {{ right: 'a direita', left: 'a esquerda', up: 'cima', down: 'baixo' }[grows]}, recortado dentro da caixa pontilhada{cap ? '; o cap acompanha a ponta do preenchimento' : ''}. Em 1% ainda deve aparecer.</FieldDescription>
+            <FieldDescription>{t('preview.ui.bar.growsHint', { direction: t(`preview.ui.bar.growsTo.${grows}`) })}{cap ? t('preview.ui.bar.capHint') : ''}</FieldDescription>
           </Section>
-          <Section title={horizontal ? 'Comprimento' : 'Altura'}>
+          <Section title={horizontal ? t('preview.ui.bar.length') : t('preview.ui.bar.height')}>
             <Field>
               <div className="flex items-center justify-between">
-                <FieldLabel htmlFor="ui-bar-extra">{horizontal ? 'Mais comprida' : 'Mais alta'}</FieldLabel>
-                <Value>+{extra} px</Value>
+                <FieldLabel htmlFor="ui-bar-extra">{horizontal ? t('preview.ui.bar.longer') : t('preview.ui.bar.taller')}</FieldLabel>
+                <Value>+{t('units.px', { value: extra })}</Value>
               </div>
-              <Slider id="ui-bar-extra" min={0} max={range} step={1} value={[extra]} aria-label="Esticar a barra" onValueChange={([next]) => setExtra(next)} />
+              <Slider id="ui-bar-extra" min={0} max={range} step={1} value={[extra]} aria-label={t('preview.ui.bar.stretch')} onValueChange={([next]) => setExtra(next)} />
             </Field>
             <Field orientation="horizontal">
               <Switch id="ui-bar-box" checked={guides} onCheckedChange={setGuides} />
-              <FieldLabel htmlFor="ui-bar-box">Caixa do preenchimento</FieldLabel>
+              <FieldLabel htmlFor="ui-bar-box">{t('preview.ui.bar.fillBox')}</FieldLabel>
             </Field>
           </Section>
-          <Section title="Dados">
+          <Section title={t('preview.ui.bar.data')}>
             <dl className="flex flex-col gap-1.5">
-              {[['Mede', data.measure], ['Cresce', grows], ['Caixa', `${fillBox.x}, ${fillBox.y} · ${fillBox.w}×${fillBox.h}`], ['Cap', data.cap ? `${data.cap.width} px` : 'sem cap'], ['Tamanho', `${Math.round(width)}×${Math.round(height)} px`]].map(([key, text]) => (
+              {[
+                [t('preview.ui.bar.measures'), data.measure],
+                [t('preview.ui.bar.growsRow'), t(`preview.ui.bar.grows.${grows}`)],
+                [t('preview.ui.bar.box'), `${fillBox.x}, ${fillBox.y} · ${fillBox.w}×${fillBox.h}`],
+                [t('preview.ui.bar.cap'), data.cap ? t('units.px', { value: data.cap.width }) : t('preview.ui.bar.noCap')],
+                [t('preview.ui.bar.size'), t('units.px', { value: `${Math.round(width)}×${Math.round(height)}` })],
+              ].map(([key, text]) => (
                 <div key={key} className="flex justify-between gap-3">
                   <dt className="text-muted-foreground">{key}</dt>
                   <dd className="text-right font-mono tabular-nums">{text}</dd>
@@ -317,6 +327,7 @@ const SAMPLES = ['-128', '+45', '1234', '99%', '-56'];
 
 /** A bitmap font: text set glyph by glyph with each one's advance, so a narrow "1" takes less room. */
 function FontDemo({ atlas, image, scale, zoom, controls, backdrop }: Demo & { controls: ReactNode; backdrop: Backdrop }) {
+  const { t, number } = useT();
   const font = atlas.meta.data!.font!;
   const glyphs = useMemo(() => rowRects(atlas, 0), [atlas]);
   const [text, setText] = useState('-128 +45 1234 99%');
@@ -351,12 +362,12 @@ function FontDemo({ atlas, image, scale, zoom, controls, backdrop }: Demo & { co
       }
       controls={
         <>
-          <Section title="Texto">
+          <Section title={t('preview.ui.font.text')}>
             <Field>
-              <FieldLabel htmlFor="ui-font-text">Texto</FieldLabel>
+              <FieldLabel htmlFor="ui-font-text">{t('preview.ui.font.text')}</FieldLabel>
               <Input id="ui-font-text" value={text} spellCheck={false} className="font-mono" onChange={(e) => setText(e.target.value)} />
               <FieldDescription>
-                {missing.length > 0 ? <>A fonte não tem {missing.map((ch) => <Kbd key={ch}>{ch}</Kbd>)}: ficam como espaço.</> : <>Os glifos são montados com os avanços do atlas.</>}
+                {missing.length > 0 ? <Rich id="preview.ui.font.missing" nodes={{ chars: missing.map((ch) => <Kbd key={ch}>{ch}</Kbd>) }} /> : t('preview.ui.font.laidOut')}
               </FieldDescription>
             </Field>
             <div className="flex flex-wrap gap-1.5">
@@ -364,12 +375,18 @@ function FontDemo({ atlas, image, scale, zoom, controls, backdrop }: Demo & { co
             </div>
             <Field orientation="horizontal">
               <Switch id="ui-font-cells" checked={cells} onCheckedChange={setCells} />
-              <FieldLabel htmlFor="ui-font-cells">Avanços e linha de base</FieldLabel>
+              <FieldLabel htmlFor="ui-font-cells">{t('preview.ui.font.advances')}</FieldLabel>
             </Field>
           </Section>
-          <Section title="Fonte">
+          <Section title={t('preview.ui.font.font')}>
             <dl className="flex flex-col gap-1.5">
-              {[['Glifos', String([...font.chars].length)], ['Célula', `${font.cell.w}×${font.cell.h} px`], ['Linha de base', `${font.baseline} px`], ['Altura da linha', `${font.lineHeight} px`], ['Espaçamento', `${font.spacing} px`]].map(([key, value]) => (
+              {[
+                [t('preview.ui.font.glyphs'), String([...font.chars].length)],
+                [t('preview.ui.font.cell'), t('units.px', { value: `${font.cell.w}×${font.cell.h}` })],
+                [t('preview.ui.font.baseline'), t('units.px', { value: font.baseline })],
+                [t('preview.ui.font.lineHeight'), t('units.px', { value: font.lineHeight })],
+                [t('preview.ui.font.spacing'), t('units.px', { value: font.spacing })],
+              ].map(([key, value]) => (
                 <div key={key} className="flex justify-between gap-3">
                   <dt className="text-muted-foreground">{key}</dt>
                   <dd className="text-right font-mono tabular-nums">{value}</dd>
@@ -378,8 +395,8 @@ function FontDemo({ atlas, image, scale, zoom, controls, backdrop }: Demo & { co
             </dl>
             <div className="flex flex-wrap gap-1.5">
               {[...font.chars].map((ch) => (
-                <Badge key={ch} variant="secondary" className="font-mono tabular-nums" title={`${ch} · avanço ${font.advances[ch] ?? font.cell.w}`}>
-                  {ch}<span className="text-muted-foreground">{font.advances[ch] ?? font.cell.w}</span>
+                <Badge key={ch} variant="secondary" className="font-mono tabular-nums" title={`${ch} · ${t('preview.ui.font.advance', { value: number(font.advances[ch] ?? font.cell.w, { maximumFractionDigits: 2 }) })}`}>
+                  {ch}<span className="text-muted-foreground">{number(font.advances[ch] ?? font.cell.w, { maximumFractionDigits: 2 })}</span>
                 </Badge>
               ))}
             </div>
@@ -393,6 +410,7 @@ function FontDemo({ atlas, image, scale, zoom, controls, backdrop }: Demo & { co
 
 /** A plain interface image (a cursor, a portrait frame): its states, and the point it is held by. A cursor can be tried over targets. */
 function ImageDemo({ atlas, image, scale, zoom, controls, backdrop }: Demo & { controls: ReactNode; backdrop: Backdrop }) {
+  const { t, number } = useT();
   const data = atlas.meta.data!;
   const states = data.states ?? ['normal'];
   const [state, setState] = useState(states[0]);
@@ -436,9 +454,9 @@ function ImageDemo({ atlas, image, scale, zoom, controls, backdrop }: Demo & { c
                 if (follower.current) follower.current.style.transform = 'translate(-9999px, -9999px)';
               }}
             >
-              <Button variant="outline" size="sm" className="cursor-none">Alvo</Button>
-              <Button size="sm" className="cursor-none">Outro</Button>
-              <span className="pointer-events-none absolute top-1.5 left-2 text-xs text-muted-foreground">Passe o mouse: o ponto ativo fica na ponta</span>
+              <Button variant="outline" size="sm" className="cursor-none">{t('preview.ui.image.target')}</Button>
+              <Button size="sm" className="cursor-none">{t('preview.ui.image.other')}</Button>
+              <span className="pointer-events-none absolute top-1.5 left-2 text-xs text-muted-foreground">{t('preview.ui.image.tryIt')}</span>
               <div ref={follower} className="pointer-events-none absolute top-0 left-0" style={{ transform: 'translate(-9999px, -9999px)' }}>
                 <Painted width={rect.width} height={rect.height} zoom={zoom} draw={draw} />
               </div>
@@ -449,25 +467,25 @@ function ImageDemo({ atlas, image, scale, zoom, controls, backdrop }: Demo & { c
       controls={
         <>
           {states.length > 1 && (
-            <Section title="Estado">
-              <ToggleGroup type="single" variant="outline" size="sm" aria-label="Estado" value={state} onValueChange={(value) => value && setState(value)} className="flex-wrap">
+            <Section title={t('preview.ui.state')}>
+              <ToggleGroup type="single" variant="outline" size="sm" aria-label={t('preview.ui.state')} value={state} onValueChange={(value) => value && setState(value)} className="flex-wrap">
                 {states.map((name) => <ToggleGroupItem key={name} value={name}>{name}</ToggleGroupItem>)}
               </ToggleGroup>
             </Section>
           )}
-          <Section title={isCursor ? 'Ponto ativo' : 'Pivô'}>
+          <Section title={isCursor ? t('preview.ui.image.hotspot') : t('preview.ui.image.pivot')}>
             <Field orientation="horizontal">
               <Switch id="ui-hotspot" checked={hotspot} disabled={!pivot} onCheckedChange={setHotspot} />
-              <FieldLabel htmlFor="ui-hotspot">{isCursor ? 'Mostrar o ponto ativo' : 'Mostrar o pivô'}</FieldLabel>
+              <FieldLabel htmlFor="ui-hotspot">{isCursor ? t('preview.ui.image.showHotspot') : t('preview.ui.image.showPivot')}</FieldLabel>
             </Field>
             <dl className="flex flex-col gap-1.5">
               <div className="flex justify-between gap-3">
-                <dt className="text-muted-foreground">{isCursor ? 'Ponto ativo' : 'Pivô'}</dt>
-                <dd className="font-mono tabular-nums">{pivot ? `${Math.round((pivot.logical?.x ?? pivot.x / scale) * 100) / 100}, ${Math.round((pivot.logical?.y ?? pivot.y / scale) * 100) / 100} px` : '—'}</dd>
+                <dt className="text-muted-foreground">{isCursor ? t('preview.ui.image.hotspot') : t('preview.ui.image.pivot')}</dt>
+                <dd className="font-mono tabular-nums">{pivot ? t('units.px', { value: `${number(pivot.logical?.x ?? pivot.x / scale, { maximumFractionDigits: 2 })}, ${number(pivot.logical?.y ?? pivot.y / scale, { maximumFractionDigits: 2 })}` }) : '—'}</dd>
               </div>
               <div className="flex justify-between gap-3">
-                <dt className="text-muted-foreground">Tamanho</dt>
-                <dd className="font-mono tabular-nums">{Math.round(rect.width / scale)}×{Math.round(rect.height / scale)} px</dd>
+                <dt className="text-muted-foreground">{t('preview.ui.image.size')}</dt>
+                <dd className="font-mono tabular-nums">{t('units.px', { value: `${Math.round(rect.width / scale)}×${Math.round(rect.height / scale)}` })}</dd>
               </div>
             </dl>
           </Section>
@@ -484,6 +502,7 @@ function ImageDemo({ atlas, image, scale, zoom, controls, backdrop }: Demo & { c
  */
 export function UiPreview({ asset }: { asset: AssetFileMeta }) {
   const { atlas, atlasError, image, failed } = useSheet(asset);
+  const { t } = useT();
   const [zoom, setZoom] = usePref<number>('preview.ui.zoom', 3);
   const [backdrop, setBackdrop] = usePref<Backdrop>('preview.backdrop', 'checker');
   useWindowKeydown((e) => {
@@ -498,7 +517,7 @@ export function UiPreview({ asset }: { asset: AssetFileMeta }) {
   if (failed || atlasError) {
     return (
       <Alert variant="destructive" className="m-4 w-auto">
-        <AlertDescription>{failed ? `Não foi possível carregar ${asset.url}.` : atlasError?.message}</AlertDescription>
+        <AlertDescription>{failed ? t('errors.loadFile', { url: asset.url }) : atlasError?.message}</AlertDescription>
       </Alert>
     );
   }

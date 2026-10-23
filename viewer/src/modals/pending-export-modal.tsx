@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Item, ItemActions, ItemContent, ItemGroup, ItemMedia, ItemTitle } from '@/components/ui/item';
 import { Spinner } from '@/components/ui/spinner';
+import { Rich, useT } from '@/i18n';
 import { pendingExports } from '@/lib/export-state';
 import { useExportSheets } from '@/lib/mutations';
 import { projectDir } from '@/lib/project-paths';
@@ -24,6 +25,7 @@ export const PendingExportModal = NiceModal.create(({ project }: Props) => {
   const { data: assets = [] } = useQuery(assetsQuery);
   const { data: projects = [] } = useQuery(projectsQuery);
   const exportSheets = useExportSheets();
+  const { t } = useT();
 
   const meta = projects.find((p) => p.name === project);
   const dir = projectDir(meta?.root ?? 'projects', project);
@@ -41,9 +43,9 @@ export const PendingExportModal = NiceModal.create(({ project }: Props) => {
     <Dialog {...rootProps}>
       <DialogContent {...contentProps} className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Exportar pendentes</DialogTitle>
+          <DialogTitle>{t('modals.pendingExport.title')}</DialogTitle>
           <DialogDescription>
-            Sheets de <code>{dir}/sheets/</code> que ainda não viraram imagem ou cujo código (sheet ou <code>src/</code>) mudou depois do último export.
+            <Rich id="modals.pendingExport.description" vars={{ dir }} />
           </DialogDescription>
         </DialogHeader>
 
@@ -51,8 +53,8 @@ export const PendingExportModal = NiceModal.create(({ project }: Props) => {
           <Empty>
             <EmptyHeader>
               <EmptyMedia variant="icon"><CheckIcon /></EmptyMedia>
-              <EmptyTitle>Tudo exportado</EmptyTitle>
-              <EmptyDescription>Nenhum sheet está sem export ou desatualizado.</EmptyDescription>
+              <EmptyTitle>{t('modals.pendingExport.allDone')}</EmptyTitle>
+              <EmptyDescription>{t('modals.pendingExport.allDoneHint')}</EmptyDescription>
             </EmptyHeader>
           </Empty>
         ) : (
@@ -66,9 +68,9 @@ export const PendingExportModal = NiceModal.create(({ project }: Props) => {
                   <ItemTitle className="font-mono break-all">{sheet}</ItemTitle>
                 </ItemContent>
                 <ItemActions>
-                  {stale ? <StaleBadge /> : <Badge variant="outline">Sem export</Badge>}
+                  {stale ? <StaleBadge /> : <Badge variant="outline">{t('modals.pendingExport.notExported')}</Badge>}
                   <Button variant="outline" size="xs" disabled={exportSheets.isPending} onClick={() => exportSheets.mutate({ project, sheets: [sheet] })}>
-                    Exportar
+                    {t('modals.pendingExport.exportOne')}
                   </Button>
                 </ItemActions>
               </Item>
@@ -77,10 +79,10 @@ export const PendingExportModal = NiceModal.create(({ project }: Props) => {
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => modal.hide()}>Fechar</Button>
+          <Button variant="outline" onClick={() => modal.hide()}>{t('common.close')}</Button>
           <Button disabled={rows.length === 0 || exportSheets.isPending} onClick={exportAll}>
             {exportSheets.isPending ? <Spinner data-icon="inline-start" /> : <UploadIcon data-icon="inline-start" />}
-            Exportar {rows.length > 0 ? rows.length : 'tudo'}
+            {rows.length > 0 ? t('modals.pendingExport.exportCount', { count: rows.length }) : t('modals.pendingExport.exportAll')}
           </Button>
         </DialogFooter>
       </DialogContent>

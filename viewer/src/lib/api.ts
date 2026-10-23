@@ -1,9 +1,10 @@
+import { currentTranslator } from '../i18n/store';
 import type { AssetFileMeta, DeletePlan, DeleteResult, ProjectMeta } from './types';
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
   const body = await res.json().catch(() => null);
-  if (!res.ok) throw new Error(body?.error ?? body?.output ?? `Falha na requisição (${res.status}).`);
+  if (!res.ok) throw new Error(body?.error ?? body?.output ?? currentTranslator().t('errors.request', { status: res.status }));
   return body as T;
 }
 

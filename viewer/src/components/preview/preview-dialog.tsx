@@ -3,7 +3,8 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Kbd } from '@/components/ui/kbd';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { roleOf } from '@/lib/asset-role';
-import { basename, plural, stripExtension } from '@/lib/format';
+import { useT } from '@/i18n';
+import { basename, stripExtension } from '@/lib/format';
 import { clipsOf } from '@/lib/groups';
 import { isTyping, useWindowKeydown } from '@/lib/hotkeys';
 import type { AssetFileMeta } from '@/lib/types';
@@ -76,17 +77,18 @@ interface BodyProps {
 function PreviewBody(props: BodyProps) {
   const { asset, clips, visibleAssets, projectAssets, onSelect } = props;
   const peers = usePeers(asset, clips, visibleAssets, onSelect);
+  const { t } = useT();
   const role = roleOf(asset);
   if (role === 'icon') {
     return (
-      <PreviewShell asset={asset} peers={peers} hints={<span>clique num espaço para abrir o item</span>}>
+      <PreviewShell asset={asset} peers={peers} hints={<span>{t('preview.iconHint')}</span>}>
         <IconPreview asset={asset} projectAssets={projectAssets} onSelect={onSelect} />
       </PreviewShell>
     );
   }
   if (role === 'ui') {
     return (
-      <PreviewShell asset={asset} peers={peers} hints={<span><Kbd>B</Kbd> fundo</span>}>
+      <PreviewShell asset={asset} peers={peers} hints={<span><Kbd>B</Kbd> {t('preview.footer.background')}</span>}>
         <UiPreview asset={asset} />
       </PreviewShell>
     );
@@ -96,6 +98,7 @@ function PreviewBody(props: BodyProps) {
 
 function PlayerBody({ asset, clips, projectAssets, peers, directionIndex, onDirection, onSelect }: BodyProps & { peers: ReturnType<typeof usePeers> }) {
   const player = usePlayer(asset, directionIndex);
+  const { t, plural } = useT();
   const [highlight, setHighlight] = useState<string | null>(null);
   const { directions, frames } = player;
   // An effect shows its reach and, for a projectile, flies at its own speed.
@@ -134,13 +137,13 @@ function PlayerBody({ asset, clips, projectAssets, peers, directionIndex, onDire
 
       {clips.length > 1 && (
         <div className="flex items-center gap-3 border-b px-4 py-1.5">
-          <span className="text-xs text-muted-foreground">Animações</span>
+          <span className="text-xs text-muted-foreground">{t('preview.clips')}</span>
           <Tabs value={asset.subpath} onValueChange={(subpath) => { const next = clips.find((c) => c.subpath === subpath); if (next) onSelect(next); }}>
             <TabsList variant="line">
               {clips.map((clip) => (
                 <TabsTrigger key={clip.subpath} value={clip.subpath}>
                   {basename(stripExtension(clip.subpath))}
-                  {clip.atlasInfo && <span className="text-muted-foreground tabular-nums">{clip.atlasInfo.frameCount}f</span>}
+                  {clip.atlasInfo && <span className="text-muted-foreground tabular-nums">{t('assets.card.frameCount', { count: clip.atlasInfo.frameCount })}</span>}
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -164,13 +167,13 @@ function PlayerBody({ asset, clips, projectAssets, peers, directionIndex, onDire
       </div>
 
       <footer className="flex items-center gap-4 border-t px-4 py-1.5 text-xs text-muted-foreground">
-        <span><Kbd>Espaço</Kbd> reproduzir</span>
-        <span><Kbd>←</Kbd> <Kbd>→</Kbd> frame</span>
-        {directions.length > 1 && <span><Kbd>↑</Kbd> <Kbd>↓</Kbd> direção</span>}
-        <span><Kbd>[</Kbd> <Kbd>]</Kbd> {clips.length > 1 ? 'animação' : 'asset'}</span>
-        <span><Kbd>B</Kbd> fundo</span>
-        <span><Kbd>+</Kbd> <Kbd>−</Kbd> <Kbd>0</Kbd> zoom</span>
-        <span className="ml-auto tabular-nums">{plural(frames.length, 'frame', 'frames')}</span>
+        <span><Kbd>{t('keys.space')}</Kbd> {t('preview.footer.play')}</span>
+        <span><Kbd>←</Kbd> <Kbd>→</Kbd> {t('preview.footer.frame')}</span>
+        {directions.length > 1 && <span><Kbd>↑</Kbd> <Kbd>↓</Kbd> {t('preview.footer.direction')}</span>}
+        <span><Kbd>[</Kbd> <Kbd>]</Kbd> {clips.length > 1 ? t('preview.footer.animation') : t('preview.footer.asset')}</span>
+        <span><Kbd>B</Kbd> {t('preview.footer.background')}</span>
+        <span><Kbd>+</Kbd> <Kbd>−</Kbd> <Kbd>0</Kbd> {t('preview.footer.zoom')}</span>
+        <span className="ml-auto tabular-nums">{plural('counts.frames', frames.length)}</span>
       </footer>
     </>
   );
