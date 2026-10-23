@@ -1,7 +1,7 @@
 /* Class detection stays inside the viewer: scanning the whole repo made every edit elsewhere reload this page. */
 @import "tailwindcss" source("../");
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
+@import "./shadcn-tailwind.css";
 @import "@fontsource-variable/inter";
 
 @custom-variant dark (&:is(.dark *));

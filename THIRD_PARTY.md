@@ -27,7 +27,6 @@ Direct dependencies of the exporter, the CLI and the viewer (`dependencies` in `
 | radix-ui | 1.8.1 | MIT |
 | react | 19.3.1 | MIT |
 | react-dom | 19.3.1 | MIT |
-| shadcn | 4.22.1 | MIT |
 | simplex-noise | 4.0.3 | MIT |
 | sonner | 2.0.8 | MIT |
 | tailwindcss | 4.3.3 | MIT |
@@ -48,7 +47,17 @@ Direct dependencies used to build, type check and run the project (`devDependenc
 | @vitejs/plugin-react | 5.2.0 | MIT |
 | tsx | 4.23.13 | MIT |
 | typescript | 5.9.3 | Apache-2.0 |
-| vite | 6.4.3 | MIT |
+| vite | 6.4.5 | MIT |
+
+## Files copied into the repository
+
+Third-party files kept in the source tree, each with a comment naming its origin and license.
+
+| File | Source | License |
+| :--- | :--- | :--- |
+| `viewer/src/styles/shadcn-tailwind.css` | `shadcn` npm package 4.22.1, `dist/tailwind.css` (shadcn/ui, `shadcn-ui/ui` on GitHub), unmodified | MIT |
+
+The shadcn CLI that adds components to the viewer is not a dependency: it is run with `npx` when needed (see `viewer/AGENTS.md`).
 
 ## Agent skills
 
