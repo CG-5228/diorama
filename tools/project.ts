@@ -20,6 +20,9 @@ export type ProjectRoot = (typeof PROJECT_ROOTS)[number];
 /** The four places of a project. */
 export const LAYOUT = { src: 'src', sheets: 'sheets', assets: 'assets', review: 'review' } as const;
 
+/** Allowed keys in `diorama.config.json`. */
+export const ALLOWED_CONFIG_KEYS = ['outDir', 'scale', 'format', 'cols', 'gap'] as const;
+
 /** Where `contact`, `scenery-test` and `export --mockup` write inside `review/`. */
 export const REVIEW = { contact: 'contact', sceneryTests: 'scenery-tests', mockups: 'mockups' } as const;
 

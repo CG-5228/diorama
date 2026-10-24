@@ -30,7 +30,7 @@ A project is one folder: `projects/<project>/` (yours; Diorama does not version 
 The rules the layout check enforces (the seven of [docs/ARCHITECTURE.md](../../../docs/ARCHITECTURE.md)):
 
 - **No underscores.** Everything in `src/` is a module and everything in `sheets/` is a sheet. A helper, a catalog or data is a plain file in `src/` (`src/scenery/catalog.ts`, `src/scenery/util.ts`).
-- **Kebab-case names**, one concept per file. A kit folder with a `catalog.ts` also has an `index.ts`: `catalog.ts` is what editors read, `index.ts` is what other code imports.
+- **Kebab-case names**, one concept per file (markdown notes in `src/`, like `README.md`, may use capitals). A kit folder with a `catalog.ts` also has an `index.ts`: `catalog.ts` is what editors read, `index.ts` is what other code imports.
 - **Thin sheets.** Drawing code lives in `src/`; a sheet declares no function or class. `new-asset` writes both files for you. A character lives once in `src/characters/<id>/character.ts`, and each clip is a one-line sheet `sheets/characters/<id>/<clip>.ts`.
 - **Generated sheets** are written by their command from a kit's catalog and are never edited: `sheets/gear/` (`gear-items`), `sheets/scenery/` (`scenery-items`), `sheets/vfx/` (`vfx-items`) and `sheets/icons/` (`item-icons`). To change one, change `src/<kit>/catalog.ts` and run the command with `--force`.
 - **One direction.** `src/` never imports `sheets/`, and a sheet never imports another sheet.
@@ -160,7 +160,7 @@ Run commands from the repository root. Use `npm run --silent` whenever you need 
 
 Export options: `--grid` or `--compact` for a sheet, `--gap <px>`, `--cols <n>`, `--sheet-name <name>`, `--both`, `--no-json`, `--scale <n>`, `--format png|jpeg`, `--out-dir <path>`, `--force` (export despite type errors). Values can be written as `--gap 8` or `--gap=8`. The full list is `npm run export -- --help`.
 
-Mirroring: `--out-dir` or `outDir` in `<project>/diorama.config.json` copies official outputs to another folder. Mockups are never mirrored. The config file accepts only `outDir`, `scale`, `format`, `cols` and `gap`. Any other key is an error.
+Mirroring: `--out-dir` or `outDir` in `<project>/diorama.config.json` copies official outputs to another folder. Mockups are never mirrored. The config file accepts only `outDir`, `scale`, `format`, `cols` and `gap`; `npm run check` and `npm run layout` report any other key as an error.
 
 ---
 
