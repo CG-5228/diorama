@@ -10,11 +10,12 @@
  *   (a crest on a helm, a smear on a blade). `kind: 'body'` marks the bones under the gear (skull,
  *   ribs, limbs, the fist on the scythe); `equip` names the equipment slot a part takes alone (helm,
  *   pauldron, weapon, shield, greave, bracer, belt, coat), so swapping and equipping replace it.
- *   `wield` says how the sword (blade), the scythe (polearm) and the shield are held, and gives the
- *   sword and the scythe their sockets (`tip`, `lantern`), so a character's tip follows its weapon.
+ *   `wield` says how the sword (blade), the scythe and the spear (polearm) and the shield are held, and
+ *   gives the sword, the scythe and the spear their sockets (`tip`, `lantern`), so a character's tip
+ *   follows its weapon.
  * - `CATALOG.bases`: the base bodies an outfit is drawn over (the bone legs, the flesh legs).
  * - `CATALOG.materials`: the theme's `VOLUMES`, by name.
- * - `CHARACTERS`: the guard, Malvek, the captain, the warden and the villager: each one's rig (label,
+ * - `CHARACTERS`: the guard, Malvek, the captain, the warden, the villager and Ingrid: each one's rig (label,
  *   skeleton, clips with their frames, camera, cell, pivot, shadow, sockets: `characters/<name>/spec.ts`)
  *   and the outfit it wears (`characters/<name>/outfit.ts`). Each character's `character.ts` spreads
  *   that same rig, so the customizer and the exported manifest show one name, and draws that same
@@ -26,7 +27,7 @@
  * characters' rigs, which import the kit.
  *
  * Groups: head (skulls, living heads and hair, helms, crowns, crests, hoods), shoulders, torso
- * (coats, tunics, tabards, collars, cloaks, shawls, aprons), garments (belts, limb wear, sleeves,
+ * (coats, cuirasses, tunics, tabards, tassets, collars, cloaks, wings, shawls, aprons), garments (belts, limb wear, sleeves,
  * hip pieces, boots, gloves), weapons, shields, effects (what a weapon or a hand leaves in the
  * air), bodies (bone limbs, spine, rib cage, hands, and the flesh family).
  */
@@ -39,16 +40,19 @@ import { GUARD_RIG } from '../characters/guard/spec';
 import { OUTFIT as GUARD_OUTFIT } from '../characters/guard/outfit';
 import { MALVEK_RIG } from '../characters/malvek/spec';
 import { OUTFIT as MALVEK_OUTFIT } from '../characters/malvek/outfit';
+import { INGRID_RIG } from '../characters/ingrid/spec';
+import { OUTFIT as INGRID_OUTFIT } from '../characters/ingrid/outfit';
 import { VILLAGER_RIG } from '../characters/villager/spec';
 import { OUTFIT as VILLAGER_OUTFIT } from '../characters/villager/outfit';
 import { WARDEN_RIG } from '../characters/warden/spec';
 import { OUTFIT as WARDEN_OUTFIT } from '../characters/warden/outfit';
 import {
-  SHIELD_RADIUS, SWORD_BLADE,
+  SHIELD_RADIUS, SPEAR, SWORD_BLADE,
   apron, baldric, belt, boneArm, boneHand, boneLeg, boneLegs, boneSkull, boneSpine, boot, bracer, chargedEdge, cloak, coatSleeve, coatTorso, fireCrown,
-  fleshArm, fleshHand, fleshHead, fleshLeg, fleshLegs, fleshTorso, glove, greave, grimoire, groundShockwave, hairCrop, hairTail, helmCrest, highCollar,
+  fleshArm, fleshHand, fleshHead, fleshLeg, fleshLegs, fleshTorso, cuirass, glove, greave, grimoire, groundShockwave, hairCrop, hairTail, hairWaves, helmCrest, highCollar,
   hood, hornedHelm, lamedPauldron, legWraps, longCoat, notchedSword, palmFlame, pouch, reaperScythe, ribBreastplate, ribCage, roundShield, sashTail,
-  scytheFist, scytheHeld, scytheSmear, shawl, skullBuckle, skullPauldron, skullSutures, soulLantern, swordHeld, tabard, tunic, weaponSmear,
+  scytheFist, scytheHeld, scytheSmear, shawl, skullBuckle, skullPauldron, skullSutures, soulLantern, swordHeld, tabard, tunic, weaponSmear, wingedHelm,
+  fittedSleeve, leggings, platePauldron, plateGreave, plateVambrace, spear, spearFist, spearHeld, spiritWings, tassets,
 } from '.';
 
 // ----------------------------------------------------------------------------------------------
@@ -84,9 +88,29 @@ const PARTS: PartInfo[] = [
   // Head: the skull, the living head and its hair, and what sits on a head.
   { id: 'bone-skull', label: 'Skull', group: 'head', kind: 'body', part: boneSkull, slots: ['head'], roles: ['bone', 'hollow', 'glow'] },
   { id: 'skull-sutures', label: 'Skull sutures', group: 'head', kind: 'body', part: skullSutures, slots: ['head'], roles: ['boneGroove', 'hollow'], requires: 'bone-skull' },
-  { id: 'flesh-head', label: 'Flesh head', group: 'head', kind: 'body', part: fleshHead, slots: ['head'], roles: ['skin', 'hair', 'hollow'] },
+  {
+    id: 'flesh-head', label: 'Flesh head', group: 'head', kind: 'body', part: fleshHead, slots: ['head'], roles: ['skin', 'hair', 'hollow', 'lips'],
+    options: [
+      num('smile', 'Resting smile', 0, 0, 1),
+      num('arch', 'Brow arch', 0, 0, 1),
+      flag('lashes', 'Lash line', false),
+      num('turn', 'Face turned to the camera', 0, 0, 1),
+      num('eyeSize', 'Eye size', 1, 0.4, 1.2),
+      num('eyeSpacing', 'Eye spacing', 1, 0.6, 1.2),
+      flag('whites', 'Eye whites'),
+      num('browWidth', 'Brow thickness', 1, 0.4, 1.4),
+      { key: 'nose', label: 'Nose', type: 'select', default: 'line', choices: [{ value: 'line', label: 'Drawn' }, { value: 'soft', label: 'Soft' }] },
+      num('mouthWidth', 'Mouth width', 1, 0.5, 1.4),
+      flag('ears', 'Ears'),
+      num('oval', 'Oval face', 0, 0, 1),
+    ],
+  },
   { id: 'hair-crop', label: 'Hair, cropped', group: 'head', kind: 'body', part: hairCrop, slots: ['head'], roles: ['hair'], requires: 'flesh-head' },
   { id: 'hair-tail', label: 'Hair, tied tail', group: 'head', kind: 'body', part: hairTail, slots: ['head'], roles: ['hair'], requires: 'flesh-head' },
+  {
+    id: 'hair-waves', label: 'Hair, long waves', group: 'head', kind: 'body', part: hairWaves, slots: ['head'], roles: ['hair'], requires: 'flesh-head',
+    options: [num('parting', 'Parting (left to right)', 0.3, -1, 1), num('length', 'Length', 1, 0.6, 1.4), num('volume', 'Volume at the sides', 1, 0.5, 1.4), num('hairline', 'Hairline up the forehead', 0, 0, 1)],
+  },
   {
     id: 'horned-helm', label: 'Horned helm', group: 'head', equip: 'helm', part: hornedHelm, slots: ['head'], roles: ['metal', 'bone'], requires: 'bone-skull',
     options: [
@@ -110,6 +134,10 @@ const PARTS: PartInfo[] = [
     ],
   },
   {
+    id: 'winged-helm', label: 'Winged helm', group: 'head', equip: 'helm', part: wingedHelm, slots: ['head'], roles: ['metal', 'trim'],
+    options: [size(1, 0.85, 1.25, 0.01), flag('wings', 'Wings'), num('wingSize', 'Wing size', 1, 0.5, 1.5), flag('ridge', 'Ridge'), num('rise', 'Rim up the forehead', 0, 0, 1)],
+  },
+  {
     id: 'hood', label: 'Hood', group: 'head', equip: 'helm', part: hood, slots: ['head'], roles: ['cloth', 'clothAccent'],
     options: [size(1, 0.8, 1.3, 0.01), flag('point', 'Point')],
   },
@@ -120,12 +148,16 @@ const PARTS: PartInfo[] = [
     options: [num('lames', 'Lames', 2, 1, 4, 1), flag('spike', 'Spike'), flag('rivets', 'Rivets'), size()],
   },
   {
+    id: 'plate-pauldron', label: 'Plate pauldron', group: 'shoulders', equip: 'pauldron', part: platePauldron, slots: ['shoulder'], roles: ['metal', 'trim'],
+    options: [num('lames', 'Lames', 2, 0, 3, 1), size()],
+  },
+  {
     id: 'skull-pauldron', label: 'Skull pauldron', group: 'shoulders', equip: 'pauldron', part: skullPauldron, slots: ['shoulder'], roles: ['metal', 'bone', 'hollow'],
     options: [size(), flag('spikes', 'Spikes')],
   },
 
   // Torso: what is worn around the trunk.
-  { id: 'tunic', label: 'Tunic', group: 'torso', part: tunic, slots: ['pelvis'], roles: ['cloth'], options: [num('hem', 'Hem', 9, 5, 14, 0.5)] },
+  { id: 'tunic', label: 'Tunic', group: 'torso', part: tunic, slots: ['pelvis'], roles: ['cloth'], options: [num('hem', 'Hem', 9, 5, 14, 0.5), num('waist', 'Rises up the waist', 3, 3, 12, 0.5), num('width', 'Breadth', 1, 0.8, 1.2)] },
   {
     id: 'tabard', label: 'Tabard', group: 'torso', part: tabard, slots: ['pelvis'], roles: ['clothAccent'],
     options: [num('length', 'Length', 14, 8, 24, 1), num('width', 'Width', 6.4, 4, 12, 0.2)],
@@ -136,11 +168,23 @@ const PARTS: PartInfo[] = [
     id: 'rib-breastplate', label: 'Rib breastplate', group: 'torso', part: ribBreastplate, slots: ['chest'], roles: ['boneLimb', 'bone', 'hollow'], requires: 'coat-torso',
     options: [num('ribs', 'Rib pairs', 5, 3, 6, 1)],
   },
+  {
+    id: 'cuirass', label: 'Cuirass', group: 'torso', equip: 'cuirass', part: cuirass, slots: ['chest'], roles: ['metal', 'trim'],
+    options: [num('ease', 'Ease', 0.4, 0, 3, 0.1), flag('keel', 'Keel'), num('width', 'Breadth', 1, 0.8, 1.3)],
+  },
+  {
+    id: 'tassets', label: 'Tassets', group: 'torso', equip: 'tassets', part: tassets, slots: ['pelvis'], roles: ['metal', 'trim'],
+    options: [num('length', 'Length', 12, 6, 18, 0.5), num('top', 'Top above the hips', 9.5, 2, 12, 0.5), flag('split', 'Split at the front'), flag('back', 'Plate behind')],
+  },
   { id: 'high-collar', label: 'High collar', group: 'torso', part: highCollar, slots: ['chest'], roles: ['cloth', 'clothAccent'], options: [num('height', 'Height', 1, 0.7, 1.5)] },
   // `length` is left out: by default it follows the skeleton (down to a hand above the ankles), so it has no fixed default to offer.
   { id: 'long-coat', label: 'Long coat (skirt)', group: 'torso', part: longCoat, slots: ['pelvis'], roles: ['cloth'], options: [variation('long-coat')] },
   // `length` is left out like the long coat's: by default the fall reaches the standing body's ankles.
   { id: 'cloak', label: 'Cloak', group: 'torso', equip: 'cloak', part: cloak, slots: ['back'], roles: ['cloak', 'cloth', 'clothAccent'], options: [variation('cloak')] },
+  {
+    id: 'spirit-wings', label: 'Spirit wings', group: 'torso', equip: 'wings', part: spiritWings, slots: ['back'], roles: ['glow'],
+    options: [num('spread', 'Spread at rest', 0.08, 0, 1), num('strength', 'Opacity at rest', 0.45, 0.15, 0.9), num('span', 'Span', 1, 0.6, 1.4)],
+  },
   { id: 'shawl', label: 'Shawl', group: 'torso', equip: 'shawl', part: shawl, slots: ['chest'], roles: ['cloth', 'clothAccent'] },
   {
     id: 'apron', label: 'Work apron', group: 'torso', equip: 'apron', part: apron, slots: ['pelvis'], roles: ['cloth', 'leather'],
@@ -151,11 +195,15 @@ const PARTS: PartInfo[] = [
   { id: 'belt', label: 'Belt', group: 'garments', equip: 'belt', part: belt, slots: ['pelvis'], roles: ['leather', 'metal'], options: [flag('buckle', 'Buckle')] },
   { id: 'pouch', label: 'Pouch', group: 'garments', part: pouch, slots: ['pelvis'], roles: ['leather'], options: [hip('Hip')] },
   { id: 'greave', label: 'Greave', group: 'garments', equip: 'greave', part: greave, slots: ['shin'], roles: ['metal'], options: [flag('kneeCop', 'Knee cop')] },
+  { id: 'plate-greave', label: 'Plate greave', group: 'garments', equip: 'greave', part: plateGreave, slots: ['shin'], roles: ['metal'], options: [flag('kneeCop', 'Knee cop')] },
   { id: 'bracer', label: 'Bracer', group: 'garments', equip: 'bracer', part: bracer, slots: ['forearm'], roles: ['metal'], options: [size(1, 0.8, 1.4)] },
+  { id: 'plate-vambrace', label: 'Plate vambrace', group: 'garments', equip: 'bracer', part: plateVambrace, slots: ['forearm'], roles: ['metal', 'trim'] },
   { id: 'leg-wraps', label: 'Leg wraps', group: 'garments', equip: 'greave', part: legWraps, slots: ['shin'], roles: ['leather'], options: [num('count', 'Wraps', 2, 0, 3, 1)] },
   { id: 'coat-sleeve', label: 'Coat sleeve', group: 'garments', part: coatSleeve, slots: ['shoulder'], roles: ['cloth', 'clothAccent'] },
+  { id: 'fitted-sleeve', label: 'Fitted sleeve', group: 'garments', part: fittedSleeve, slots: ['shoulder'], roles: ['cloth'], options: [size(1, 0.8, 1.3)] },
+  { id: 'leggings', label: 'Leggings', group: 'garments', part: leggings, slots: ['thigh'], roles: ['leather'] },
   { id: 'boot', label: 'Boot', group: 'garments', equip: 'boots', part: boot, slots: ['foot'], roles: ['leather'] },
-  { id: 'glove', label: 'Glove', group: 'garments', equip: 'gloves', part: glove, slots: ['hand'], roles: ['leather'], options: [num('cuff', 'Cuff', 1, 0.8, 1.4)] },
+  { id: 'glove', label: 'Glove', group: 'garments', equip: 'gloves', part: glove, slots: ['hand'], roles: ['leather'], options: [num('cuff', 'Cuff', 1, 0.8, 1.4), size(1, 0.6, 1.3)] },
   {
     id: 'sash-tail', label: 'Sash tail', group: 'garments', part: sashTail, slots: ['pelvis'], roles: ['clothAccent'], requires: 'belt',
     options: [hip('Buckle side'), num('length', 'Length', 17, 8, 26, 1)],
@@ -181,6 +229,11 @@ const PARTS: PartInfo[] = [
     options: [flag('etched', 'Etchings'), flag('bands', 'Iron bands')],
   },
   { id: 'scythe-fist', label: 'Fist on the scythe', group: 'weapons', kind: 'body', part: scytheFist, slots: ['hand'], roles: ['boneLimb', 'bone'], requires: 'reaper-scythe' },
+  {
+    id: 'spear', label: 'Spear', group: 'weapons', equip: 'weapon', wield: { class: 'polearm', sockets: { tip: (pose, skeleton, p) => spearHeld(pose, skeleton, p.side, (p.options.length as number | undefined) ?? SPEAR.reach, (p.options.butt as number | undefined) ?? SPEAR.butt).tip } }, part: spear, slots: ['hand'], roles: ['wood', 'metal', 'blade', 'metalAccent', 'trim'],
+    options: [num('length', 'Reach (grip to tip)', SPEAR.reach, 40, 80, 1), num('butt', 'Shaft behind the grip', SPEAR.butt, 10, 60, 1), flag('lugs', 'Lugs'), flag('bands', 'Gilded bands')],
+  },
+  { id: 'spear-fist', label: 'Fist on the spear', group: 'weapons', kind: 'body', part: spearFist, slots: ['hand'], roles: ['leather', 'skin'], requires: 'spear' },
   { id: 'soul-lantern', label: 'Soul lantern', group: 'weapons', part: soulLantern, slots: ['hand'], roles: ['metal', 'glow'], requires: 'reaper-scythe' },
 
   // Shields.
@@ -214,7 +267,7 @@ const PARTS: PartInfo[] = [
   { id: 'rib-cage', label: 'Rib cage', group: 'bodies', kind: 'body', part: ribCage, slots: ['chest'], roles: ['boneLimb', 'bone', 'hollow'] },
   { id: 'bone-arm', label: 'Bone arm', group: 'bodies', kind: 'body', part: boneArm, slots: ['shoulder'], roles: ['boneLimb', 'bone'] },
   { id: 'bone-hand', label: 'Open bone hand', group: 'bodies', kind: 'body', part: boneHand, slots: ['hand'], roles: ['boneLimb', 'bone'] },
-  { id: 'flesh-torso', label: 'Flesh torso', group: 'bodies', kind: 'body', part: fleshTorso, slots: ['chest'], roles: ['skin'] },
+  { id: 'flesh-torso', label: 'Flesh torso', group: 'bodies', kind: 'body', part: fleshTorso, slots: ['chest'], roles: ['skin'], options: [num('width', 'Breadth', 1, 0.75, 1.25), num('bottom', 'Starts below the chest', 20.5, 10, 20.5, 0.5)] },
   { id: 'flesh-arm', label: 'Flesh arm', group: 'bodies', kind: 'body', part: fleshArm, slots: ['shoulder'], roles: ['skin'] },
   { id: 'flesh-hand', label: 'Flesh hand', group: 'bodies', kind: 'body', part: fleshHand, slots: ['hand'], roles: ['skin'] },
   { id: 'flesh-leg', label: 'Flesh leg', group: 'bodies', kind: 'body', part: fleshLeg, slots: ['thigh'], roles: ['skin'] },
@@ -241,4 +294,5 @@ export const CHARACTERS: OutfitCharacterInfo[] = [
   { id: 'captain', ...CAPTAIN_RIG, outfit: CAPTAIN_OUTFIT },
   { id: 'warden', ...WARDEN_RIG, outfit: WARDEN_OUTFIT },
   { id: 'villager', ...VILLAGER_RIG, outfit: VILLAGER_OUTFIT },
+  { id: 'ingrid', ...INGRID_RIG, outfit: INGRID_OUTFIT },
 ];

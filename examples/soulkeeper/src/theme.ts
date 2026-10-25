@@ -35,12 +35,30 @@ export const PALETTES = {
   skinLit: '#e3bfa3',
   skin: '#b08d79',
   skinDark: '#5e443c',
+  // Warm golden-brown skin: deeper and warmer than `skin`, its shadow a warm brown, never grey.
+  skinWarmLit: '#e2a983',
+  skinWarm: '#c3845e',
+  skinWarmDark: '#8b573d',
+  // Lips: a muted rose-brown, between the warm skin's shadow and a red, so a closed mouth reads as
+  // lips, not a dark line.
+  lipsLit: '#b65e4a',
+  lips: '#963f33',
+  lipsDark: '#6a2a24',
+  // Dark brown hair, almost black: a warm near-black with a lit step that still reads as brown.
+  hairLit: '#3b2a20',
+  hair: '#231812',
+  hairDark: '#120b08',
   woodLit: '#715749',
   wood: '#47362e',
   woodDark: '#2a1f1b',
   ironLit: '#8a8799',
   iron: '#535064',
   ironDark: '#2b2935',
+  // Armour plate: a darker steel than `steel` with a bright lit step, so fitted plates read as
+  // polished metal (a dark base, lit edges, a deep core shadow) and not as flat grey.
+  armorLit: '#dedce8',
+  armor: '#7a778c',
+  armorDark: '#383545',
   soulLit: '#d6fff2',
   soul: '#5cf0c4',
   soulDark: '#1d8a76',
@@ -127,6 +145,9 @@ export const RAMPS = {
   bone: { lit: PALETTES.boneLit, base: PALETTES.bone, dark: PALETTES.boneDark },
   flesh: { lit: PALETTES.fleshLit, base: PALETTES.flesh, dark: PALETTES.fleshDark },
   skin: { lit: PALETTES.skinLit, base: PALETTES.skin, dark: PALETTES.skinDark },
+  skinWarm: { lit: PALETTES.skinWarmLit, base: PALETTES.skinWarm, dark: PALETTES.skinWarmDark },
+  lips: { lit: PALETTES.lipsLit, base: PALETTES.lips, dark: PALETTES.lipsDark },
+  hair: { lit: PALETTES.hairLit, base: PALETTES.hair, dark: PALETTES.hairDark },
   wood: { lit: PALETTES.woodLit, base: PALETTES.wood, dark: PALETTES.woodDark },
   iron: { lit: PALETTES.ironLit, base: PALETTES.iron, dark: PALETTES.ironDark },
   soul: { lit: PALETTES.soulLit, base: PALETTES.soul, dark: PALETTES.soulDark },
@@ -273,6 +294,13 @@ export const VOLUMES = {
   flesh: { ramp: RAMPS.flesh, stroke: inner(RAMPS.flesh), edge, form: { highlight: { ratio: 0.14, min: 0.5, max: 1.4 } } },
   // Skin for living people: the same matte treatment as the flesh volume, on the warm skin ramp.
   skin: { ramp: RAMPS.skin, stroke: inner(RAMPS.skin), edge, form: { highlight: { ratio: 0.14, min: 0.5, max: 1.4 } } },
+  // Warm golden-brown skin, the same matte treatment on a deeper, warmer ramp, with a broader
+  // highlight so a face a few pixels across still shows its modelling past the hair over its sides.
+  skinWarm: { ramp: RAMPS.skinWarm, stroke: inner(RAMPS.skinWarm), edge, form: { highlight: { ratio: 0.2, min: 0.6, max: 2 } } },
+  // Lips, laid flat on a face: no shading of their own.
+  lips: { ramp: RAMPS.lips, form: { highlight: false } },
+  // Dark hair: a soft sheen on the lit side, inner lines a shade darker than the hair so the locks separate.
+  hair: { ramp: RAMPS.hair, stroke: inner(RAMPS.hair, 0.8), edge: inner(RAMPS.hair, 0.6), form: { highlight: { ratio: 0.12, min: 0.4, max: 1 } } },
   // Matte cloth: no highlight, a wider core shadow.
   robe: { ramp: RAMPS.robe, stroke: inner(RAMPS.robe, 1), edge, form: { highlight: false, core: { ratio: 0.36, min: 1.2, max: 4 } } },
   sash: { ramp: RAMPS.sash, stroke: inner(RAMPS.sash), edge: inner(RAMPS.sash, 0.6), form: { highlight: false } },
@@ -304,6 +332,14 @@ export const VOLUMES = {
   soul: { ramp: RAMPS.soul },
   // Polished steel: a step lighter than `iron`, still darker than `blade`, so armor separates from bone.
   steel: { ramp: { lit: PALETTES.stoneLit, base: PALETTES.ironLit, dark: PALETTES.iron }, stroke: inner(RAMPS.iron), edge: inner(RAMPS.iron, 0.6), form: { highlight: { ratio: 0.2, min: 0.6, max: 1.6 } } },
+  // Armour plate: the darker steel ramp with a broad highlight on the lit edge, a deep core shadow
+  // and a cool reflected light inside it, the three cues that make a curved plate read as metal.
+  armor: {
+    ramp: { lit: PALETTES.armorLit, base: PALETTES.armor, dark: PALETTES.armorDark },
+    stroke: inner({ dark: PALETTES.armorDark }),
+    edge: inner({ dark: PALETTES.armorDark }, 0.6),
+    form: { highlight: { ratio: 0.22, min: 0.7, max: 1.8 }, core: { ratio: 0.36, min: 1.1, max: 4 }, rim: { color: PALETTES.ironLit, width: 0.55 } },
+  },
   // Gilded metal for rank (pauldrons, a sword's guard, a crest's comb).
   brass: {
     ramp: { lit: PALETTES.brassLit, base: PALETTES.brass, dark: PALETTES.brassDark },

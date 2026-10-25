@@ -4,15 +4,16 @@
  *
  * All of it follows the trunk through `ctx.body` (and the head through the shared `headFrame`), so
  * a hit recoils it and a death lays it down; only the cloak's fall looks at world up to drape on
- * the floor once the body lies.
+ * the floor once the body lies. The cloak, the boots and the gloves follow the skeleton's scale
+ * (`scaleOf`) like the flesh body they cover.
  */
 
 import { createRng } from '@core';
-import { partFrame, type Part } from '@core/rig';
-import { Blob, Round, Tube, UP, add3, dot3, lerp3, norm3, scale3, sub3, vec3, visibleArc, type Vec3 } from '@core/volume';
+import { partFrame, solvePose, type Part } from '@core/rig';
+import { Blob, Round, Tube, UP, add3, dot3, len3, lerp3, norm3, scale3, sub3, vec3, visibleArc, type Vec3 } from '@core/volume';
 import { headFrame } from './heads';
 import { trunkScale } from './torso';
-import { legOf, plate, role, tornPanel, type NoOptions } from './util';
+import { armOf, legOf, plate, role, scaleOf, tornPanel, type NoOptions } from './util';
 
 /** Options of `hood`. */
 export interface HoodOptions {
@@ -79,9 +80,9 @@ export interface CloakOptions {
 }
 
 /**
- * A cloak: a yoke over the shoulders, a long fall down the back that sways with the legs and
- * drapes flat along the floor once the body lies, a small front collar the fall hangs from, and a
- * hem of a few broad folds. The fall takes the `cloak` role when the outfit gives one, so a cloak
+ * A cloak: a yoke over the shoulders, a long fall down the back that trails behind the body as it
+ * moves (never forward through it) and drapes flat along the floor once the body lies, a small
+ * front collar the fall hangs from, and a hem of a few broad, rounded folds. The fall takes the `cloak` role when the outfit gives one, so a cloak
  * can wear a cloth of its own value and hue next to the coat and the hood.
  * Seen from the front it stays behind the body; seen from behind (the back and the three-quarter
  * rear views) it is the outermost garment: it hangs straight down the back and draws over the coat.
@@ -94,50 +95,56 @@ export const cloak: Part<CloakOptions> = (ctx, { length, seed = 'cloak' }) => {
   const cam = kit.camera;
   const cloth = role(materials, 'cloak', 'cloth');
   const s = trunkScale(ctx);
+  const k = scaleOf(ctx);
   const chest = at.frame.origin;
   // The yoke wraps the shoulders at collar height.
   const collar = Round.loft(
     [[2.5, 7.2, 4.8], [4.6, 6.9, 4.5], [6.4, 5, 3.4]].map(([h, rx, ry]) => ({
       center: add3(chest, scale3(up, h * s)),
-      rx,
-      ry,
+      rx: rx * k,
+      ry: ry * k,
       axes: [across, chestFwd] as [Vec3, Vec3],
     })),
   );
   o.add(collar, cloth);
   // The fall hangs from the back of the shoulders, sways a little with the legs' average stride
-  // and drapes away from the head once the body lies (the long coat's math).
+  // and drapes away from the head once the body lies (the long coat's math). The sway is measured
+  // against the standing body: at rest the knees already sit ahead of the chest, and counting that
+  // reach would tilt the whole fall forward, in front of the legs in the profiles. A lean or a lunge
+  // that carries the chest ahead of the knees swings it back; nothing swings it forward through the
+  // body it hangs behind, in any facing, and a long stride or a lunge eases out to a soft limit, so
+  // the fall trails behind instead of standing out like a board.
   const j = pose.joints;
   const [first, second] = kit.skeleton.legs;
-  const knees = lerp3(j[`${first.name}.knee`], j[`${second.name}.knee`], 0.5);
-  const sway = sub3(knees, j.chest);
+  const kneesOf = (p: typeof pose) => lerp3(p.joints[`${first.name}.knee`], p.joints[`${second.name}.knee`], 0.5);
+  const rest = solvePose(kit.skeleton, pose.frame);
+  const sway = sub3(sub3(kneesOf(pose), j.chest), sub3(kneesOf(rest), rest.joints.chest));
   let swing = scale3(sub3(sway, scale3(UP, dot3(sway, UP))), 0.12 * (1 - lie));
-  // Seen from behind (`rear`, measured on the hips and along the floor, so a twist of the shoulders in
-  // an attack or a lean in a run does not count; 0 once the body lies) the fall hangs against the back:
-  // it can sway away from it, but not forward through the body, which is where the knees' reach ahead
-  // of the chest would take it, and a long cloak would shrink to a stub. Nothing changes in the front
-  // facings or the profiles.
+  swing = sub3(swing, scale3(hipForward, Math.max(0, dot3(swing, hipForward))));
+  const reach = len3(swing);
+  if (reach > 1e-6) swing = scale3(swing, (0.3 * Math.tanh(reach / 0.3)) / reach);
+  // How squarely the back is turned to the camera, measured on the hips and along the floor, so a
+  // twist of the shoulders in an attack or a lean in a run does not count; 0 once the body lies.
   const rear = rearness(dot3(hipForward, norm3(sub3(cam.viewDir, scale3(UP, dot3(cam.viewDir, UP)))))) * (1 - lie);
-  swing = sub3(swing, scale3(chestFwd, rear * Math.max(0, dot3(swing, chestFwd))));
-  const L = (length ?? j.pelvis.z + 9) * (1 - 0.36 * lie);
-  const top = add3(chest, add3(scale3(up, 5.2 * s), scale3(chestFwd, -3.2)));
+  const L = (length ?? j.pelvis.z + 9 * k) * (1 - 0.36 * lie);
+  const top = add3(chest, add3(scale3(up, 5.2 * s), scale3(chestFwd, -3.2 * k)));
   const hang = norm3(add3(scale3(up, -1), scale3(chestFwd, -0.16)));
   let dir = norm3(add3(hang, swing));
   if (lie > 0) {
     const back = vec3(-up.x, -up.y, 0);
     const flat = norm3(Math.hypot(back.x, back.y) > 1e-3 ? back : scale3(pose.frame.forward, -1));
-    const drop = Math.max(0, Math.min(0.95, (top.z - 0.6) / L));
+    const drop = Math.max(0, Math.min(0.95, (top.z - 0.6 * k) / L));
     dir = norm3(lerp3(hang, add3(scale3(flat, Math.sqrt(1 - drop * drop)), vec3(0, 0, -drop)), lie));
   }
   const centre = (u: number, lat = 0) => {
     const c = add3(top, add3(scale3(dir, L * u), scale3(hipRight, lat)));
-    const floor = 1.6 + 2.4 * u;
+    const floor = (1.6 + 2.4 * u) * k;
     return c.z < floor ? vec3(c.x, c.y, floor) : c;
   };
   const rng = createRng(seed);
   const ends = [0, 0.35, 0.7, 1];
-  const widths: [number, number] = [7.4, 11.8];
-  const deeps: [number, number] = [2.6, 3.4];
+  const widths: [number, number] = [7.4 * k, 11.8 * k];
+  const deeps: [number, number] = [2.6 * k, 3.4 * k];
   const mix = (pair: [number, number], u: number) => pair[0] + (pair[1] - pair[0]) * u;
   const fall = Round.loft(ends.map(u => ({ center: centre(u), rx: mix(widths, u), ry: mix(deeps, u), axes: [hipRight, hipForward] as [Vec3, Vec3] })));
   // The fall hangs down the back. Its centroid sits high enough on the trunk to sort in front of
@@ -148,17 +155,17 @@ export const cloak: Part<CloakOptions> = (ctx, { length, seed = 'cloak' }) => {
   // back it hangs from and it drapes over the coat instead of hiding under it.
   const frontness = Math.max(0, dot3(chestFwd, cam.viewDir));
   const hungFrom = Math.max(0, cam.depth(chest) - fall.depth(cam));
-  const behind = { bias: rear * hungFrom - 52 * frontness };
+  const behind = { bias: rear * hungFrom - 52 * frontness * k };
   o.add(fall, cloth, behind);
-  // The hem: three broad folds that overlap and drape, each its own length — wide cloth masses,
-  // not a row of tongues. They ride `on` the fall, so the same bias keeps them behind the body.
+  // The hem: three broad folds that overlap and drape, each its own length and ending round —
+  // wide cloth masses, not a row of tongues or teeth. They ride `on` the fall, so the same bias keeps them behind the body.
   const folds = 3;
-  for (let k = 0; k < folds; k++) {
-    const frac = ((k + 0.5) / folds) * 2 - 1;
+  for (let f = 0; f < folds; f++) {
+    const frac = ((f + 0.5) / folds) * 2 - 1;
     const base = centre(0.62, frac * mix(widths, 0.62) * 0.72);
-    const tip = centre(1.02 + rng.float(0, 0.1), frac * mix(widths, 1) * 0.82 + rng.float(-0.4, 0.4));
+    const tip = centre(1.02 + rng.float(0, 0.1), frac * mix(widths, 1) * 0.82 + rng.float(-0.4, 0.4) * k);
     const mid = lerp3(base, tip, 0.55);
-    o.add(new Tube([base, mid, tip], { start: mix(widths, 0.8) * 0.62 * rng.float(0.95, 1.15), end: 0.5 }), cloth, { on: fall, ...behind });
+    o.add(new Tube([base, mid, tip], { start: mix(widths, 0.8) * 0.62 * rng.float(0.95, 1.15), end: 2.2 * k }), cloth, { on: fall, ...behind });
   }
   // The fall's edge in the accent cloth, when the outfit gives one: the whole edge from behind, and
   // from the other facings the part of it that faces the camera.
@@ -167,7 +174,7 @@ export const cloak: Part<CloakOptions> = (ctx, { length, seed = 'cloak' }) => {
     for (const side of [-1, 1]) {
       const run = ends.map(u => centre(u, side * mix(widths, u) * 0.97));
       const arc = rear > 0.5 ? run : run.filter(p => cam.faces(norm3(sub3(p, j.chest))));
-      if (arc.length > 1) o.add(new Tube(arc, 0.8), trim, { on: fall, ...behind });
+      if (arc.length > 1) o.add(new Tube(arc, 0.8 * k), trim, { on: fall, ...behind });
     }
   }
   return fall;
@@ -180,24 +187,85 @@ export const cloak: Part<CloakOptions> = (ctx, { length, seed = 'cloak' }) => {
 export const boot: Part<NoOptions> = ctx => {
   const { object: o, pose, at, materials } = ctx;
   const leather = role(materials, 'leather');
+  const k = scaleOf(ctx);
   const leg = legOf(ctx, at.side).name;
   const [, , ankle] = pose.chains[leg];
   const f = pose.frame;
   const foot = pose.joints[`${leg}.foot`];
   const boot = new Blob([
-    Round.ellipsoid(partFrame(add3(foot, f.dir(2, 0, 0.9)), f.forward), 4.3, 2.4, 2),
-    new Tube([add3(ankle, f.dir(0, 0, 6.5)), ankle], { start: 2.9, end: 2.4 }),
+    Round.ellipsoid(partFrame(add3(foot, f.dir(2 * k, 0, 0.9 * k)), f.forward), 4.3 * k, 2.4 * k, 2 * k),
+    new Tube([add3(ankle, f.dir(0, 0, 6.5 * k)), ankle], { start: 2.9 * k, end: 2.4 * k }),
   ]);
   // The bias lifts the boot over the leg it covers: the leg's mass averages deeper than the
   // foot-level boot, and without it the skin foot would paint over the leather.
-  o.add(boot, leather, { bias: 12 });
+  o.add(boot, leather, { bias: 12 * k });
   return boot;
+};
+
+/** Options of `fittedSleeve`. */
+export interface FittedSleeveOptions {
+  /** Scale of the sleeve's thickness. Default 1. */
+  size?: number;
+}
+
+/**
+ * A fitted cloth sleeve over the whole arm, the sleeve of a doublet worn under armour: a rounded
+ * shoulder, the upper arm, the elbow and the forearm down to the wrist as one slim mass, fuller
+ * than the bare arm, so the arm keeps a believable thickness and a vambrace and a glove fit over it.
+ * It covers the arm whole, so it can stand in for the `flesh-arm`. Follows the skeleton's scale.
+ * Mirrored by side.
+ * Slot: `shoulder` (side -1 left, 1 right). Roles: `cloth`. Returns the sleeve, so a shield can rest on it.
+ */
+export const fittedSleeve: Part<FittedSleeveOptions> = (ctx, { size = 1 }) => {
+  const { object: o, pose, body, at, materials } = ctx;
+  const k = scaleOf(ctx);
+  const w = k * size;
+  const [sh, el, ha] = pose.chains[armOf(ctx, at.side).name];
+  const wrist = add3(ha, scale3(norm3(sub3(ha, el)), 0.4 * k));
+  const sleeve = new Blob([
+    Round.ellipsoid(partFrame(sh, body.forward, body.up), 2.75 * w, 2.75 * w, 2.75 * w),
+    new Tube([sh, el], { start: 4.6 * w, end: 3.6 * w }),
+    Round.ellipsoid(partFrame(el, pose.frame.forward), 1.75 * w, 1.75 * w, 1.75 * w),
+    new Tube([el, wrist], { start: 3.3 * w, end: 2.6 * w }),
+  ]);
+  o.add(sleeve, role(materials, 'cloth'));
+  return sleeve;
+};
+
+/**
+ * Leggings: fitted leather over the seat, the thigh and the knee, ending under a greave or inside a
+ * boot's shaft — legwear for a skirt that ends above the knee. Each side covers its half of the hips
+ * as well, so no skin shows under a short skirt, even when the body lies. Follows the leg, the trunk
+ * and the skeleton's scale.
+ * Slot: `thigh` (side -1 left, 1 right). Roles: `leather`. Returns the leg, so a greave can rest on it.
+ */
+export const leggings: Part<NoOptions> = ctx => {
+  const { object: o, pose, body, at, materials } = ctx;
+  const { up, hipRight, hipForward } = body;
+  const k = scaleOf(ctx);
+  const leather = role(materials, 'leather');
+  const [hip, knee, ankle] = pose.chains[legOf(ctx, at.side).name];
+  // The seat: this side's half of the hips, set low on them, so it covers the bare hips from below
+  // (what shows of them under a short skirt once the body lies) and sorts under a skirt standing.
+  const pelvis = pose.joints.pelvis ?? hip;
+  const seat = Round.ellipsoid(partFrame(add3(pelvis, add3(scale3(up, -1 * k), scale3(hipRight, at.side * 1.8 * k))), hipForward, up), 4.6 * k, 4.3 * k, 4.2 * k);
+  o.add(seat, leather);
+  const mass = new Blob([
+    new Tube([hip, knee], { start: 4.9 * k, end: 3.7 * k }),
+    Round.ellipsoid(partFrame(knee, pose.frame.forward), 2.45 * k, 2.45 * k, 2.55 * k),
+    new Tube([knee, lerp3(knee, ankle, 0.35)], { start: 3.7 * k, end: 3.2 * k }),
+  ]);
+  // The bias lifts the leggings over the bare leg they cover.
+  o.add(mass, leather, { bias: 2 * k });
+  return mass;
 };
 
 /** Options of `glove`. */
 export interface GloveOptions {
   /** Width of the cuff at the wrist. Default 1. */
   cuff?: number;
+  /** Scale of the whole glove. Default 1. */
+  size?: number;
 }
 
 /**
@@ -205,22 +273,23 @@ export interface GloveOptions {
  * way, and a cuff round the wrist. The cuff covers the wrist the `flesh-arm` ends at.
  * Slot: `hand` (side -1 left, 1 right). Roles: `leather`.
  */
-export const glove: Part<GloveOptions> = (ctx, { cuff = 1 }) => {
+export const glove: Part<GloveOptions> = (ctx, { cuff = 1, size = 1 }) => {
   const { object: o, at, materials } = ctx;
   const leather = role(materials, 'leather');
+  const k = scaleOf(ctx) * size;
   const f = at.frame;
-  const band = new Tube([f.at(0.2, -2.9, 0.6), f.at(0.4, 0, 1.9), f.at(0.2, 2.9, 0.6), f.at(-0.2, 2.6, -1.3), f.at(-0.2, -2.6, -1.3), f.at(0.2, -2.9, 0.6)], 1.15 * cuff);
+  const band = new Tube([f.at(0.2 * k, -2.9 * k, 0.6 * k), f.at(0.4 * k, 0, 1.9 * k), f.at(0.2 * k, 2.9 * k, 0.6 * k), f.at(-0.2 * k, 2.6 * k, -1.3 * k), f.at(-0.2 * k, -2.6 * k, -1.3 * k), f.at(0.2 * k, -2.9 * k, 0.6 * k)], 1.15 * cuff * k);
   // The bias lifts the glove over the arm it covers: the arm's mass averages deeper than the hand.
-  o.add(band, leather, { bias: 6 });
-  const palm = Round.ellipsoid(f.moved(2.3, 0, 0.15), 3, 2.7, 1.4);
-  o.add(palm, leather, { on: band, bias: 6 });
+  o.add(band, leather, { bias: 6 * k });
+  const palm = Round.ellipsoid(f.moved(2.3 * k, 0, 0.15 * k), 3 * k, 2.7 * k, 1.4 * k);
+  o.add(palm, leather, { on: band, bias: 6 * k });
   for (let i = 0; i < 4; i++) {
     const y = (i - 1.5) * 1.4;
     const len = 4.5 - 0.45 * Math.abs(i - 1.5) * 1.2 + (i === 1 || i === 2 ? 0.4 : 0);
-    o.add(new Tube([f.at(3.8, y * 0.9, 0.4), f.at(3.8 + len * 0.55, y * 1.15, 0.9), f.at(3.8 + len, y * 1.3, 1.9)], { start: 1.25, end: 0.65 }), leather, { on: palm, bias: 6 });
+    o.add(new Tube([f.at(3.8 * k, y * 0.9 * k, 0.4 * k), f.at((3.8 + len * 0.55) * k, y * 1.15 * k, 0.9 * k), f.at((3.8 + len) * k, y * 1.3 * k, 1.9 * k)], { start: 1.25 * k, end: 0.65 * k }), leather, { on: palm, bias: 6 * k });
   }
   const inner = -at.side;
-  o.add(new Tube([f.at(1.5, inner * 2, 0.2), f.at(3.1, inner * 3.4, 0.7), f.at(4.7, inner * 3.9, 1.5)], { start: 1.5, end: 0.7 }), leather, { on: palm, bias: 6 });
+  o.add(new Tube([f.at(1.5 * k, inner * 2 * k, 0.2 * k), f.at(3.1 * k, inner * 3.4 * k, 0.7 * k), f.at(4.7 * k, inner * 3.9 * k, 1.5 * k)], { start: 1.5 * k, end: 0.7 * k }), leather, { on: palm, bias: 6 * k });
   return palm;
 };
 
