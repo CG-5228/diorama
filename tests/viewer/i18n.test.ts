@@ -17,7 +17,17 @@ assert.deepEqual([...en.keys()].filter((key) => !pt.has(key)), [], 'every Englis
 assert.deepEqual([...pt.keys()].filter((key) => !en.has(key)), [], 'no Portuguese key is left over');
 assert.ok(en.size > 600, `the dictionaries are not empty (${en.size} strings)`);
 
-// 2. A string and its translation carry the same {placeholders} and the same markup, and no string is empty.
+// 1b. The window an asset opens in is "Details", in its keys and in its words. "Preview" is left only to the Customize tab's
+//     live drawing (customize.*), which is a different thing.
+assert.deepEqual([...en.keys()].filter((key) => key.startsWith('preview.')), [], 'the namespace of the Details window is details.*');
+assert.ok([...en.keys()].some((key) => key.startsWith('details.')));
+for (const lang of LANGS) {
+  const named = [...stringsOf(lang)].filter(([key, text]) => /preview/i.test(text) && !key.startsWith('customize.')).map(([key]) => key);
+  assert.deepEqual(named, [], `${lang}: only the Customize tab says "preview"`);
+}
+
+// 2. A string and its translation carry the same {placeholders} and the same markup, and no string is empty. No string
+//    asks the reader to know the command line: none names a --flag (the New dialog's CLI line is built in code, not here).
 const tagsOf = (text: string) => [...text.matchAll(/<(\w+)>[^<]*<\/\1>/g)].map((m) => m[1]).sort();
 const KNOWN_TAGS = new Set(['code', 'b', 'kbd', 'mono']);
 for (const [key, text] of en) {
@@ -26,6 +36,8 @@ for (const [key, text] of en) {
   assert.deepEqual([...new Set(placeholdersOf(other))].sort(), [...new Set(placeholdersOf(text))].sort(), `${key}: the same {placeholders} in both languages`);
   assert.deepEqual(tagsOf(other), tagsOf(text), `${key}: the same markup in both languages`);
   for (const tag of tagsOf(text)) assert.ok(KNOWN_TAGS.has(tag), `${key}: <${tag}> is a markup the screen knows`);
+  // A flag is "--" and a letter after anything but a letter or a dash: a space, "(", or markup such as <code>--force</code>.
+  for (const s of [text, other]) assert.doesNotMatch(s, /(^|[^\w-])--[a-z]/, `${key}: no command-line flag in the interface`);
 }
 
 // 3. A plural (a key with a .one) has both forms.
