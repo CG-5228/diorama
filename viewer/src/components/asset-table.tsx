@@ -104,10 +104,11 @@ export function AssetTable({ table, activeKey, scrollRef, onOpen }: Props) {
                 <TableRow
                   id={assetDomId(row.original.subpath)}
                   ref={virtualizer.measureElement}
+                  tabIndex={-1}
                   data-index={item.index}
                   aria-rowindex={item.index + 2}
                   data-state={row.id === activeKey ? 'selected' : undefined}
-                  className={cn('cursor-pointer tabular-nums', row.id === activeKey && 'bg-accent')}
+                  className={cn('cursor-pointer outline-none tabular-nums', row.id === activeKey && 'bg-accent')}
                   onClick={() => onOpen(row.original)}
                 >
                   {row.getAllCells().map((cell) => (
