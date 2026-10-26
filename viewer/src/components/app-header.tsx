@@ -29,11 +29,14 @@ export function AppHeader() {
         <span className="font-medium">Diorama</span>
       </Link>
       <Separator orientation="vertical" className="mx-2 h-4" />
-      <ProjectSwitcher project={project} section={section} />
-      {project && <ProjectMenu project={project} />}
+      {/* One box for the tour to point at: the project in use and what can be done with it. */}
+      <div data-tour="project" className="flex items-center gap-1">
+        <ProjectSwitcher project={project} section={section} />
+        {project && <ProjectMenu project={project} />}
+      </div>
 
       <div className="ml-auto flex items-center gap-1">
-        <Button variant="outline" size="sm" onClick={() => void NiceModal.show(NewModal, {})}>
+        <Button variant="outline" size="sm" onClick={() => void NiceModal.show(NewModal, { project })}>
           <PlusIcon data-icon="inline-start" />
           {t('header.new')}
           <Kbd>N</Kbd>
@@ -48,7 +51,7 @@ export function AppHeader() {
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon-sm" aria-label={t('header.shortcuts')} onClick={() => void NiceModal.show(ShortcutsModal)}>
+            <Button variant="ghost" size="icon-sm" aria-label={t('header.shortcuts')} data-tour="shortcuts" onClick={() => void NiceModal.show(ShortcutsModal)}>
               <KeyboardIcon />
             </Button>
           </TooltipTrigger>

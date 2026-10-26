@@ -2,6 +2,7 @@ import { useEffect, useState, type RefObject } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ColorSwatch } from '@/components/ui/color-swatch';
 import { cn } from '@/lib/utils';
 import { useT } from '@/i18n';
 import { dirname } from '@/lib/format';
@@ -26,7 +27,7 @@ function ItemBadges({ asset }: { asset: AssetFileMeta }) {
     <>
       {info.rarity && (
         <Badge variant="outline" className="gap-1.5">
-          <span aria-hidden className="size-2 rounded-full" style={{ backgroundColor: info.rarity.color }} />
+          <ColorSwatch size="xs" color={info.rarity.color} aria-hidden />
           {info.rarity.label}
         </Badge>
       )}
@@ -66,8 +67,8 @@ function AssetCard({ asset, active, position, onOpen }: CardProps & { asset: Ass
         {(role === 'vfx' || role === 'ui') && detail && <Badge variant="secondary">{detail}</Badge>}
         {role === 'icon' && <ItemBadges asset={asset} />}
         {asset.engine && <EngineBadge engine={asset.engine} />}
-        {asset.width && <span>{asset.width}×{asset.height}</span>}
         <FrameSummary info={asset.atlasInfo} />
+        {asset.width && <span>{asset.width}×{asset.height}</span>}
         <span className="ml-auto">{bytes(asset.size)}</span>
       </EntryCard>
     </AssetContextMenu>
@@ -128,6 +129,8 @@ function EntryCard({ id, active, position, onOpen, onHover, thumb, flag, title, 
       aria-selected={active}
       aria-posinset={position.index + 1}
       aria-setsize={position.total}
+      // The first card is the one the tour points at to say what Details shows.
+      data-tour={position.index === 0 ? 'asset' : undefined}
       onClick={onOpen}
       onMouseEnter={() => onHover(true)}
       onMouseLeave={() => onHover(false)}
@@ -138,11 +141,19 @@ function EntryCard({ id, active, position, onOpen, onHover, thumb, flag, title, 
         {flag && <div className="absolute top-1.5 left-1.5">{flag}</div>}
       </div>
       <CardHeader className="pt-2">
-        <CardTitle className="truncate">{title}</CardTitle>
-        <CardDescription className="truncate">{description}</CardDescription>
+        {/* Long names and paths are cut to the card: the browser's own tooltip gives them whole (a Radix one per card would weigh on the grid). */}
+        <CardTitle className="truncate" title={title}>{title}</CardTitle>
+        <CardDescription className="truncate" title={description}>{description}</CardDescription>
         <CardAction>{menu}</CardAction>
       </CardHeader>
-      <CardFooter className="flex-wrap items-center gap-x-2 gap-y-1 py-2 text-muted-foreground tabular-nums">{children}</CardFooter>
+      {/*
+        One line at every card size: what does not fit wraps onto a second line that the fixed height hides, so the facts
+        go in order of weight (the type, the engine, the frames, the size in pixels, the file size, all of them in the
+        Details window too) and a narrow card drops the last ones whole, never half a badge.
+      */}
+      <CardFooter className="py-2">
+        <div className="flex h-5 min-w-0 flex-1 flex-wrap items-center gap-x-2 overflow-hidden whitespace-nowrap text-muted-foreground tabular-nums *:shrink-0">{children}</div>
+      </CardFooter>
     </Card>
   );
 }

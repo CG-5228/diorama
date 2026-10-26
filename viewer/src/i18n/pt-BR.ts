@@ -5,18 +5,28 @@ export type Shape<T> = { [K in keyof T]: T[K] extends string ? string : Shape<T[
 
 /** The interface in Brazilian Portuguese. It must have exactly the keys of `en.ts` (a missing or an extra one is a type error). */
 export const ptBR: Shape<typeof en> = {
+  noKit: {
+    terminal: 'Num terminal',
+    copyCommand: 'Copiar o comando',
+    commandLabel: 'Comando',
+    tryBuiltIn: 'Experimentar o kit embutido',
+    builtInHint: 'O kit embutido é um kit pequeno que vem com o viewer, para experimentar esta aba: o que você fizer com ele não pode ser salvo neste projeto.',
+  },
   common: {
     cancel: 'Cancelar',
     close: 'Fechar',
     create: 'Criar',
     export: 'Exportar',
     undo: 'Desfazer',
+    redo: 'Refazer',
+    history: 'Histórico',
     loading: 'Carregando…',
     more: 'Mais',
     breadcrumb: 'Navegação estrutural',
     none: 'Nenhum',
     yes: 'sim',
     no: 'não',
+    resizePanel: 'Redimensionar o painel',
   },
   units: {
     byte: 'B',
@@ -61,6 +71,59 @@ export const ptBR: Shape<typeof en> = {
     refresh: 'Atualizar catálogo',
     shortcuts: 'Atalhos',
   },
+  tour: {
+    offer: {
+      title: 'Primeira vez aqui?',
+      description: 'Um tour curto por esta página.',
+      take: 'Fazer o tour',
+      later: 'Agora não',
+    },
+    start: 'Fazer o tour',
+    counter: '{current} de {total}',
+    next: 'Próximo',
+    back: 'Voltar',
+    done: 'Concluir',
+    skip: 'Pular o tour',
+    close: 'Fechar o tour',
+    project: {
+      title: 'Seus projetos',
+      body: 'Cada projeto é uma pasta de <code>projects/</code>, escrita como código por você ou por um agente de código. Troque de projeto aqui (<kbd>⌘K</kbd>); o menu ⋯ ao lado copia o caminho, exporta ou apaga o projeto.',
+    },
+    create: {
+      title: 'Criar e exportar',
+      body: 'Novo asset começa um asset neste projeto; <kbd>N</kbd> ou Novo, no alto, abre a mesma janela em qualquer lugar, também para um projeto novo. Exportar desenha os sheets em <code>assets/</code>, as imagens que um jogo carrega.',
+    },
+    find: {
+      title: 'Encontrar um asset',
+      body: 'Filtre a lista por nome ou caminho (<kbd>/</kbd>) e restrinja-a por engine, tipo ou pasta em Filtros.',
+    },
+    asset: {
+      title: 'Abrir um asset',
+      body: 'Este é um asset; um personagem é um card só, com todas as suas animações. Clique nele, ou escolha-o com as setas e aperte <kbd>↵</kbd>, para abrir os Detalhes: eles tocam o asset frame a frame, com as direções, os dados e os arquivos.',
+    },
+    playground: {
+      title: 'Playground',
+      body: 'Jogue com seus personagens numa cena. Escolha um aqui para controlá-lo pelo teclado, ou escolha outra coisa para pôr na cena.',
+      tab: 'Toca seus personagens numa cena, cada um com as suas teclas, com coisas postas em volta.',
+      empty: 'Toca numa cena os personagens que você exporta, cada um com as suas teclas. Quando este projeto tiver assets, eles aparecem lá.',
+    },
+    customize: {
+      title: 'Customizar',
+      body: 'Vista um personagem com o kit de gear, slot por slot, e veja o resultado ao vivo em todas as direções. Salve-o como um personagem novo.',
+      tab: 'Veste um personagem com o kit de gear, slot por slot, e o salva como um personagem novo.',
+      noKit: 'Veste personagens com um kit de gear, que este projeto ainda não tem. A aba mostra o comando que começa um.',
+    },
+    scenery: {
+      title: 'Cenário',
+      body: 'Pinte cenas com as peças do kit de cenário: escolha aqui um chão, uma parede ou um prop, pinte-o na tela e salve a cena.',
+      tab: 'Pinta cenas com as peças do kit de cenário, para o Playground e para o seu jogo.',
+      noKit: 'Pinta cenas com um kit de cenário, que este projeto ainda não tem. A aba mostra o comando que começa um.',
+    },
+    shortcuts: {
+      title: 'As teclas e este tour',
+      body: 'Todas as teclas de todas as páginas estão na janela de atalhos (<kbd>?</kbd>). Faça este tour de novo por lá ou pelo menu ⋯ do projeto.',
+    },
+  },
   projects: {
     none: {
       title: 'Nenhum projeto ainda',
@@ -69,9 +132,10 @@ export const ptBR: Shape<typeof en> = {
       create: 'Novo projeto',
       sample: 'Experimentar o exemplo',
       sampleRunning: 'Trazendo o exemplo…',
-      sampleHint: 'Copia <code>examples/soulkeeper</code> para <code>projects/soulkeeper</code> e o exporta lá: cerca de um minuto na primeira vez. A cópia é sua para mudar.',
+      sampleHint: 'Copia <code>examples/soulkeeper</code> para <code>projects/soulkeeper</code> e o exporta lá: um ou dois minutos na primeira vez. A cópia é sua para mudar.',
       copying: 'Copiando o exemplo…',
-      exporting: 'Exportando os sheets: {done} de {total} prontos',
+      exporting: 'Exportando os sheets…',
+      exportCount: '{done} de {total}',
       terminal: 'Num terminal',
       copyCommand: 'Copiar o comando',
       commandLabel: 'Comando',
@@ -146,6 +210,12 @@ export const ptBR: Shape<typeof en> = {
     grouped: { one: '{count} item agrupado', other: '{count} itens agrupados' },
     clearFiltersLink: 'limpar filtros',
     clearFilters: 'Limpar filtros',
+    filters: {
+      label: 'Filtros',
+      labelActive: 'Filtros, {count} em uso',
+      searchFolders: 'Buscar pastas',
+      noFolder: 'Nenhuma pasta encontrada.',
+    },
     empty: {
       title: 'Nenhum asset exportado neste projeto',
       withSheets: {
@@ -302,6 +372,7 @@ export const ptBR: Shape<typeof en> = {
       details: ' — {assets}, {sheets} em sheets/ ({size} exportados)',
       detailsAssets: { one: '{count} asset exportado', other: '{count} assets exportados' },
       warning: 'Inclui src/, sheets/, exports e STYLE.md.',
+      warningNoStyle: 'Inclui src/, sheets/ e exports.',
       confirmLabel: 'Digite o nome do projeto para confirmar',
       confirmHint: 'Confirme com <code>{project}</code>.',
       confirm: 'Apagar projeto',
@@ -417,6 +488,8 @@ export const ptBR: Shape<typeof en> = {
       },
       cliProject: '<projeto>',
       cliPath: '<caminho>',
+      copyCommand: 'Copiar o comando',
+      commandLabel: 'Comando',
       projectName: 'Nome do projeto',
       projectNamePlaceholder: 'meu-jogo',
       projectNameHint: 'Letras minúsculas, números, - e _.',
@@ -455,6 +528,8 @@ export const ptBR: Shape<typeof en> = {
       projectCreated: 'Projeto criado',
       assetCreated: 'Asset criado',
       assetExportFailed: 'Asset criado, mas o export falhou',
+      clipToAdd: 'O clipe foi criado. Adicione-o aos clipes do personagem (abaixo) e depois exporte.',
+      exportPathPlaceholder: 'ex.: characters/',
     },
   },
   details: {
@@ -541,6 +616,7 @@ export const ptBR: Shape<typeof en> = {
       modified: 'Modificado',
       filePathLabel: 'Caminho do arquivo',
       sheetPathLabel: 'Caminho do .ts',
+      clickToCopy: 'Clique para copiar',
     },
     vfx: {
       title: 'Efeito',
@@ -698,7 +774,7 @@ export const ptBR: Shape<typeof en> = {
   customize: {
     noKit: {
       title: 'Este projeto não tem um kit de gear',
-      description: 'Para customizar personagens, o projeto precisa de <code>src/gear/catalog.ts</code> exportando <code>CATALOG</code> (gear, corpos e materiais) e <code>CHARACTERS</code> (os personagens que podem ser vestidos).',
+      description: 'Para customizar personagens, o projeto precisa de <code>src/gear/catalog.ts</code> exportando <code>CATALOG</code> (gear, corpos e materiais) e <code>CHARACTERS</code> (os personagens que podem ser vestidos). Comece um com o comando abaixo.',
     },
     noCharacters: {
       title: 'Nenhum personagem para vestir',
@@ -724,6 +800,12 @@ export const ptBR: Shape<typeof en> = {
       none: 'Nenhuma peça',
       noneHint: 'O personagem aparece só com o corpo. Adicione peças do kit.',
       alsoRemoved: { one: 'Removeu também {count} complemento que dependia dela', other: 'Removeu também {count} complementos que dependiam dela' },
+      reorderRefused: 'Uma peça fica depois daquela em que se apoia',
+      dragInstructions: 'Para mover uma peça, pressione Espaço ou Enter na alça dela. Mova com as setas para cima e para baixo e pressione Espaço ou Enter para soltar, ou Esc para cancelar.',
+      dragStart: 'Peça {name} levantada, na posição {position} de {total}.',
+      dragOver: 'Peça {name} sobre a posição {position} de {total}.',
+      dragEnd: 'Peça {name} solta na posição {position} de {total}.',
+      dragCancel: 'Movimento cancelado: a peça {name} voltou à posição {position} de {total}.',
     },
     basics: {
       body: 'Corpo',
@@ -754,6 +836,7 @@ export const ptBR: Shape<typeof en> = {
       open: 'Abrir {name}',
       close: 'Fechar {name}',
       unknown: 'desconhecida',
+      drag: 'Arrastar {name} para reordenar',
       moveUp: 'Subir',
       moveDown: 'Descer',
       remove: 'Remover peça',
@@ -794,12 +877,18 @@ export const ptBR: Shape<typeof en> = {
       frame: 'Frame',
       madeFor: 'Feito para {needs}',
       noClip: 'O personagem não tem o clipe "{clip}".',
+      compare: 'Comparar',
+      compareHint: 'O outfit salvo e o editado lado a lado, divididos por uma alça',
+      compareSlider: 'Outfit salvo e editado',
+      compareValue: 'Outfit salvo nos {percent}% da esquerda',
+      saved: 'Salvo',
+      edited: 'Editado',
     },
   },
   scenery: {
     noKit: {
       title: 'Este projeto não tem um kit de cenário',
-      description: 'Para pintar cenas, o projeto precisa de <code>src/scenery/catalog.ts</code> exportando <code>SCENERY</code> (peças, materiais, grade e câmera).',
+      description: 'Para pintar cenas, o projeto precisa de <code>src/scenery/catalog.ts</code> exportando <code>SCENERY</code> (peças, materiais, grade e câmera). Comece um com o comando abaixo.',
     },
     sceneLabel: 'Cena',
     piecesLabel: 'Peças',
@@ -897,7 +986,6 @@ export const ptBR: Shape<typeof en> = {
       variants: '{count} variações',
     },
     toolbar: {
-      history: 'Histórico',
       layersLabel: 'Camadas visíveis',
       hideLayer: 'Esconder {layer}',
       showLayer: 'Mostrar {layer}',

@@ -7,18 +7,28 @@
  * shown as they are and never go through here.
  */
 export const en = {
+  noKit: {
+    terminal: 'In a terminal',
+    copyCommand: 'Copy the command',
+    commandLabel: 'Command',
+    tryBuiltIn: 'Try the built-in kit',
+    builtInHint: 'The built-in kit is a small one that comes with the viewer, to try this tab: what you make with it cannot be saved to this project.',
+  },
   common: {
     cancel: 'Cancel',
     close: 'Close',
     create: 'Create',
     export: 'Export',
     undo: 'Undo',
+    redo: 'Redo',
+    history: 'History',
     loading: 'Loading…',
     more: 'More',
     breadcrumb: 'Breadcrumb',
     none: 'None',
     yes: 'yes',
     no: 'no',
+    resizePanel: 'Resize the panel',
   },
   units: {
     byte: 'B',
@@ -63,6 +73,59 @@ export const en = {
     refresh: 'Refresh catalog',
     shortcuts: 'Shortcuts',
   },
+  tour: {
+    offer: {
+      title: 'New here?',
+      description: 'A short tour of this page.',
+      take: 'Take the tour',
+      later: 'Not now',
+    },
+    start: 'Take the tour',
+    counter: '{current} of {total}',
+    next: 'Next',
+    back: 'Back',
+    done: 'Done',
+    skip: 'Skip tour',
+    close: 'Close the tour',
+    project: {
+      title: 'Your projects',
+      body: 'Each project is a folder of <code>projects/</code>, written as code by you or a coding agent. Switch projects here (<kbd>⌘K</kbd>); the ⋯ menu beside it copies its path, exports it or deletes it.',
+    },
+    create: {
+      title: 'Make and export',
+      body: 'New asset starts an asset in this project; <kbd>N</kbd> or New at the top opens the same window anywhere, for a new project too. Export draws the sheets into <code>assets/</code>, the images a game loads.',
+    },
+    find: {
+      title: 'Find an asset',
+      body: 'Filter the list by name or path (<kbd>/</kbd>), and narrow it by engine, type or folder with Filters.',
+    },
+    asset: {
+      title: 'Open an asset',
+      body: 'This is one asset; a character is one card with all its animations. Click it, or pick it with the arrows and press <kbd>↵</kbd>, to open Details: it plays the asset frame by frame, with its directions, its data and its files.',
+    },
+    playground: {
+      title: 'Playground',
+      body: 'Play your characters in a scene. Pick one here to control it with the keyboard, or pick something else to place in the scene.',
+      tab: 'Plays your characters in a scene, each with its own keys, with things placed around them.',
+      empty: 'Plays the characters you export in a scene, each with its own keys. Once this project has assets, they show up there.',
+    },
+    customize: {
+      title: 'Customize',
+      body: 'Dress a character from the gear kit, slot by slot, and watch it live in every direction. Save the result as a new character.',
+      tab: 'Dresses a character from the gear kit, slot by slot, and saves the result as a new character.',
+      noKit: 'Dresses characters from a gear kit, which this project has not got yet. The tab shows the command that starts one.',
+    },
+    scenery: {
+      title: 'Scenery',
+      body: 'Paint scenes with the pieces of the scenery kit: pick a floor, a wall or a prop here, paint it on the canvas, and save the scene.',
+      tab: 'Paints scenes with the pieces of the scenery kit, for the Playground and for your game.',
+      noKit: 'Paints scenes from a scenery kit, which this project has not got yet. The tab shows the command that starts one.',
+    },
+    shortcuts: {
+      title: 'Keys and this tour',
+      body: "Every key of every page is in the Shortcuts window (<kbd>?</kbd>). Take this tour again from there or from the project's ⋯ menu.",
+    },
+  },
   projects: {
     none: {
       title: 'No projects yet',
@@ -71,9 +134,10 @@ export const en = {
       create: 'New project',
       sample: 'Try the sample',
       sampleRunning: 'Bringing in the sample…',
-      sampleHint: 'Copies <code>examples/soulkeeper</code> to <code>projects/soulkeeper</code> and exports it there: about a minute the first time. The copy is yours to change.',
+      sampleHint: 'Copies <code>examples/soulkeeper</code> to <code>projects/soulkeeper</code> and exports it there: a minute or two the first time. The copy is yours to change.',
       copying: 'Copying the sample…',
-      exporting: 'Exporting the sheets: {done} of {total} done',
+      exporting: 'Exporting the sheets…',
+      exportCount: '{done} of {total}',
       terminal: 'In a terminal',
       copyCommand: 'Copy the command',
       commandLabel: 'Command',
@@ -148,6 +212,12 @@ export const en = {
     grouped: { one: '{count} item grouped', other: '{count} items grouped' },
     clearFiltersLink: 'clear filters',
     clearFilters: 'Clear filters',
+    filters: {
+      label: 'Filters',
+      labelActive: 'Filters, {count} in use',
+      searchFolders: 'Search folders',
+      noFolder: 'No folder matches.',
+    },
     empty: {
       title: 'No exported assets in this project',
       withSheets: {
@@ -304,6 +374,7 @@ export const en = {
       details: ' — {assets}, {sheets} in sheets/ ({size} exported)',
       detailsAssets: { one: '{count} exported asset', other: '{count} exported assets' },
       warning: 'Includes src/, sheets/, the exports and STYLE.md.',
+      warningNoStyle: 'Includes src/, sheets/ and the exports.',
       confirmLabel: 'Type the project name to confirm',
       confirmHint: 'Confirm with <code>{project}</code>.',
       confirm: 'Delete project',
@@ -419,6 +490,8 @@ export const en = {
       },
       cliProject: '<project>',
       cliPath: '<path>',
+      copyCommand: 'Copy the command',
+      commandLabel: 'Command',
       projectName: 'Project name',
       projectNamePlaceholder: 'my-game',
       projectNameHint: 'Lowercase letters, numbers, - and _.',
@@ -457,6 +530,8 @@ export const en = {
       projectCreated: 'Project created',
       assetCreated: 'Asset created',
       assetExportFailed: 'Asset created, but the export failed',
+      clipToAdd: 'The clip is created. Add it to the character\'s clips (below), then export it.',
+      exportPathPlaceholder: 'e.g. characters/',
     },
   },
   details: {
@@ -543,6 +618,7 @@ export const en = {
       modified: 'Modified',
       filePathLabel: 'Path of the file',
       sheetPathLabel: 'Path of the .ts',
+      clickToCopy: 'Click to copy',
     },
     vfx: {
       title: 'Effect',
@@ -700,7 +776,7 @@ export const en = {
   customize: {
     noKit: {
       title: 'This project has no gear kit',
-      description: 'To customize characters, the project needs <code>src/gear/catalog.ts</code> exporting <code>CATALOG</code> (gear, bodies and materials) and <code>CHARACTERS</code> (the characters that can be dressed).',
+      description: 'To customize characters, the project needs <code>src/gear/catalog.ts</code> exporting <code>CATALOG</code> (gear, bodies and materials) and <code>CHARACTERS</code> (the characters that can be dressed). Start one with the command below.',
     },
     noCharacters: {
       title: 'No character to dress',
@@ -726,6 +802,12 @@ export const en = {
       none: 'No pieces',
       noneHint: 'The character appears with the body only. Add pieces from the kit.',
       alsoRemoved: { one: 'Also removed {count} add-on that depended on it', other: 'Also removed {count} add-ons that depended on it' },
+      reorderRefused: 'A piece stays after the one it rests on',
+      dragInstructions: 'To move a piece, press Space or Enter on its handle. Move it with the up and down arrows, then press Space or Enter to drop it, or Escape to cancel.',
+      dragStart: 'Picked up {name}, at {position} of {total}.',
+      dragOver: '{name} is over place {position} of {total}.',
+      dragEnd: '{name} dropped at {position} of {total}.',
+      dragCancel: 'Moving cancelled: {name} is back at {position} of {total}.',
     },
     basics: {
       body: 'Body',
@@ -756,6 +838,7 @@ export const en = {
       open: 'Open {name}',
       close: 'Close {name}',
       unknown: 'unknown',
+      drag: 'Drag {name} to reorder',
       moveUp: 'Move up',
       moveDown: 'Move down',
       remove: 'Remove piece',
@@ -796,12 +879,18 @@ export const en = {
       frame: 'Frame',
       madeFor: 'Made for {needs}',
       noClip: 'The character has no clip "{clip}".',
+      compare: 'Compare',
+      compareHint: 'The saved outfit and the edited one side by side, split by a handle',
+      compareSlider: 'Saved and edited outfit',
+      compareValue: 'Saved outfit on the left {percent}% of the width',
+      saved: 'Saved',
+      edited: 'Edited',
     },
   },
   scenery: {
     noKit: {
       title: 'This project has no scenery kit',
-      description: 'To paint scenes, the project needs <code>src/scenery/catalog.ts</code> exporting <code>SCENERY</code> (pieces, materials, grid and camera).',
+      description: 'To paint scenes, the project needs <code>src/scenery/catalog.ts</code> exporting <code>SCENERY</code> (pieces, materials, grid and camera). Start one with the command below.',
     },
     sceneLabel: 'Scene',
     piecesLabel: 'Pieces',
@@ -899,7 +988,6 @@ export const en = {
       variants: '{count} variants',
     },
     toolbar: {
-      history: 'History',
       layersLabel: 'Visible layers',
       hideLayer: 'Hide {layer}',
       showLayer: 'Show {layer}',

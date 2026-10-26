@@ -4,8 +4,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { buildAssetCatalog, buildProjectCatalog } from '../../viewer/server/catalog';
 import { createTranslator } from '../../viewer/src/i18n/core';
-import { characterLabel, detailsTitle, roleDetail, roleOf } from '../../viewer/src/lib/asset-role';
-import { exportTarget, isStale, pendingExports, projectTotals } from '../../viewer/src/lib/export-state';
+import { characterLabel, detailsTitle, readableName, roleDetail, roleOf } from '../../viewer/src/lib/asset-role';
+import { exportTarget, isStale, pendingExports, progressPercent, projectTotals } from '../../viewer/src/lib/export-state';
 import { clipsOf, groupAnimations } from '../../viewer/src/lib/groups';
 import type { AssetFileMeta, AtlasInfo } from '../../viewer/src/lib/types';
 
@@ -137,10 +137,11 @@ try {
   const titleOf = (subpath: string) => detailsTitle(find(subpath));
   assert.deepEqual(['characters/captain/idle.png', 'characters/captain/walk.png'].map(titleOf), ['Ossuary Captain', 'Ossuary Captain'], 'a clip is titled by its character');
   assert.equal(titleOf('characters/bat/idle.png'), 'Bat', 'even a character with a single clip');
-  assert.equal(titleOf('characters/old/walk.png'), 'old', 'an older sheet without a manifest: its folder');
-  assert.equal(titleOf('hero.png'), 'hero', 'a character with no folder: its file name');
+  assert.equal(titleOf('characters/old/walk.png'), 'Old', 'an older sheet without a manifest: its folder, as a name reads');
+  assert.equal(titleOf('hero.png'), 'Hero', 'a character with no folder: its file name, as a name reads');
   assert.equal(titleOf('gear/horned-helm.png'), 'Horned helm', 'a gear sheet by its label, as its card');
-  assert.equal(titleOf('ui/button.png'), 'button', 'an interface piece with no label: its file name');
+  assert.equal(titleOf('ui/button.png'), 'Button', 'an interface piece with no label: its file name, as a name reads');
+  assert.equal(readableName('stone-crate'), 'Stone crate', 'a kebab-case name reads as a label is written');
   assert.deepEqual(['scenery/coffin.png', 'scenery/crypt-door--closing.png', 'scenery/crypt-archway.png'].map(titleOf), ['Coffin', 'Crypt door', 'Crypt archway']);
   assert.deepEqual(sample.map(characterLabel).filter(Boolean), ['Ossuary Captain', 'Ossuary Captain', 'Bat'], 'only a clip of a character with a manifest has a label');
 
@@ -195,6 +196,13 @@ try {
   const [english, portuguese] = [createTranslator('en'), createTranslator('pt-BR')];
   assert.equal(projectTotals({ ...meta, totalSize: mb }, 4, english), '4 assets · 2.50 MB · 2 not exported', 'sheets show only as what is not exported yet');
   assert.equal(projectTotals({ ...meta, pendingSheets: [], totalSize: 1536 }, 1, english), '1 asset · 1.5 kB', 'all exported: one count and the size');
+  // The bars that count an export: done of total as a percentage, never past either end, and empty for nothing to do.
+  assert.equal(progressPercent(3, 12), 25);
+  assert.equal(progressPercent(0, 40), 0);
+  assert.equal(progressPercent(40, 40), 100);
+  assert.equal(progressPercent(5, 4), 100, 'more done than counted (the catalog read late) stays a full bar');
+  assert.equal(progressPercent(-1, 4), 0);
+  assert.equal(progressPercent(0, 0), 0, 'no step to take is an empty bar, not NaN');
   assert.equal(projectTotals({ ...meta, totalSize: mb }, 4, portuguese), '4 assets · 2,50 MB · 2 sem export');
   assert.equal(projectTotals({ ...meta, pendingSheets: ['a.ts'], totalSize: 0 }, 0, portuguese), '0 asset · 0 B · 1 sem export', 'Portuguese counts zero as one');
   assert.doesNotMatch(projectTotals(meta, assets.length, english), /sheet/, 'assets and sheets are not two totals');

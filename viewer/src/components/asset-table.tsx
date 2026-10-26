@@ -107,6 +107,7 @@ export function AssetTable({ table, activeKey, scrollRef, onOpen }: Props) {
                   tabIndex={-1}
                   data-index={item.index}
                   aria-rowindex={item.index + 2}
+                  data-tour={item.index === 0 ? 'asset' : undefined}
                   data-state={row.id === activeKey ? 'selected' : undefined}
                   className={cn('cursor-pointer outline-none tabular-nums', row.id === activeKey && 'bg-accent')}
                   onClick={() => onOpen(row.original)}

@@ -1,5 +1,5 @@
 import NiceModal from '@ebay/nice-modal-react';
-import { createRootRouteWithContext, ErrorComponent, Link, Outlet, useRouter, type ErrorComponentProps } from '@tanstack/react-router';
+import { createRootRouteWithContext, ErrorComponent, Link, Outlet, useParams, useRouter, type ErrorComponentProps } from '@tanstack/react-router';
 import type { QueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
@@ -8,6 +8,7 @@ import { assetsQuery, projectsQuery } from '@/lib/queries';
 import { APP_KEYS, isModalOpen, isTyping, useWindowKeydown } from '@/lib/hotkeys';
 import { Rich, useT } from '@/i18n';
 import { AppHeader } from '@/components/app-header';
+import { AppPending } from '@/components/app-pending';
 import { NewModal } from '@/modals/new-modal';
 import { ShortcutsModal } from '@/modals/shortcuts-modal';
 
@@ -15,6 +16,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   loader: ({ context: { queryClient } }) =>
     Promise.all([queryClient.ensureQueryData(projectsQuery), queryClient.ensureQueryData(assetsQuery)]),
   component: Shell,
+  // A slow first load (a large catalog, a dev server just started) shows the header and a spinner rather than a blank
+  // page; only after a moment, so a fast load never flashes it, and then for long enough to be read.
+  pendingComponent: AppPending,
+  pendingMs: 300,
+  pendingMinMs: 400,
   errorComponent: LoadError,
   notFoundComponent: NotFound,
 });
@@ -45,6 +51,8 @@ function NotFound() {
 }
 
 function Shell() {
+  // N opens the New dialog on the project in use, as the header's New does.
+  const { project } = useParams({ strict: false });
   useWindowKeydown((e) => {
     // A modal dialog or an open menu keeps the keys; a popover does not (the Playground's and the painter's selection
     // popovers stay open while the page is used), so N and ? still work over one.
@@ -52,7 +60,7 @@ function Shell() {
     const key = e.key.toLowerCase();
     if (key === APP_KEYS.newThing) {
       e.preventDefault();
-      void NiceModal.show(NewModal, {});
+      void NiceModal.show(NewModal, { project });
     } else if (key === APP_KEYS.help) {
       e.preventDefault();
       void NiceModal.show(ShortcutsModal);

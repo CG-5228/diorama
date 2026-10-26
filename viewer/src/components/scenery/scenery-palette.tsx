@@ -59,7 +59,7 @@ function BrushStrip({ catalog, brush, tool, onTool }: Pick<Props, 'catalog' | 'b
           <ToggleGroupItem key={slot.tool} value={slot.tool} aria-label={t(`scenery.brushAria.${slot.brush}`)} className="h-auto min-w-0 flex-col items-stretch gap-1 p-1.5 aria-checked:border-primary aria-checked:bg-primary/10">
             <span className="text-left text-[0.625rem] text-muted-foreground uppercase">{t(`scenery.brushes.${slot.brush}`)}</span>
             {info ? <PieceThumb catalog={catalog} info={info} size="slot" /> : <span className="h-10 rounded-sm bg-muted" />}
-            <span className="truncate text-left font-normal">{info?.label ?? t('scenery.noBrush')}</span>
+            <span className="truncate text-left font-normal" title={info?.label}>{info?.label ?? t('scenery.noBrush')}</span>
           </ToggleGroupItem>
         );
       })}
@@ -91,7 +91,7 @@ const PieceCard = memo(function PieceCard({ catalog, info, current }: { catalog:
   );
 });
 
-/** The brushes and every piece of the kit by group, drawn by the engine. Choosing one arms it for its tool. */
+/** The brushes and every piece of the kit by group, drawn by the engine; a wider panel fits more pieces to a row. Choosing one arms it for its tool. */
 export const SceneryPalette = memo(function SceneryPalette({ catalog, brush, tool, onChoose, onTool }: Props) {
   const { t } = useT();
   const [query, setQuery] = useState('');
@@ -128,7 +128,7 @@ export const SceneryPalette = memo(function SceneryPalette({ catalog, brush, too
                 const info = pieces.find((p) => p.id === id);
                 if (info) onChoose(info);
               }}
-              className="grid w-full grid-cols-3 items-stretch"
+              className="grid w-full grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] items-stretch"
             >
               {pieces.map((info) => <PieceCard key={info.id} catalog={catalog} info={info} current={toolNow === key} />)}
             </ToggleGroup>

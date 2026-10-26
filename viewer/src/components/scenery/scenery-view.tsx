@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import NiceModal from '@ebay/nice-modal-react';
 import { keepPreviousData, useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
 import { useSelector } from '@tanstack/react-store';
 import { validateScene, type SceneData, type ScenePieceInfo, type SceneryCatalog, type SpaceHeight } from '@core/volume';
-import { MapIcon, TriangleAlertIcon } from 'lucide-react';
+import { FlaskConicalIcon, MapIcon, TriangleAlertIcon } from 'lucide-react';
+import { NoKit } from '@/components/no-kit';
+import { SidePanelLayout } from '@/components/side-panel-layout';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import { Button } from '@/components/ui/button';
 import { Rich, useT } from '@/i18n';
 import { historyCommand, isTyping, useWindowKeydown } from '@/lib/hotkeys';
 import { projectsQuery } from '@/lib/queries';
@@ -18,7 +21,6 @@ import { brushOf, type PieceGroup, type Tool } from '@/lib/scenery/labels';
 import { fitZoom, geometryOf, stepZoom, ZOOMS, type Zoom } from '@/lib/scenery/render';
 import { createCanvasStatus } from '@/lib/scenery/status';
 import { useHistory } from '@/lib/scenery/use-history';
-import { cn } from '@/lib/utils';
 import { usePref } from '@/lib/use-pref';
 import { SaveSceneModal } from '@/modals/save-scene-modal';
 import { DrawReadout, HoverReadout } from './canvas-readout';
@@ -29,6 +31,7 @@ import type { UseBrush } from './selection-popover';
 import { SceneryPalette } from './scenery-palette';
 import { ToolOptions } from './tool-options';
 import { ToolRail } from './tool-rail';
+import { useWarnOnUnload } from '@/lib/unsaved';
 
 const DEFAULT_SIZE = { cols: 16, rows: 12 };
 
@@ -46,15 +49,20 @@ export function SceneryView() {
 
   if (!catalog) {
     return (
-      <Empty className="h-full">
-        <EmptyHeader>
-          <EmptyMedia variant="icon"><MapIcon /></EmptyMedia>
-          <EmptyTitle>{t('scenery.noKit.title')}</EmptyTitle>
-          <EmptyDescription>
-            <Rich id="scenery.noKit.description" />
-          </EmptyDescription>
-        </EmptyHeader>
-      </Empty>
+      <NoKit
+        icon={<MapIcon />}
+        title={t('scenery.noKit.title')}
+        description={<Rich id="scenery.noKit.description" />}
+        command={`npm run new-kit -- ${project} scenery`}
+        tryBuiltIn={
+          <Button variant="outline" asChild>
+            <Link to="/p/$project/scenery" params={{ project }} search={{ fixture: true }}>
+              <FlaskConicalIcon data-icon="inline-start" />
+              {t('noKit.tryBuiltIn')}
+            </Link>
+          </Button>
+        }
+      />
     );
   }
   return <Painter key={`${project}:${fixture}`} project={project} catalog={catalog} fixture={fixture} sceneNames={meta?.scenes ?? []} />;
@@ -106,6 +114,7 @@ function Painter({ project, catalog, fixture, sceneNames }: { project: string; c
   const problems = useMemo(() => validateScene(scene, catalog), [scene, catalog]);
   const empty = useMemo(() => scene.props.length === 0 && countCells(scene.floor) === 0 && countCells(scene.walls) === 0, [scene]);
   const unsaved = loaded === null ? !empty : scene !== baseline;
+  useWarnOnUnload(unsaved);
   // Undo, an erase or a resize can leave the selection pointing at nothing.
   const selected = useMemo(() => validSelection(scene, selection), [scene, selection]);
   const selectedProp = selected?.kind === 'prop' ? selected.index : null;
@@ -255,8 +264,21 @@ function Painter({ project, catalog, fixture, sceneNames }: { project: string; c
     });
 
   return (
-    <div className="flex min-h-0 flex-1">
-      <section className="flex min-w-0 flex-1 flex-col" aria-label={t('scenery.sceneLabel')}>
+    <SidePanelLayout
+      id="scenery"
+      side="end"
+      size={{ initial: '20rem', min: '16rem', max: '36rem' }}
+      open={panelOpen}
+      onOpen={setPanelOpen}
+      panel={
+        <aside data-tour="scenery" className="flex min-h-0 flex-1 flex-col" aria-label={t('scenery.piecesLabel')}>
+          <div className="min-h-0 flex-1 overflow-y-auto p-3">
+            <SceneryPalette catalog={catalog} brush={brush} tool={tool} onChoose={choose} onTool={setTool} />
+          </div>
+        </aside>
+      }
+    >
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col" aria-label={t('scenery.sceneLabel')}>
         <SceneToolbar
           leading={<SceneMenu catalog={catalog} scene={scene} saved={saved} loaded={loaded} unsaved={unsaved} onEdit={history.set} onLoad={open} />}
           panelOpen={panelOpen}
@@ -352,12 +374,6 @@ function Painter({ project, catalog, fixture, sceneNames }: { project: string; c
           <DrawReadout status={status} />
         </div>
       </section>
-
-      <aside className={cn('flex w-80 shrink-0 flex-col border-l', !panelOpen && 'hidden')} aria-label={t('scenery.piecesLabel')}>
-        <div className="min-h-0 flex-1 overflow-y-auto p-3">
-          <SceneryPalette catalog={catalog} brush={brush} tool={tool} onChoose={choose} onTool={setTool} />
-        </div>
-      </aside>
-    </div>
+    </SidePanelLayout>
   );
 }
